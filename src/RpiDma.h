@@ -72,7 +72,9 @@ struct {
 //On Jessie Pi2:
 //3893 :    111100110101
 // USE CHANNEL 4 AND 5 which seems to be free
-#define DMA_CHANNEL 4
+// On Jessie, channel 4 and 5 seems to crash : set to DMA 8 .
+#define DMA_CHANNEL 8
+
 #define DMA_CHANNEL_PWMFREQUENCY (DMA_CHANNEL+1)
 
 typedef struct {
