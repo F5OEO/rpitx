@@ -901,7 +901,11 @@ main(int argc, char **argv)
 	//Open File Input for modes which need it
 	if((Mode==MODE_IQ)||(Mode==MODE_IQ_FLOAT)||(Mode==MODE_RF)||(Mode==MODE_RFA))
 	{
-		FileInHandle = open(FileName, 'r');
+		if(strcmp(FileName,"-")==0)
+		{
+			FileInHandle = STDIN_FILENO;
+		}
+		else FileInHandle = open(FileName, 'r');
 		if (FileInHandle < 0)
 		{
 			fatal("Failed to read Filein %s\n",FileName);
