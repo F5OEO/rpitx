@@ -37,4 +37,10 @@ clean:
 	
 	rm -f  RpiTx.o mailbox.o RpiGpio.o RpiDma.o
 
-	
+install: all
+	install -m 0755 ../pisstv /usr/bin
+	install -m 0755 ../pifm /usr/bin
+	install -m 0755 ../piam /usr/bin
+	install -m 0755 ../pissb /usr/bin
+	install -m 0755 ../pifsq /usr/bin
+	install -m 0755 ../rpitx /usr/bin
