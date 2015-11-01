@@ -1163,7 +1163,7 @@ for (;;)
 							close(FileInHandle);
 							FileInHandle = open(FileName, 'r');
 						}
-						else
+						else if (FileInHandle != STDIN_FILENO) 
 							terminate(0);
 						
 					
@@ -1231,7 +1231,7 @@ for (;;)
 								FileInHandle = open(FileName, 'r');
 								NbRead=read(FileInHandle,TabRfSample+i,sizeof(samplerf_t));
 							}
-							else
+							else if (FileInHandle != STDIN_FILENO) 
 							{
 								sleep(1);	
 								terminate(0);
@@ -1279,7 +1279,7 @@ for (;;)
 								FileInHandle = open(FileName, 'r');
 								NbRead=read(FileInHandle,TabRfSample+i,sizeof(samplerf_t));
 							}
-							else
+							else if (FileInHandle != STDIN_FILENO) 
 								terminate(0);
 						}
 						//for(i=0;i<DmaSampleBurstSize;i++)
