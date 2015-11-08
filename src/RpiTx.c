@@ -95,7 +95,7 @@ int NUM_SAMPLES=NUM_SAMPLES_MAX;
 
 char EndOfApp=0;
 unsigned char loop_mode_flag=0;
-char *FileName;
+char *FileName = 0;
 int FileInHandle; //Handle in Transport Stream File
 static void
 udelay(int us)
@@ -824,10 +824,18 @@ main(int argc, char **argv)
 	
 	Mode=MODE_IQ; //By default
 
+	int anyargs = 0;
+
 	while(1)
 	{
 	a = getopt(argc, argv, "i:f:m:s:p:hld:");
-	if(a == -1) break;
+	
+	if(a == -1) 
+	{
+		if(anyargs) break;
+		else a='h'; //print usage and exit
+	}
+	anyargs = 1;	
 
 	switch(a)
 		{
@@ -901,7 +909,7 @@ main(int argc, char **argv)
 	//Open File Input for modes which need it
 	if((Mode==MODE_IQ)||(Mode==MODE_IQ_FLOAT)||(Mode==MODE_RF)||(Mode==MODE_RFA))
 	{
-		if(strcmp(FileName,"-")==0)
+		if(FileName && strcmp(FileName,"-")==0)
 		{
 			FileInHandle = STDIN_FILENO;
 		}
