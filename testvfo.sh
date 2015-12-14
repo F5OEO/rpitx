@@ -1,1 +1,1 @@
-sudo ./rpitx -m VFO -f 100000
+sudo ./rpitx -m VFO -f 433900

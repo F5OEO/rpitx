@@ -191,6 +191,7 @@ void ssb(float in, int USB, float* out_I, float* out_Q) {
 	
 	// low pass filter y to keep only audio band	
 	y = fir_filt( audio_fir, y );
+#define AUDIO_COMPRESSOR
 #ifdef AUDIO_COMPRESSOR
 //----------- audio compressor	
 //--- code inspired from http://www.musicdsp.org/showone.php?id=169

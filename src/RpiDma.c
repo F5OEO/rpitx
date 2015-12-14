@@ -1,8 +1,36 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include "RpiDma.h"
 #include "RpiGpio.h"
 char InitDma(void *FunctionTerminate)
 {
+	DMA_CHANNEL=4;
+	system("rm linuxversion.txt");
+	system("uname -r >> linuxversion.txt");
+	char *line = NULL;
+	size_t size;
+//	int fLinux=open("Flinuxversion.txt", "r');
+	FILE * flinux=fopen("linuxversion.txt", "r");
+	if (getline(&line, &size, flinux) == -1) 
+	{
+		printf("Could no get Linux version\n");
+	}
+	else
+	{
+		if(line[0]=='3')
+		{
+			 printf("Wheezy\n");
+			 DMA_CHANNEL=DMA_CHANNEL_WHEEZY;
+		}
+		
+		if(line[0]=='4')
+		{
+			 printf("Jessie\n");
+			DMA_CHANNEL=DMA_CHANNEL_JESSIE;
+		}
+
+	}
 	//printf("Init DMA\n");
 	
 	// Catch all signals possible - it is vital we kill the DMA engine

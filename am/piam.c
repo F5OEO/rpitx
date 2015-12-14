@@ -12,10 +12,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-
+#include <math.h>
 
 #include <sndfile.h>
-
+#define ln(x) (log(x)/log(2.718281828459045235f))
 #define		BUFFER_LEN	1024*8
 int FileFreqTiming;
 // Test program using SNDFILE 
@@ -99,7 +99,14 @@ int main(int argc, char **argv) {
 				x /= 2 ;
 			}
 			//printf("%f \n",x);
-			WriteTone(x*32767*2.0,1e9/48000.0);
+			float FactAmplitude=2.0; // To be analyzed more deeply !
+			/*
+			 double A = 87.7f; // compression parameter
+						double ampf=x/32767.0;
+      						 ampf = (fabs(ampf) < 1.0f/A) ? A*fabs(ampf)/(1.0f+ln(A)) : (1.0f+ln(A*fabs(ampf)))/(1.0f+ln(A)); //compand
+						x= (int)(round(ampf * 32767.0f)) ;
+			*/			
+			WriteTone(x*32767*FactAmplitude,1e9/48000.0);
 			 	
 		}
         	

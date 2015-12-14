@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
     /* While there are.frames in the input file, read them, process
     ** them and write them to the output file.
     */
-	int Excursion=12500;
+	int Excursion=6000;
     while ((readcount = sf_readf_float(infile, data, BUFFER_LEN)))
     {   
 		nb_samples = readcount / sfinfo.channels ;		

@@ -24,7 +24,7 @@ uint32_t mem_phys_to_virt(volatile uint32_t phys);
 #define NUM_CB_PWM_FREQUENCY 8
 //#define MBFILE			DEVICE_FILE_NAME	/* From mailbox.h */ 
 #define NUM_SAMPLES_MAX		(4000)
-#define CBS_SIZE_BY_SAMPLE	(8) // !!!!! With 8 CBS : DMA 2 DOES NOT START !!!!!!!!!!!
+#define CBS_SIZE_BY_SAMPLE	(5) 
 #define NUM_CBS_MAIN 		((NUM_SAMPLES_MAX * CBS_SIZE_BY_SAMPLE))
 #define NUM_CBS			(NUM_CBS_MAIN)
 
@@ -73,7 +73,13 @@ struct {
 //3893 :    111100110101
 // USE CHANNEL 4 AND 5 which seems to be free
 // On Jessie, channel 4 and 5 seems to crash : set to DMA 8 .
-#define DMA_CHANNEL 8
+#define DMA_CHANNEL_WHEEZY 14
+#define DMA_CHANNEL_JESSIE 8  
+//#define DMA_CHANNEL_PWMFREQUENCY 5
+
+char DMA_CHANNEL;
+
+//#define DMA_CHANNEL 8
 
 #define DMA_CHANNEL_PWMFREQUENCY (DMA_CHANNEL+1)
 
@@ -92,14 +98,17 @@ page_map_t *page_map;
  uint8_t *virtbase;
 
 typedef struct {
-	uint32_t Frequency1;
-	uint32_t Frequency2;
+	//uint32_t Frequency1;
+	//uint32_t Frequency2;
 	uint32_t Amplitude1;
 	uint32_t Amplitude2;
 	uint32_t PWMF1;
 	uint32_t PWMF2;
 	uint32_t WaitForThisSample;
-	uint32_t dummy;
+	uint32_t PCMRegister;
+	uint32_t FrequencyTab[200];
+	uint32_t debugSet;
+	uint32_t debugClear;
 } sample_t;
 
 
@@ -112,6 +121,7 @@ struct control_data_s {
 	uint32_t SharedFrequency1;
 	uint32_t SharedFrequency2;
 	uint32_t DmaPwmfControlRegister;
+	uint32_t SharedFrequencyTab[100];
 	
 };
 

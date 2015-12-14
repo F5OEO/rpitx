@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 	printf ("Channels    : %d\n",  sf_out.channels) ;
 	
 	// la porteuse SSB est décalée de +1K
-	ssb_init( 10000 );
+	ssb_init( 1000 );
 	
     /* While there are.frames in the input file, read them, process
     ** them and write them to the output file.
