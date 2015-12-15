@@ -1,4 +1,4 @@
-all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam
+all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
 
 #CFLAGS	= -Wall -g -O2 -D DIGITHIN
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable
@@ -33,6 +33,11 @@ CFLAGS_Piam	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Piam	= -lm -lrt -lpthread -lsndfile
 ../piam : ../am/piam.c 
 	$(CC) $(CFLAGS_Piam) -o ../piam ../am/piam.c  $(LDFLAGS_Piam) 
+
+CFLAGS_Pidcf77	= -Wall -g -O2 -Wno-unused-variable
+LDFLAGS_Pidcf77	= -lm -lrt -lpthread
+../pidcf77 : ../dcf77/pidcf77.c 
+	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS_Piam) 
 clean:
 	
 	rm -f  ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam RpiTx.o mailbox.o RpiGpio.o RpiDma.o
@@ -44,3 +49,4 @@ install: all
 	install -m 0755 ../pissb /usr/bin
 	install -m 0755 ../pifsq /usr/bin
 	install -m 0755 ../rpitx /usr/bin
+	install -m 0755 ../pidcf77 /usr/bin
