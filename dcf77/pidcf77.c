@@ -207,12 +207,15 @@ void modulate(byte b)
   
    if (b == 0)
    {
-     playtone(32767,100000000);
+     
+	playtone(0,100000000);
+	playtone(32767,900000000);
     
    }
    else
    {
-	playtone(32767/4,200000000);
+	playtone(0,200000000);
+	playtone(32767,900000000);
     
    }
   
