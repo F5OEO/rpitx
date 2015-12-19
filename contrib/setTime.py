@@ -91,4 +91,4 @@ trigger = start - datetime.timedelta(minutes=1)
 while True:
     if datetime.datetime.now() >= trigger:
         break
-call("sudo", "./rpitx", "-m RFA", "-i", filename, "-f 77500", "-l")
+call(["sudo", "rpitx", "-m", "RFA", "-i", filename, "-f", "77.500", "-l"])
