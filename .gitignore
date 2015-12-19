@@ -4,3 +4,5 @@ pissb
 piam
 pidcf77
 rpitx
+*.pyc
+*linuxversion.txt
