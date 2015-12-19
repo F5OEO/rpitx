@@ -208,14 +208,14 @@ void modulate(byte b)
    if (b == 0)
    {
      
-	playtone(0,100000000);
-	playtone(32767,900000000);
+	playtone(32667/8,100e6);
+	playtone(32767,900e6);
     
    }
    else
    {
-	playtone(0,200000000);
-	playtone(32767,900000000);
+	playtone(32767/8,200e6);
+	playtone(32767,800e6);
     
    }
   
@@ -255,6 +255,7 @@ if (argc > 1) {
 		
 		DCF_BITS(7,59);
 		loop();
+		playtone(0,1000e6);//last second
 		close(FileFreqTiming);
 		}
 		else
