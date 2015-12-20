@@ -35,18 +35,20 @@ byte StundenBits[anzahlStundenBits] = { 0 };
 int parity = 0;
 int FileFreqTiming;
 
+double HI = 32767;
+double LO;
+
 void modulate(byte b);
 void playtone(double Amplitude,uint32_t Timing);
 
 void loop()
 {
   int i;
-  for ( i = 0;i<58;++i)
+  for ( i = 0;i<59;i++)
   {
-    modulate(dcfBits[i]);
-    
+    modulate(dcfBits[i]);  
   }
-
+  playtone(HI,1000e6);//last second
 }
 
 
@@ -208,14 +210,14 @@ void modulate(byte b)
    if (b == 0)
    {
      
-	playtone(32667/8,100e6);
-	playtone(32767,900e6);
+	playtone(LO,100e6);
+	playtone(HI,900e6);
     
    }
    else
    {
-	playtone(32767/8,200e6);
-	playtone(32767,800e6);
+	playtone(LO,200e6);
+	playtone(HI,800e6);
     
    }
   
@@ -252,10 +254,15 @@ if (argc > 1) {
 		
 		char *sFileFreqTiming=(char *)argv[1];
 	       	FileFreqTiming = open(argv[1],O_WRONLY|O_CREAT);
-		
+	        LO = HI/8;	
 		DCF_BITS(7,59);
+                int i;
+                for ( i = 0;i<60;i++)
+                {
+                   printf("%i", dcfBits[i]);
+                }
+                printf("\n");
 		loop();
-		playtone(0,1000e6);//last second
 		close(FileFreqTiming);
 		}
 		else

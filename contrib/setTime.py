@@ -26,8 +26,8 @@ class Sample(Structure):
 BASE = [1, 2, 4, 8, 10, 20, 40, 80]
 NUMS = 5
 UP = 32767.0
-#DOWN = 3276.0
-DOWN = 0.0
+DOWN = UP/8
+
 filename = "/tmp/pippo.rfa"
 
 
@@ -192,6 +192,20 @@ def modulate(value=None):
         else:
             return [(DOWN,200000000),
                     (UP,800000000)]
+
+def test(value = "000000000000000010010111000011011111000000011000010101000010"):
+    sample = Sample()
+    print value
+    with open(filename, "wb") as f:
+        for val in ( int(v) for v in value):
+            for amplitude, timing in modulate(val):
+                sample.amplitude = amplitude
+                sample.timing = timing
+                f.write(sample)
+                print "%s  %i" % (amplitude, timing)
+
+
+
 if __name__ == "__main__":    
     with open(filename, "wb") as f:
         now = datetime.datetime.now()
