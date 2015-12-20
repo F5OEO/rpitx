@@ -17,11 +17,13 @@ from ctypes import *
 class Sample(Structure):
     _fields_ = [("amplitude", c_double), ("timing", c_uint)]
 
-#with open("/tmp/upstream.bin", "rb") as file:
-#    result = []
-#    x = Pippo()
-#    while file.readinto(x) == sizeof(x):
-#        result.append((x.a, x.t))
+def read(filename="/tmp/upstream.bin"):
+    with open("/tmp/upstream.bin", "rb") as file:
+        result = []
+        x = Sample()
+        while file.readinto(x) == sizeof(x):
+            result.append((x.amplitude, x.timing))
+        return result
 
 BASE = [1, 2, 4, 8, 10, 20, 40, 80]
 NUMS = 5
