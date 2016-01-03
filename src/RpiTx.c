@@ -1106,7 +1106,7 @@ main(int argc, char **argv)
 		{
 			FileInHandle = STDIN_FILENO;
 		}
-		else FileInHandle = open(FileName, 'r');
+		else FileInHandle = open(FileName, O_RDONLY);
 		if (FileInHandle < 0)
 		{
 			fatal("Failed to read Filein %s\n",FileName);
@@ -1297,7 +1297,7 @@ for (;;)
 						{
 							printf("Looping FileIn\n");
 							close(FileInHandle);
-							FileInHandle = open(FileName, 'r');
+							FileInHandle = open(FileName, O_RDONLY);
 							char dummyheader[44];
 							read(FileInHandle,dummyheader,44);
 							NbRead=read(FileInHandle,IQArray,DmaSampleBurstSize*2*2);
@@ -1376,7 +1376,7 @@ for (;;)
 						{
 							printf("Looping FileIn\n");
 							close(FileInHandle);
-							FileInHandle = open(FileName, 'r');
+							FileInHandle = open(FileName, O_RDONLY);
 						}
 						else if (FileInHandle != STDIN_FILENO) 
 							terminate(0);
@@ -1450,7 +1450,7 @@ for (;;)
 									{
 										//printf("Looping FileIn\n");
 										close(FileInHandle);
-										FileInHandle = open(FileName, 'r');
+										FileInHandle = open(FileName, O_RDONLY);
 										NbRead=read(FileInHandle,&SampleRf,sizeof(samplerf_t));
 									}
 									else if (FileInHandle != STDIN_FILENO) 

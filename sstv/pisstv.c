@@ -153,10 +153,10 @@ main(int argc, char **argv)
 if (argc > 2) {
 		
 		char *sFilePicture=(char *)argv[1];
-	       	FilePicture = open(argv[1], 'r');
+	       	FilePicture = open(argv[1], O_RDONLY);
 
 		char *sFileFreqTiming=(char *)argv[2];
-	       	FileFreqTiming = open(argv[2],O_WRONLY|O_CREAT);
+	       	FileFreqTiming = open(argv[2], O_WRONLY|O_CREAT, 0644);
 		}
 		else
 		{

@@ -352,10 +352,10 @@ main(int argc, char **argv)
 	if (argc > 2) {
 		
 		sText=(char *)argv[1];
-	       	//FileText = open(argv[1], 'r');
+	       	//FileText = open(argv[1], O_RDONLY);
 
 		char *sFileFreqTiming=(char *)argv[2];
-	       	FileFreqTiming = open(argv[2],O_WRONLY|O_CREAT);
+	       	FileFreqTiming = open(argv[2], O_WRONLY|O_CREAT, 0644);
 		}
 		else
 		{

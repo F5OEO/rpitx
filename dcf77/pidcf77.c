@@ -251,7 +251,7 @@ if (argc > 1) {
 		
 		
 		char *sFileFreqTiming=(char *)argv[1];
-	       	FileFreqTiming = open(argv[1],O_WRONLY|O_CREAT);
+	       	FileFreqTiming = open(argv[1], O_WRONLY|O_CREAT, 0644);
 		
 		DCF_BITS(7,59);
 		loop();

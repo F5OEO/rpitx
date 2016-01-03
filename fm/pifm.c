@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 		return 1 ;
 	}
  
-	FileFreqTiming = open(outfilename,'r');
+	FileFreqTiming = open(outfilename, O_RDONLY);
     
 		
 	/** **/
