@@ -81,6 +81,8 @@ Optimize CPU on PWMFrequency
 #define PLLFREQ_192             19200000	//PLLA = 19.2MHZ
 #define PLL_192			0x1
 
+#define HEADER_SIZE 44
+
 
 typedef unsigned char 	uchar ;		// 8 bit
 typedef unsigned short	uint16 ;	// 16 bit
@@ -1116,8 +1118,10 @@ main(int argc, char **argv)
 	if(Mode==MODE_IQ)
 	{
 		IQArray=malloc(DmaSampleBurstSize*2*sizeof(signed short)); // TODO A FREE AT THE END OF SOFTWARE
-		char dummyheader[44];
-		read(FileInHandle,dummyheader,44);
+		char dummyheader[HEADER_SIZE];
+		if (read(FileInHandle,dummyheader,HEADER_SIZE) != HEADER_SIZE) {
+			fatal("Unable to read header\n");
+		}
 		
 	} 
 	if(Mode==MODE_IQ_FLOAT)
@@ -1298,8 +1302,10 @@ for (;;)
 							printf("Looping FileIn\n");
 							close(FileInHandle);
 							FileInHandle = open(FileName, O_RDONLY);
-							char dummyheader[44];
-							read(FileInHandle,dummyheader,44);
+							char dummyheader[HEADER_SIZE];
+							if (read(FileInHandle,dummyheader,HEADER_SIZE) != HEADER_SIZE) {
+								fatal("Unable to read header\n");
+							}
 							NbRead=read(FileInHandle,IQArray,DmaSampleBurstSize*2*2);
 						}
 						else
