@@ -32,7 +32,9 @@ typedef struct {
 	RfSample.Frequency=Frequency;
 	RfSample.WaitForThisSample=Timing; //en 100 de nanosecond
 	//printf("Freq =%f Timing=%d\n",RfSample.Frequency,RfSample.WaitForThisSample);
-	write(FileFreqTiming,&RfSample,sizeof(samplerf_t));
+	if (write(FileFreqTiming,&RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
+		fprintf(stderr, "Unable to write sample\n");
+	}
 
 }
 
@@ -72,7 +74,7 @@ int main(int argc, char **argv) {
 		return 1 ;
 	}
  
-	FileFreqTiming = open(outfilename,'r');
+	FileFreqTiming = open(outfilename, O_RDONLY);
     
 		
 	/** **/

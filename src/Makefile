@@ -40,7 +40,7 @@ LDFLAGS_Pidcf77	= -lm -lrt -lpthread
 	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS_Piam) 
 clean:
 	
-	rm -f  ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam RpiTx.o mailbox.o RpiGpio.o RpiDma.o
+	rm -f  ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 RpiTx.o mailbox.o RpiGpio.o RpiDma.o
 
 install: all
 	install -m 0755 ../pisstv /usr/bin
