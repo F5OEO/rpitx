@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 		return 1 ;
 	}
 
-	FileFreqTiming = open(outfilename, O_RWONLY);
+	FileFreqTiming = open(outfilename, O_WRONLY|O_CREAT, 0644);
 
 
 	/** **/
