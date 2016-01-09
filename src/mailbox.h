@@ -26,10 +26,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <linux/ioctl.h>
+// Newer kernels (>= 4.1) use major 249, older ones major 100.
+#define MAJOR_NUM_A 249
+#define MAJOR_NUM_B 100
+#define IOCTL_MBOX_PROPERTY _IOWR(MAJOR_NUM_B, 0, char *)
 
-#define MAJOR_NUM 100
-#define IOCTL_MBOX_PROPERTY _IOWR(MAJOR_NUM, 0, char *)
-#define CUSTOM_DEVICE_FILE_NAME "/dev/rpidatv-mb"
+#define LOCAL_DEVICE_FILE_NAME "/dev/rpidatv-mb"
 #define VCIO_DEVICE_FILE_NAME "/dev/vcio"
 
 int mbox_open();

@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 
 #include "mailbox.h"
 
@@ -246,18 +247,28 @@ unsigned execute_qpu(int file_desc, unsigned num_qpus, unsigned control, unsigne
 int mbox_open() {
    int file_desc;
 
-   // open a char device file used for communicating with kernel mbox driver
-   file_desc = open(VCIO_DEVICE_FILE_NAME, 0);
-   if (file_desc < 0) {
-       printf("Can't open device file: %s\n", CUSTOM_DEVICE_FILE_NAME);
-       printf("Try %s\n", CUSTOM_DEVICE_FILE_NAME);
-	   file_desc = open(CUSTOM_DEVICE_FILE_NAME, 0);
-	   if (file_desc < 0) {
-	      printf("Can't open device file: %s\n", CUSTOM_DEVICE_FILE_NAME);
-	      printf("Try creating a device file with: sudo mknod %s c %d 0\n", CUSTOM_DEVICE_FILE_NAME, MAJOR_NUM);
-	      exit(-1);
-	   }
-   }
+    // Open a char device file used for communicating with kernel mbox driver.
+    file_desc = open(VCIO_DEVICE_FILE_NAME, 0);
+    if(file_desc >= 0) {
+        printf("Using mbox device " VCIO_DEVICE_FILE_NAME ".\n");
+        return file_desc;
+    }
+    
+    // Try to create one
+    unlink(LOCAL_DEVICE_FILE_NAME);
+    if(mknod(LOCAL_DEVICE_FILE_NAME, S_IFCHR|0600, makedev(MAJOR_NUM_A, 0)) >= 0 &&
+        (file_desc = open(LOCAL_DEVICE_FILE_NAME, 0)) >= 0) {
+        printf("Using local mbox device file with major %d.\n", MAJOR_NUM_A);
+        return file_desc;
+    }
+
+    unlink(LOCAL_DEVICE_FILE_NAME);
+    if(mknod(LOCAL_DEVICE_FILE_NAME, S_IFCHR|0600, makedev(MAJOR_NUM_B, 0)) >= 0 &&
+        (file_desc = open(LOCAL_DEVICE_FILE_NAME, 0)) >= 0) {
+        printf("Using local mbox device file with major %d.\n", MAJOR_NUM_B);
+        return file_desc;
+    }
+
 
    return file_desc;
 }

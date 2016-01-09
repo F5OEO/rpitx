@@ -208,14 +208,14 @@ void modulate(byte b)
    if (b == 0)
    {
      
-	playtone(0,100000000);
-	playtone(32767,900000000);
+	playtone(32667/8,100e6);
+	playtone(32767,900e6);
     
    }
    else
    {
-	playtone(0,200000000);
-	playtone(32767,900000000);
+	playtone(32767/8,200e6);
+	playtone(32767,800e6);
     
    }
   
@@ -237,7 +237,9 @@ void playtone(double Amplitude,uint32_t Timing)
 	RfSample.Amplitude=Amplitude;
 	RfSample.WaitForThisSample=Timing; //en 100 de nanosecond
 	printf("%f %ld\n",Amplitude,Timing);
-	write(FileFreqTiming,&RfSample,sizeof(samplerf_t));
+	if (write(FileFreqTiming,&RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
+		fprintf(stderr, "Unable to write sample\n");
+	}
 
 }
 
@@ -251,10 +253,11 @@ if (argc > 1) {
 		
 		
 		char *sFileFreqTiming=(char *)argv[1];
-	       	FileFreqTiming = open(argv[1],O_WRONLY|O_CREAT);
+	       	FileFreqTiming = open(argv[1], O_WRONLY|O_CREAT, 0644);
 		
 		DCF_BITS(7,59);
 		loop();
+		playtone(0,1000e6);//last second
 		close(FileFreqTiming);
 		}
 		else
