@@ -31,7 +31,9 @@ void playtone(double Frequency,uint32_t Timing)
 	RfSample.Frequency=GlobalTuningFrequency+Frequency;
 	RfSample.WaitForThisSample=Timing*100L; //en 100 de nanosecond
 	//printf("Freq =%f Timing=%d\n",RfSample.Frequency,RfSample.WaitForThisSample);
-	write(FileFreqTiming,&RfSample,sizeof(samplerf_t));
+	if (write(FileFreqTiming,&RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
+		fprintf(stderr, "Unable to write sample");
+	}
 
 }
 
@@ -153,10 +155,10 @@ main(int argc, char **argv)
 if (argc > 2) {
 		
 		char *sFilePicture=(char *)argv[1];
-	       	FilePicture = open(argv[1], 'r');
+	       	FilePicture = open(argv[1], O_RDONLY);
 
 		char *sFileFreqTiming=(char *)argv[2];
-	       	FileFreqTiming = open(argv[2],O_WRONLY|O_CREAT);
+	       	FileFreqTiming = open(argv[2], O_WRONLY|O_CREAT, 0644);
 		}
 		else
 		{

@@ -1,8 +1,12 @@
 .project
 .preferences
-pissb
-piam
-pidcf77
-rpitx
 *.pyc
 *linuxversion.txt
+piam
+pidcf77
+pifm
+pifsq
+pissb
+pisstv
+rpitx
+*.o

@@ -6,8 +6,12 @@
 char InitDma(void *FunctionTerminate)
 {
 	DMA_CHANNEL=4;
-	system("rm linuxversion.txt");
-	system("uname -r >> linuxversion.txt");
+	if (system("rm -f linuxversion.txt") != 0) {
+		fprintf(stderr, "rm failed\n");
+	}
+	if (system("uname -r >> linuxversion.txt") != 0) {
+		fprintf(stderr, "uname failed\n");
+	}
 	char *line = NULL;
 	size_t size;
 //	int fLinux=open("Flinuxversion.txt", "r');
