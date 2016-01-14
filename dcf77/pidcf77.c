@@ -236,7 +236,7 @@ void playtone(double Amplitude,uint32_t Timing)
 
 	RfSample.Amplitude=Amplitude;
 	RfSample.WaitForThisSample=Timing; //en 100 de nanosecond
-	printf("%f %ld\n",Amplitude,Timing);
+	printf("%f %d\n",Amplitude,Timing);
 	if (write(FileFreqTiming,&RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
 		fprintf(stderr, "Unable to write sample\n");
 	}
