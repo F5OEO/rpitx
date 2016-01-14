@@ -198,20 +198,28 @@ printf("Warning: pthread_setschedparam (increase thread priority) returned non-z
 
 uint32_t DelayFromSampleRate=0;
 int Instrumentation=1;
+int UsePCMClk=0;
+uint32_t Originfsel=0;
+
 int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 {
 	char MASH=1;
-	 		
-	if((TuningFrequency>=50e6)&&(TuningFrequency<=80e6))
+	 	
+	if(UsePCMClk==0) TuningFrequency=TuningFrequency*2;	
+	if((TuningFrequency>=100e6)&&(TuningFrequency<=150e6))
 	{
 		MASH=2;
 	}
-	if(TuningFrequency<50e6)
+	if(TuningFrequency<100e6)
 	{
 		MASH=3;
 	}
 	
-	printf("MASH %d\n",MASH);
+	printf("MASH %d Freq PLL# %d\n",MASH,PllNumber);
+	Originfsel=gpio_reg[GPFSEL0]; // Warning carefull if FSEL is used after !!!!!!!!!!!!!!!!!!!!
+	if(UsePCMClk==1)
+			gpio_reg[GPFSEL0] = (Originfsel & ~(7 << 12)) | (4 << 12); //ENABLE CLOCK ON GPIO CLK
+
 	/*
 		gpio_reg[GPFSEL0] = (gpio_reg[GPFSEL0] & ~(7 << 12)) | (4 << 12); //ENABLE CLOCK ON GPIO CLK
 		usleep(1000);
@@ -279,28 +287,39 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	// FIN PCM
 
 	//INIT PWM in Serial Mode
-	gpioSetMode(18, 2); /* set to ALT5, PWM1 : RF On PIN */	
+	if(UsePCMClk==0)
+	{
+		gpioSetMode(18, 2); /* set to ALT5, PWM1 : RF On PIN */	
 
-	pwm_reg[PWM_CTL] = 0;
-	clk_reg[PWMCLK_CNTL] = 0x5A000000 | (MASH << 9) |PllNumber/*PLL_1GHZ*/ ;
-	udelay(300);
-	clk_reg[PWMCLK_DIV] = 0x5A000000 | (2<<12); //WILL BE UPDATED BY DMA
-	udelay(300);
-	clk_reg[PWMCLK_CNTL] = 0x5A000010 | (MASH << 9) | PllNumber /*PLL_1GHZ*/; //MASH3 : A TESTER SI MIEUX en MASH1
-	//MASH 3 doesnt seem work above 80MHZ, back to MASH1
-	pwm_reg[PWM_RNG1] = 32;// 250 -> 8KHZ
-	udelay(100);
-	pwm_reg[PWM_RNG2] = 32;// 32 Mandatory for Serial Mode without gap
+		pwm_reg[PWM_CTL] = 0;
+		clk_reg[PWMCLK_CNTL] = 0x5A000000 | (MASH << 9) |PllNumber/*PLL_1GHZ*/ ;
+		udelay(300);
+		clk_reg[PWMCLK_DIV] = 0x5A000000 | (2<<12); //WILL BE UPDATED BY DMA
+		udelay(300);
+		clk_reg[PWMCLK_CNTL] = 0x5A000010 | (MASH << 9) | PllNumber /*PLL_1GHZ*/; //MASH3 : A TESTER SI MIEUX en MASH1
+		//MASH 3 doesnt seem work above 80MHZ, back to MASH1
+		pwm_reg[PWM_RNG1] = 32;// 250 -> 8KHZ
+		udelay(100);
+		pwm_reg[PWM_RNG2] = 32;// 32 Mandatory for Serial Mode without gap
 	
-	pwm_reg[PWM_FIFO]=0xAAAAAAAA;
-	pwm_reg[PWM_DMAC] = PWMDMAC_ENAB | PWMDMAC_THRSHLD;
-	udelay(100);
-	pwm_reg[PWM_CTL] = PWMCTL_CLRF;
-	udelay(100);
-	pwm_reg[PWM_CTL] =   PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_RPTL1; //PWM0 in Repeat mode 
+		pwm_reg[PWM_FIFO]=0xAAAAAAAA;
+		pwm_reg[PWM_DMAC] = PWMDMAC_ENAB | PWMDMAC_THRSHLD;
+		udelay(100);
+		pwm_reg[PWM_CTL] = PWMCTL_CLRF;
+		udelay(100);
+		pwm_reg[PWM_CTL] =   PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_RPTL1; //PWM0 in Repeat mode 
+	}
 	// FIN INIT PWM
 
-	
+	//******************* INIT CLK MODE
+	if(UsePCMClk==1)
+	{
+		clk_reg[GPCLK_CNTL] = 0x5A000000 | (MASH << 9) |PllNumber/*PLL_1GHZ*/ ;
+		udelay(300);
+		clk_reg[GPCLK_DIV] = 0x5A000000 | (2<<12); //WILL BE UPDATED BY DMA !! CAREFUL NOT DIVIDE BY 2 LIKE PWM
+		udelay(300);
+		clk_reg[GPCLK_CNTL] = 0x5A000010 | (MASH << 9) | PllNumber /*PLL_1GHZ*/; //MASH3 : A TESTER SI MIEUX en MASH1
+	}
 	ctl = (struct control_data_s *)virtbase; // Struct ctl is mapped to the memory allocated by RpiDMA (Mailbox)
 	dma_cb_t *cbp = ctl->cb;
 
@@ -316,6 +335,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	uint32_t phys_pcm_clock =     0x7e10109c ;
 	uint32_t phys_pcm_clock_div_addr = 0x7e10109c;//CLOCK Frequency Setting
 	uint32_t phys_DmaPwmfRegCtrl = 0x7e007000+DMA_CHANNEL_PWMFREQUENCY*0x100+0x4;
+	uint32_t phys_gpfsel = 0x7E200000 ; 
 	int samplecnt;
 	
 			
@@ -358,8 +378,11 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 //@2				
 				//Set Amplitude by writing to PWM_SERIAL via Patern	
 				cbp->info = 0;//BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP  ;
-				cbp->src = mem_virt_to_phys(&ctl->sample[samplecnt].Amplitude2);  
-				cbp->dst = phys_pwm_fifo_addr;
+				cbp->src = mem_virt_to_phys(&ctl->sample[samplecnt].Amplitude2); 
+				if(UsePCMClk==0) 
+					cbp->dst = phys_pwm_fifo_addr;
+				if(UsePCMClk==1) 
+					cbp->dst = phys_gpfsel; 				
 				cbp->length = 4;
 				cbp->stride = 0;
 				cbp->next = mem_virt_to_phys(cbp + 1); 
@@ -371,8 +394,11 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 //@3
 				//Set PWMFrequency
 				cbp->info =/*BCM2708_DMA_NO_WIDE_BURSTS |BCM2708_DMA_WAIT_RESP|*/BCM2708_DMA_SRC_INC;
-				cbp->src = mem_virt_to_phys(&ctl->sample[samplecnt].FrequencyTab[0]);//mem_virt_to_phys(&ctl->SharedFrequencyTab[0]);//mem_virt_to_phys(&ctl->SharedFrequency1); 
-				cbp->dst = phys_pwm_clock_div_addr;
+				cbp->src = mem_virt_to_phys(&ctl->sample[samplecnt].FrequencyTab[0]);
+				if(UsePCMClk==0)		
+					cbp->dst = phys_pwm_clock_div_addr;
+				if(UsePCMClk==1)		
+					cbp->dst = phys_clock_div_addr;
 				cbp->length = 4;//mem_virt_to_phys(&ctl->sample[samplecnt].PWMF1); //Be updated by main DMA
 				cbp->stride = 0;
 				cbp->next = mem_virt_to_phys(cbp + 1); 
@@ -615,8 +641,11 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				
 				
 				// ********************************** PWM FREQUENCY PROCESSING *****************************
-	
-				TuneFrequency*=2.0; //Because of pattern 10
+				
+
+				if(UsePCMClk==0)
+					TuneFrequency*=2.0; //Because of pattern 10
+				
 
 
 				
@@ -629,9 +658,9 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 	
 				//FreqDividerf2=FreqDividerf2*2;//debug
 
-				double f1=PllFreq1GHZ/(FreqDividerf1+(double)FreqFractionnalf1/4096.0);
-				double f2=PllFreq1GHZ/(FreqDividerf2+(double)FreqFractionnalf2/4096.0); // f2 is the higher frequency
-				double FreqTuningUp=PllFreq1GHZ/(FreqDividerf2+(double)FreqFractionnalf2/4096.0);
+				double f1=PllUsed/(FreqDividerf1+(double)FreqFractionnalf1/4096.0);
+				double f2=PllUsed/(FreqDividerf2+(double)FreqFractionnalf2/4096.0); // f2 is the higher frequency
+				double FreqTuningUp=PllUsed/(FreqDividerf2+(double)FreqFractionnalf2/4096.0);
 
 				double FreqStep=f2-f1;
 				static uint32_t RegisterF1;
@@ -646,7 +675,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				}
 				
 			
-				static DebugStep=71;
+				static int DebugStep=71;
 				double	fPWMFrequency=((FreqTuningUp-TuneFrequency)*1.0*(double)(PwmNumberStep)/FreqStep); // Give NbStep of F2
 				int PWMFrequency=round(fPWMFrequency);
 				
@@ -779,18 +808,33 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				Amplitude=(Amplitude>32767)?32767:Amplitude;	
 				int IntAmplitude=(Amplitude*7.0)/32767.0; // Convert to 8 amplitude step
 				
+				if(UsePCMClk==0)
+				{
+					if(IntAmplitude==0)
+					{
+						 ctl->sample[NoSample].Amplitude2=0x0;
+					}
+					else
+					{
+						ctl->sample[NoSample].Amplitude2=0xAAAAAAAA;					
+					}
+				}
+				if(UsePCMClk==1)
+				{
+					if(IntAmplitude==0)
+					{
+						 ctl->sample[NoSample].Amplitude2=(Originfsel & ~(7 << 12)) | (0 << 12);
+					}
+					else
+					{
+						ctl->sample[NoSample].Amplitude2=(Originfsel & ~(7 << 12)) | (4 << 12);
+					}
+				}
+
 				
-				if(IntAmplitude==0)
-				{
-					 ctl->sample[NoSample].Amplitude2=0x0;
-				}
-				else
-				{
-					ctl->sample[NoSample].Amplitude2=0xAAAAAAAA;					
-				}
 				static int OldIntAmplitude=0;
 				
-				if(((OldIntAmplitude!=0)&&(IntAmplitude==0))||((OldIntAmplitude==0)&&(IntAmplitude!=0)))
+				/*if(((OldIntAmplitude!=0)&&(IntAmplitude==0))||((OldIntAmplitude==0)&&(IntAmplitude!=0)))
 				{
 					cbpwrite=cbp+1; 
 					cbpwrite->next=mem_virt_to_phys(cbpwrite + 1); //Set Patern	
@@ -800,7 +844,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 					cbpwrite=cbp+1; 
 					cbpwrite->next=mem_virt_to_phys(cbpwrite + 2); //DOn't set patern
 				}
-				OldIntAmplitude=IntAmplitude;				
+				OldIntAmplitude=IntAmplitude;	*/			
 				
 				//IntAmplitude=IntAmplitude+3; // Make a little more gain if amplitude not 0
 				if(IntAmplitude>7) IntAmplitude=7;
@@ -940,13 +984,13 @@ int pitx_SetTuneFrequency(double Frequency)
 	#define MAX_HARMONIC 41
 	int harmonic;
 	
-	if(Frequency<PLL_FREQ_1GHZ*2/4096) 
+	if(Frequency<PLL_FREQ_1GHZ*2/4096) // For very Low Frequency we used 19.2 MHZ PLL 
 	{
 		PllUsed=PllFreq19MHZ;
 		PllNumber=PLL_192;
 		
 	}
-	else // For very Low Frequency we used 19.2 MHZ PLL
+	else 
 	{
 	
 		PllUsed=PllFreq1GHZ;
@@ -961,6 +1005,8 @@ int pitx_SetTuneFrequency(double Frequency)
 		if((Frequency/(double)harmonic)<=(double)PllUsed/4.0) break;
 	}
 	HarmonicNumber=harmonic;	
+
+		//HarmonicNumber=11; //TEST
 
 	if(HarmonicNumber>1) //Use Harmonic
 	{
@@ -1007,7 +1053,8 @@ main(int argc, char **argv)
 		double Frequency;
 		uint32_t WaitForThisSample;
 	} samplerf_t;
-	samplerf_t *TabRfSample=NULL;
+
+	samplerf_t *TabRfSample;
 		
 	fprintf(stdout,"rpitx Version %s compiled %s (F5OEO Evariste) running on ",PROGRAM_VERSION,__DATE__);
 	
@@ -1017,7 +1064,7 @@ main(int argc, char **argv)
 
 	while(1)
 	{
-	a = getopt(argc, argv, "i:f:m:s:p:hld:w:");
+	a = getopt(argc, argv, "i:f:m:s:p:hld:w:c:");
 	
 	if(a == -1) 
 	{
@@ -1059,9 +1106,13 @@ main(int argc, char **argv)
 			DmaSampleBurstSize = atoi(optarg);
 			NUM_SAMPLES=4*DmaSampleBurstSize;
 			break;
+		case 'c': // Use clock instead of PWM pin
+			UsePCMClk = atoi(optarg);
+			if(UsePCMClk==1) printf("Use GPCLK Pin instead of PWM\n");
+			break;
 		case 'w': // No use pwmfrequency 
 			NoUsePwmFrequency = atoi(optarg);
-			printf("Not USED PWMFrequency\n");
+			
 			break;
         	case -1:
         	break;
@@ -1126,7 +1177,7 @@ main(int argc, char **argv)
 	}
 	if((Mode==MODE_RF)||(Mode==MODE_RFA))
 	{
-		TabRfSample=malloc(DmaSampleBurstSize*sizeof(samplerf_t));
+		//TabRfSample=malloc(DmaSampleBurstSize*sizeof(samplerf_t));
 		SampleRate=100000L; //NOT USED BUT BY CALCULATING TIMETOSLEEP IN RF MODE
 	}
 	if(Mode==MODE_VFO)
@@ -1463,7 +1514,7 @@ for (;;)
 							TimeRemaining=SampleRf.WaitForThisSample;
 							//TimeRemaining=50000;//SampleRf.WaitForThisSample;
 							debug=1;
-							//printf("Time =%d %d\n",SampleRf.WaitForThisSample,TimeRemaining);
+							//printf("A=%f Time =%d \n",SampleRf.Frequency,SampleRf.WaitForThisSample);
 						}
 						else
 							debug=0;	
