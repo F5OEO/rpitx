@@ -1032,27 +1032,6 @@ static void resetFile(void) {
 }
 
 
-static void* arrayBaseAddress;
-static int arrayLength;
-static int arrayPosition;
-/** Wrapper around reading from memory with an interface similar to read. */
-ssize_t readArray(void *buffer, const size_t count) {
-    if (arrayPosition >= arrayLength) {
-        return 0;
-    }
-    const int left = arrayLength - arrayPosition;
-    const int numBytesToCopy = left > count ? count : left;
-    memcpy(buffer, arrayBaseAddress + arrayPosition, numBytesToCopy);
-    arrayPosition += numBytesToCopy;
-    return numBytesToCopy;
-}
-void setUpReadArray(void* baseAddress, size_t length) {
-    arrayBaseAddress = baseAddress;
-    arrayLength = length;
-    arrayPosition = 0;
-}
-
-
 int
 main(int argc, char* argv[])
 {

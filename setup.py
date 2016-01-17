@@ -19,9 +19,9 @@ setup(
                 'src/RpiDma.c',
                 'src/RpiGpio.c',
             ],
-            extra_link_args=['-lrt'],
+            extra_link_args=['-lrt', '-lsndfile'],
         ),
     ],
     package_dir={'': 'src/python'},
-    install_requires=['wave', 'pydub'],
+    install_requires=['pydub'],
 )

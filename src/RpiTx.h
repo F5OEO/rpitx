@@ -24,8 +24,4 @@ int pitx_run(
 );
 
 
-/** Wrapper around reading from memory with an interface similar to read. */
-ssize_t readArray(void *buffer, const size_t count);
-void setUpReadArray(void* baseAddress, size_t length);
-
 #endif
