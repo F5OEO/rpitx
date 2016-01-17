@@ -1025,10 +1025,10 @@ int pitx_SetTuneFrequency(double Frequency)
 
 /** Wrapper around read. */
 static ssize_t readFile(void *buffer, const size_t count) {
-    return read(FileInHandle, buffer, count);
+	return read(FileInHandle, buffer, count);
 }
 static void resetFile(void) {
-    lseek(FileInHandle, 0, SEEK_SET);
+	lseek(FileInHandle, 0, SEEK_SET);
 }
 
 
@@ -1132,6 +1132,7 @@ main(int argc, char* argv[])
 		}
 	}
 
+	resetFile();
 	return pitx_run(Mode, SampleRate, SetFrequency, ppmpll, NoUsePwmFrequency, readFile, resetFile);
 }
 
@@ -1182,11 +1183,7 @@ int pitx_run(
 	if(Mode==MODE_IQ)
 	{
 		IQArray=malloc(DmaSampleBurstSize*2*sizeof(signed short)); // TODO A FREE AT THE END OF SOFTWARE
-		char dummyheader[HEADER_SIZE];
-		if (readWrapper(dummyheader,HEADER_SIZE) != HEADER_SIZE) {
-			fatal("Unable to read header\n");
-		}
-		
+		reset();
 	} 
 	if(Mode==MODE_IQ_FLOAT)
 	{
@@ -1365,10 +1362,6 @@ for (;;)
 						{
 							printf("Looping FileIn\n");
 							reset();
-							char dummyheader[HEADER_SIZE];
-							if (readWrapper(dummyheader,HEADER_SIZE) != HEADER_SIZE) {
-								fatal("Unable to read header\n");
-							}
 							NbRead=readWrapper(IQArray,DmaSampleBurstSize*2*2);
 						}
 						else
