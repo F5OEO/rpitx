@@ -108,7 +108,6 @@ uint32_t GlobalTabPwmFrequency[50];
 char EndOfApp=0;
 unsigned char loop_mode_flag=0;
 char *FileName = 0;
-void *rawFileMemory = NULL;
 int FileInHandle; //Handle in Transport Stream File
 static void
 udelay(int us)
@@ -1203,7 +1202,7 @@ int pitx_run(
 	{
 		IQArray=malloc(DmaSampleBurstSize*2*sizeof(signed short)); // TODO A FREE AT THE END OF SOFTWARE
 		char dummyheader[HEADER_SIZE];
-		if (read(FileInHandle,dummyheader,HEADER_SIZE) != HEADER_SIZE) {
+		if (readWrapper(dummyheader,HEADER_SIZE) != HEADER_SIZE) {
 			fatal("Unable to read header\n");
 		}
 		
