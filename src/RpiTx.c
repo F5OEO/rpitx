@@ -109,6 +109,7 @@ char EndOfApp=0;
 unsigned char loop_mode_flag=0;
 char *FileName = 0;
 int FileInHandle; //Handle in Transport Stream File
+int useStdin = 0;
 static void
 udelay(int us)
 {
@@ -1040,7 +1041,7 @@ ssize_t readArray(void *buffer, const size_t count) {
         return 0;
     }
     const int left = arrayLength - arrayPosition;
-    const int numBytesToCopy = left > count ? left : count;
+    const int numBytesToCopy = left > count ? count : left;
     memcpy(buffer, arrayBaseAddress + arrayPosition, numBytesToCopy);
     arrayPosition += numBytesToCopy;
     return numBytesToCopy;
@@ -1143,6 +1144,7 @@ main(int argc, char* argv[])
 		if(FileName && strcmp(FileName,"-")==0)
 		{
 			FileInHandle = STDIN_FILENO;
+			useStdin = 1;
 		}
 		else FileInHandle = open(FileName, O_RDONLY);
 		if (FileInHandle < 0)
@@ -1465,7 +1467,7 @@ for (;;)
 							printf("Looping FileIn\n");
 							reset();
 						}
-						else if (FileInHandle != STDIN_FILENO) 
+						else if (!useStdin)
 							terminate(0);
 						
 					
@@ -1539,7 +1541,7 @@ for (;;)
 										reset();
 										NbRead=readWrapper(&SampleRf,sizeof(samplerf_t));
 									}
-									else if (FileInHandle != STDIN_FILENO) 
+									else if (!useStdin)
 									{
 										sleep(1);	
 										terminate(0);
