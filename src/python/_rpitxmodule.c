@@ -13,6 +13,7 @@ static sf_count_t sampleLength;
 static sf_count_t sampleOffset;
 static SNDFILE* sndFile;
 static int bitRate;
+static PyObject* rpitxError;
 
 
 // These methods used by libsndfile's virtual file open function
@@ -29,7 +30,11 @@ static sf_count_t virtualSndfileRead(void* const dest, const sf_count_t count, v
 static sf_count_t virtualSndfileTell(void* const unused) {
 	return sampleOffset;
 }
-static sf_count_t virtualSndfileSeek(const sf_count_t offset, const int whence, void* const unused) {
+static sf_count_t virtualSndfileSeek(
+		const sf_count_t offset,
+		const int whence,
+		void* const unused
+) {
 	switch (whence) {
 		case SEEK_CUR:
 			sampleOffset += offset;
@@ -44,9 +49,6 @@ static sf_count_t virtualSndfileSeek(const sf_count_t offset, const int whence, 
 			assert(!"Invalid whence");
 	}
 	return sampleOffset;
-}
-static sf_count_t virtualSndfileWrite(const void *ptr, sf_count_t count, void *user_data) {
-	return 0;
 }
 
 
@@ -70,7 +72,11 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 	char* const out = outBuffer;
 
 	while (numBytesWritten < count) {
-		for (; numBytesWritten <= count - sizeof(samplerf_t) && wavOffset < wavFilled; ++wavOffset) {
+		for (
+				;
+				numBytesWritten <= count - sizeof(samplerf_t) && wavOffset < wavFilled;
+				++wavOffset
+		) {
 			const float x = wavBuffer[wavOffset];
 			samplerf.frequency = x * excursion * 2.0;
 			memcpy(&out[numBytesWritten], &samplerf, sizeof(samplerf_t));
@@ -97,7 +103,8 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	int length;
 	float frequency;
 	if (!PyArg_ParseTuple(args, "iif", &address, &length, &frequency)) {
-		return NULL;
+		PyErr_SetString(rpitxError, "Invalid arguments");
+		Py_RETURN_NONE;
 	}
 
 	sampleBase = (void*)address;
@@ -108,14 +115,20 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		.get_filelen = virtualSndfileGetLength,
 		.seek = virtualSndfileSeek,
 		.read = virtualSndfileRead,
-		.write = virtualSndfileWrite,
+		.write = NULL,
 		.tell = virtualSndfileTell
 	};
 	SF_INFO sfInfo;
 	sndFile = sf_open_virtual(&virtualIo, SFM_READ, &sfInfo, sampleBase);
 	if (sf_error(sndFile) != SF_ERR_NO_ERROR) {
-		// TODO: Throw an exception
-		fprintf(stderr, "Unable to open sound file: %s\n", sf_strerror(sndFile));
+		char message[100];
+		snprintf(
+				message,
+				COUNT_OF(message),
+				"Unable to open sound file: %s",
+				sf_strerror(sndFile));
+		message[COUNT_OF(message) - 1] = '\0';
+		PyErr_SetString(rpitxError, message);
 		Py_RETURN_NONE;
 	}
 	bitRate = sfInfo.samplerate;
@@ -128,12 +141,28 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 
 
 static PyMethodDef _rpitx_methods[] = {
-	{"broadcast_fm", _rpitx_broadcast_fm, METH_VARARGS, "Low-level broadcasting."},
+	{
+		"broadcast_fm",
+		_rpitx_broadcast_fm,
+		METH_VARARGS,
+		"Low-level broadcasting.\n\n"
+			"Broadcast a WAV formatted 48KHz memory array.\n"
+			"Args:\n"
+			"    address (int): Address of the memory array.\n"
+			"    length (int): Length of the memory array.\n"
+			"    frequency (float): The frequency, in MHz, to broadcast on.\n"
+	},
 	{NULL, NULL, 0, NULL}
 };
 
 
 PyMODINIT_FUNC
 init_rpitx(void) {
-	(void) Py_InitModule("_rpitx", _rpitx_methods);
+	PyObject* const module = Py_InitModule("_rpitx", _rpitx_methods);
+	if (module == NULL) {
+		return NULL;
+	}
+	rpitxError = PyErr_NewException("_rpitx.error", NULL, NULL);
+	Py_INCREF(rpitxError);
+	PyModule_AddObject(module, "error", rpitxError);
 }
