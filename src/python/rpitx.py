@@ -6,6 +6,7 @@ import _rpitx
 import array
 import logging
 import os
+import wave
 
 
 def broadcast_fm(file_, frequency):
@@ -32,13 +33,23 @@ def broadcast_fm(file_, frequency):
         ):
             logger.debug('Reencoding file')
             reencoded = StringIO.StringIO()
-            original.export(reencoded, format='wav', bitrate='44k')
-            return reencoded
+            return AudioSegment.from_file(reencoded)
 
         return original
 
-    encoded_file = _reencode(file_)
+    raw_audio_data = _reencode(file_)
+
+    wav_data = StringIO.StringIO()
+    wav_writer = wave.open(wav_data, 'w')
+    wav_writer.setnchannels(1)
+    wav_writer.setsampwidth(2)
+    wav_writer.setframerate(48000)
+    wav_writer.writeframes(raw_audio_data.raw_data)
+    wav_writer.close()
+
     raw_array = array.array('c')
-    raw_array.fromstring(encoded_file.raw_data)
+    raw_array.fromstring(wav_data.getvalue())
+    #with open('sampleaudio.wav', 'rb') as file_:
+    #    raw_array.fromstring(file_.read())
     array_address, length = raw_array.buffer_info()
     _rpitx.broadcast_fm(array_address, length, frequency)

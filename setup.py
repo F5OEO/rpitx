@@ -23,5 +23,5 @@ setup(
         ),
     ],
     package_dir={'': 'src/python'},
-    install_requires=['pydub'],
+    install_requires=['pydub', 'wave'],
 )
