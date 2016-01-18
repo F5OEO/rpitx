@@ -26,15 +26,6 @@ def broadcast_fm(file_, frequency):
             left, right = original.split_to_mono()
             original = left.overlay(right)
 
-        if (
-                original.frame_rate != 48000
-                # TODO: There should be a better way to check if it's wav
-                or not file_name.endswith('.wav')
-        ):
-            logger.debug('Reencoding file')
-            reencoded = StringIO.StringIO()
-            return AudioSegment.from_file(reencoded)
-
         return original
 
     raw_audio_data = _reencode(file_)
@@ -49,7 +40,5 @@ def broadcast_fm(file_, frequency):
 
     raw_array = array.array('c')
     raw_array.fromstring(wav_data.getvalue())
-    #with open('sampleaudio.wav', 'rb') as file_:
-    #    raw_array.fromstring(file_.read())
     array_address, length = raw_array.buffer_info()
     _rpitx.broadcast_fm(array_address, length, frequency)

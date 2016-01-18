@@ -12,6 +12,7 @@ static void* sampleBase;
 static sf_count_t sampleLength;
 static sf_count_t sampleOffset;
 static SNDFILE* sndFile;
+static int bitRate;
 
 
 // These methods used by libsndfile's virtual file open function
@@ -65,13 +66,13 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 	const int excursion = 6000;
 	int numBytesWritten = 0;
 	samplerf_t samplerf;
+	samplerf.waitForThisSample = 1e9 / ((float)bitRate);  //en 100 de nanosecond
 	char* const out = outBuffer;
 
 	while (numBytesWritten < count) {
 		for (; numBytesWritten <= count - sizeof(samplerf_t) && wavOffset < wavFilled; ++wavOffset) {
 			const float x = wavBuffer[wavOffset];
 			samplerf.frequency = x * excursion * 2.0;
-			samplerf.waitForThisSample = 1e9 / 48000.0; //en 100 de nanosecond
 			memcpy(&out[numBytesWritten], &samplerf, sizeof(samplerf_t));
 			numBytesWritten += sizeof(samplerf_t);
 		}
@@ -117,8 +118,9 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		fprintf(stderr, "Unable to open sound file: %s\n", sf_strerror(sndFile));
 		Py_RETURN_NONE;
 	}
+	bitRate = sfInfo.samplerate;
 
-	pitx_run(MODE_RF, 48000, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset);
+	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset);
 	sf_close(sndFile);
 
 	Py_RETURN_NONE;
