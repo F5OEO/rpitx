@@ -22,6 +22,7 @@ setup(
             extra_link_args=['-lrt', '-lsndfile'],
         ),
     ],
+    packages=['rpitx'],
     package_dir={'': 'src/python'},
     install_requires=['pydub', 'wave'],
 )
