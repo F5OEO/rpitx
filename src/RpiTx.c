@@ -119,7 +119,7 @@ udelay(int us)
 }
 
 static void
-terminate(int dummy)
+stop_dma(void)
 {
 	#ifdef WITH_MEMORY_BUFFER
 	//pthread_cancel(th1);
@@ -163,7 +163,12 @@ terminate(int dummy)
 		mem_free(mbox.handle, mbox.mem_ref);
 		//printf("Unmapfree Done\n");
 	}
-	
+}
+
+static void
+terminate(int dummy)
+{
+	stop_dma();
 	//munmap(virtbase,NUM_PAGES * PAGE_SIZE); 
 	printf("END OF PiTx\n");
 	exit(1);
@@ -1364,8 +1369,10 @@ for (;;)
 							reset();
 							NbRead=readWrapper(IQArray,DmaSampleBurstSize*2*2);
 						}
-						else
-							terminate(0);
+						else {
+							stop_dma();
+							return 0;
+						}
 					
 					}
 				
@@ -1439,8 +1446,10 @@ for (;;)
 							printf("Looping FileIn\n");
 							reset();
 						}
-						else if (!useStdin)
-							terminate(0);
+						else if (!useStdin) {
+							stop_dma();
+							return 0;
+						}
 						
 					
 					}
@@ -1515,8 +1524,8 @@ for (;;)
 									}
 									else if (!useStdin)
 									{
-										sleep(1);	
-										terminate(0);
+										stop_dma();
+										return 0;
 									}
 								}
 							
@@ -1615,7 +1624,7 @@ for (;;)
 				
 	
 
-	terminate(0);
+	stop_dma();
 	return(0);
 }
 

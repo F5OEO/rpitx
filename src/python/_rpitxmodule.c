@@ -62,8 +62,12 @@ typedef struct {
  */
 static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 	static float wavBuffer[1024];
-	static int wavOffset = 0;
-	static int wavFilled = 0;
+	static int wavOffset = -1;
+	static int wavFilled = -1;
+
+	if (wavFilled == 0) {
+		return 0;
+	}
 
 	const int excursion = 6000;
 	int numBytesWritten = 0;
@@ -160,7 +164,7 @@ PyMODINIT_FUNC
 init_rpitx(void) {
 	PyObject* const module = Py_InitModule("_rpitx", _rpitx_methods);
 	if (module == NULL) {
-		return NULL;
+		return;
 	}
 	rpitxError = PyErr_NewException("_rpitx.error", NULL, NULL);
 	Py_INCREF(rpitxError);
