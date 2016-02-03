@@ -40,4 +40,4 @@ def broadcast_fm(file_, frequency):
     raw_array = array.array('c')
     raw_array.fromstring(wav_data.getvalue())
     array_address, length = raw_array.buffer_info()
-    _rpitx.broadcast_fm(array_address, length, frequency)
+    _rpitx.broadcast_fm(long(array_address), length, frequency)
