@@ -109,7 +109,7 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	assert(sizeof(address) == sizeof(sampleBase));
 	if (!PyArg_ParseTuple(args, "lif", &address, &sampleLength, &frequency)) {
 		PyErr_SetString(rpitxError, "Invalid arguments");
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	sampleBase = ((void*)address);
@@ -133,7 +133,7 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 				sf_strerror(sndFile));
 		message[COUNT_OF(message) - 1] = '\0';
 		PyErr_SetString(rpitxError, message);
-		Py_RETURN_NONE;
+		return NULL;
 	}
 	bitRate = sfInfo.samplerate;
 
