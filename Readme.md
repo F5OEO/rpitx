@@ -47,7 +47,7 @@ sudo ./rpitx -m IQ -i ssbIQ.wav -f 50000 -l
 ```
 A sample script : **testssb.sh** is included.
 <h3> FM modulation </h3>
-**pifm** convert an audio file (Wav 48KHZ mono only!) to Narrow band FM (12.5khz excursion) and output it on a .ft file.
+**pifm** convert an audio file (Wav, 48KHz, 1 channel, pcm_s16le codec) to Narrow band FM (12.5khz excursion) and output it on a .ft file.
 Assuming your audio file is in the folder
 ```
 ./pifm audio48mono.wav fm.ft
