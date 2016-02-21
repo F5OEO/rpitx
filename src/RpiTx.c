@@ -108,7 +108,7 @@ uint32_t GlobalTabPwmFrequency[50];
 char EndOfApp=0;
 unsigned char loop_mode_flag=0;
 char *FileName = 0;
-int FileInHandle; //Handle in Transport Stream File
+int FileInHandle = -1; //Handle in Transport Stream File
 int useStdin = 0;
 static void
 udelay(int us)
@@ -126,7 +126,10 @@ stop_dma(void)
 	EndOfApp=1;
 	 pthread_join(th1, NULL);
 	#endif
-	close(FileInHandle);
+	if (FileInHandle != -1) {
+		close(FileInHandle);
+		FileInHandle = -1;
+	}
 	if (dma_reg) {
 		//Stop Main DMA
 		dma_reg[DMA_CS+DMA_CHANNEL*0x40] = BCM2708_DMA_INT | BCM2708_DMA_END;
