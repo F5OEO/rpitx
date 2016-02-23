@@ -5,7 +5,6 @@ import StringIO
 import _rpitx
 import array
 import logging
-import sys
 import wave
 
 

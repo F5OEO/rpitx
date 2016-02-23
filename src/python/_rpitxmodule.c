@@ -105,7 +105,7 @@ static PyObject*
 _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	float frequency;
 
-    assert(sizeof(sampleBase) == sizeof(unsigned long));
+	assert(sizeof(sampleBase) == sizeof(unsigned long));
 	if (!PyArg_ParseTuple(args, "Lif", &sampleBase, &sampleLength, &frequency)) {
 		PyErr_SetString(rpitxError, "Invalid arguments");
 		return NULL;
