@@ -103,16 +103,14 @@ static void reset(void) {
 
 static PyObject*
 _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
-	long int address;
 	float frequency;
 
-	assert(sizeof(address) == sizeof(sampleBase));
-	if (!PyArg_ParseTuple(args, "lif", &address, &sampleLength, &frequency)) {
+    assert(sizeof(sampleBase) == sizeof(unsigned long));
+	if (!PyArg_ParseTuple(args, "Lif", &sampleBase, &sampleLength, &frequency)) {
 		PyErr_SetString(rpitxError, "Invalid arguments");
 		return NULL;
 	}
 
-	sampleBase = ((void*)address);
 	sampleOffset = 0;
 
 	SF_VIRTUAL_IO virtualIo = {

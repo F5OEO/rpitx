@@ -5,6 +5,7 @@ import StringIO
 import _rpitx
 import array
 import logging
+import sys
 import wave
 
 
@@ -37,7 +38,6 @@ def broadcast_fm(file_, frequency):
     wav_writer.writeframes(raw_audio_data.raw_data)
     wav_writer.close()
 
-    raw_array = array.array('c')
-    raw_array.fromstring(wav_data.getvalue())
+    raw_array = array.array('c', wav_data.getvalue())
     array_address, length = raw_array.buffer_info()
-    _rpitx.broadcast_fm(long(array_address), length, frequency)
+    _rpitx.broadcast_fm(array_address, length, frequency)
