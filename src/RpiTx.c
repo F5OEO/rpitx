@@ -173,7 +173,7 @@ terminate(int dummy)
 {
 	stop_dma();
 	//munmap(virtbase,NUM_PAGES * PAGE_SIZE); 
-	printf("END OF PiTx\n");
+	printf("END OF PiTx\n", dummy);
 	exit(1);
 }
 

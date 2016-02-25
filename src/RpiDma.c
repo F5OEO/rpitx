@@ -6,19 +6,12 @@
 char InitDma(void *FunctionTerminate)
 {
 	DMA_CHANNEL=4;
-	if (system("rm -f linuxversion.txt") != 0) {
-		fprintf(stderr, "rm failed\n");
-	}
-	if (system("uname -r >> linuxversion.txt") != 0) {
-		fprintf(stderr, "uname failed\n");
-	}
 	char *line = NULL;
 	size_t size;
-//	int fLinux=open("Flinuxversion.txt", "r');
-	FILE * flinux=fopen("linuxversion.txt", "r");
-	if (getline(&line, &size, flinux) == -1) 
+	FILE * flinux = popen("uname -r", "r");
+	if (flinux != NULL && getline(&line, &size, flinux) == -1)
 	{
-		printf("Could no get Linux version\n");
+		fprintf(stderr, "Could no get Linux version\n");
 	}
 	else
 	{
@@ -35,6 +28,7 @@ char InitDma(void *FunctionTerminate)
 		}
 
 	}
+	pclose(flinux);
 	//printf("Init DMA\n");
 	
 	// Catch all signals possible - it is vital we kill the DMA engine
