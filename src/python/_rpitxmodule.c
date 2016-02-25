@@ -135,7 +135,14 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	}
 	bitRate = sfInfo.samplerate;
 
-	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset);
+	int skipSignals[] = {
+		SIGALRM,
+		SIGVTALRM,
+		SIGCHLD,  // We fork whenever calling broadcast_fm
+		SIGWINCH,  // Window resized
+        0
+	};
+	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset, skipSignals);
 	sf_close(sndFile);
 
 	Py_RETURN_NONE;

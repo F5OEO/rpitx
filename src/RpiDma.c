@@ -3,7 +3,21 @@
 #include <signal.h>
 #include "RpiDma.h"
 #include "RpiGpio.h"
-char InitDma(void *FunctionTerminate)
+
+static int compareInts(const void* first, const void* second) {
+	const int firstInt = *((int*)first);
+	const int secondInt = *((int*)second);
+	if (firstInt < secondInt) {
+		return -1;
+	}
+	if (firstInt == secondInt) {
+		return 0;
+	}
+	return 1;
+}
+
+
+char InitDma(void *FunctionTerminate, int* skipSignals)
 {
 	DMA_CHANNEL=4;
 	char *line = NULL;
@@ -31,15 +45,32 @@ char InitDma(void *FunctionTerminate)
 	pclose(flinux);
 	//printf("Init DMA\n");
 	
+	int sentinel[] = {0};
+	if (skipSignals == NULL) {
+		skipSignals = sentinel;
+	}
+	int sentinelIndex;
+	for (sentinelIndex = 0; ; ++sentinelIndex) {
+		if (skipSignals[sentinelIndex] == 0) {
+			break;
+		}
+	}
+	qsort(skipSignals, sentinelIndex, sizeof(int), compareInts);
+
 	// Catch all signals possible - it is vital we kill the DMA engine
 	// on process exit!
 	int i;
 	for (i = 0; i < 64; i++) {
-		struct sigaction sa;
+		// Some signals are fine, so don't catch them
+		if (i == *skipSignals) {
+			++skipSignals;
+		} else {
+			struct sigaction sa;
 
-		memset(&sa, 0, sizeof(sa));
-		sa.sa_handler = FunctionTerminate;//terminate;
-		sigaction(i, &sa, NULL);
+			memset(&sa, 0, sizeof(sa));
+			sa.sa_handler = FunctionTerminate;//terminate;
+			sigaction(i, &sa, NULL);
+		}
 	}
 
 	//NUM_SAMPLES = NUM_SAMPLES_MAX;

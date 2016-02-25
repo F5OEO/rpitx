@@ -173,7 +173,7 @@ terminate(int dummy)
 {
 	stop_dma();
 	//munmap(virtbase,NUM_PAGES * PAGE_SIZE); 
-	printf("END OF PiTx\n", dummy);
+	printf("END OF PiTx\n");
 	exit(1);
 }
 
@@ -951,10 +951,10 @@ void update_ppm(
   }
 }
 
-int pitx_init(int SampleRate,double TuningFrequency)
+int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals)
 {
 	InitGpio();
-	InitDma(terminate);
+	InitDma(terminate, skipSignals);
 	
 	SetupGpioClock(SampleRate,TuningFrequency);
 	
@@ -1141,7 +1141,7 @@ main(int argc, char* argv[])
 	}
 
 	resetFile();
-	return pitx_run(Mode, SampleRate, SetFrequency, ppmpll, NoUsePwmFrequency, readFile, resetFile);
+	return pitx_run(Mode, SampleRate, SetFrequency, ppmpll, NoUsePwmFrequency, readFile, resetFile, NULL);
 }
 
 int pitx_run(
@@ -1151,7 +1151,8 @@ int pitx_run(
 	const float ppmpll,
 	const char NoUsePwmFrequency,
 	ssize_t (*readWrapper)(void *buffer, size_t count),
-	void (*reset)(void)
+	void (*reset)(void),
+	int* skipSignals
 ) {
 	int i;
 	//char pagemap_fn[64];
@@ -1213,7 +1214,7 @@ int pitx_run(
 
 	
 	pitx_SetTuneFrequency(SetFrequency*1000.0);
-	pitx_init(SampleRate,GlobalTuningFrequency);
+	pitx_init(SampleRate, GlobalTuningFrequency, skipSignals);
 	
 
 	
