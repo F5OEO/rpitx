@@ -7,13 +7,22 @@
 
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
+struct module_state {
+	PyObject *error;
+};
+
+#if PY_MAJOR_VERSION >= 3
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
 
 static void* sampleBase;
 static sf_count_t sampleLength;
 static sf_count_t sampleOffset;
 static SNDFILE* sndFile;
 static int bitRate;
-static PyObject* rpitxError;
 
 
 // These methods used by libsndfile's virtual file open function
@@ -107,7 +116,8 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 
 	assert(sizeof(sampleBase) == sizeof(unsigned long));
 	if (!PyArg_ParseTuple(args, "Lif", &sampleBase, &sampleLength, &frequency)) {
-		PyErr_SetString(rpitxError, "Invalid arguments");
+		struct module_state *st = GETSTATE(self);
+		PyErr_SetString(st->error, "Invalid arguments");
 		return NULL;
 	}
 
@@ -130,7 +140,8 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 				"Unable to open sound file: %s",
 				sf_strerror(sndFile));
 		message[COUNT_OF(message) - 1] = '\0';
-		PyErr_SetString(rpitxError, message);
+		struct module_state *st = GETSTATE(self);
+		PyErr_SetString(st->error, message);
 		return NULL;
 	}
 	bitRate = sfInfo.samplerate;
@@ -140,7 +151,7 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		SIGVTALRM,
 		SIGCHLD,  // We fork whenever calling broadcast_fm
 		SIGWINCH,  // Window resized
-        0
+		0
 	};
 	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset, skipSignals);
 	sf_close(sndFile);
@@ -165,13 +176,62 @@ static PyMethodDef _rpitx_methods[] = {
 };
 
 
-PyMODINIT_FUNC
-init_rpitx(void) {
+#if PY_MAJOR_VERSION >= 3
+static int _rpitx_traverse(PyObject* m, visitproc visit, void* arg) {
+	Py_VISIT(GETSTATE(m)->error);
+	return 0;
+}
+
+
+static int _rpitx_clear(PyObject *m) {
+	Py_CLEAR(GETSTATE(m)->error);
+	return 0;
+}
+
+
+static struct PyModuleDef moduledef = {
+	PyModuleDef_HEAD_INIT,
+	"_rpitx",
+	NULL,
+	sizeof(struct module_state),
+	_rpitx_methods,
+	NULL,
+	_rpitx_traverse,
+	_rpitx_clear,
+	NULL
+};
+
+#define INITERROR return NULL
+
+PyObject*
+PyInit__rpitx(void)
+
+#else
+
+#define INITERROR return
+
+void
+init_rpitx(void)
+#endif
+{
+#if PY_MAJOR_VERSION >= 3
+	PyObject* const module = PyModule_Create(&moduledef);
+#else
 	PyObject* const module = Py_InitModule("_rpitx", _rpitx_methods);
+#endif
 	if (module == NULL) {
-		return;
+		INITERROR;
 	}
-	rpitxError = PyErr_NewException("_rpitx.error", NULL, NULL);
-	Py_INCREF(rpitxError);
-	PyModule_AddObject(module, "error", rpitxError);
+	struct module_state* st = GETSTATE(module);
+	st->error = PyErr_NewException("_rpitx.Error", NULL, NULL);
+	if (st->error == NULL) {
+		Py_DECREF(module);
+		INITERROR;
+	}
+	Py_INCREF(st->error);
+	PyModule_AddObject(module, "error", st->error);
+
+#if PY_MAJOR_VERSION >= 3
+	return module;
+#endif
 }
