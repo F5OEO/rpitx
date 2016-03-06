@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <ctype.h>
 
-char InitGpio();
+char InitGpio(void);
 void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted);
 
 int model;

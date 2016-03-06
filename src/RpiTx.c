@@ -83,7 +83,6 @@ Optimize CPU on PWMFrequency
 
 #define HEADER_SIZE 44
 
-
 typedef unsigned char 	uchar ;		// 8 bit
 typedef unsigned short	uint16 ;	// 16 bit
 typedef unsigned int	uint ;		// 32 bits
@@ -109,7 +108,8 @@ uint32_t GlobalTabPwmFrequency[50];
 char EndOfApp=0;
 unsigned char loop_mode_flag=0;
 char *FileName = 0;
-int FileInHandle; //Handle in Transport Stream File
+int FileInHandle = -1; //Handle in Transport Stream File
+int useStdin = 0;
 static void
 udelay(int us)
 {
@@ -119,14 +119,17 @@ udelay(int us)
 }
 
 static void
-terminate(int dummy)
+stop_dma(void)
 {
 	#ifdef WITH_MEMORY_BUFFER
 	//pthread_cancel(th1);
 	EndOfApp=1;
 	 pthread_join(th1, NULL);
 	#endif
-	close(FileInHandle);
+	if (FileInHandle != -1) {
+		close(FileInHandle);
+		FileInHandle = -1;
+	}
 	if (dma_reg) {
 		//Stop Main DMA
 		dma_reg[DMA_CS+DMA_CHANNEL*0x40] = BCM2708_DMA_INT | BCM2708_DMA_END;
@@ -163,7 +166,12 @@ terminate(int dummy)
 		mem_free(mbox.handle, mbox.mem_ref);
 		//printf("Unmapfree Done\n");
 	}
-	
+}
+
+static void
+terminate(int dummy)
+{
+	stop_dma();
 	//munmap(virtbase,NUM_PAGES * PAGE_SIZE); 
 	printf("END OF PiTx\n");
 	exit(1);
@@ -943,10 +951,10 @@ void update_ppm(
   }
 }
 
-int pitx_init(int SampleRate,double TuningFrequency)
+int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals)
 {
 	InitGpio();
-	InitDma(terminate);
+	InitDma(terminate, skipSignals);
 	
 	SetupGpioClock(SampleRate,TuningFrequency);
 	
@@ -956,7 +964,7 @@ int pitx_init(int SampleRate,double TuningFrequency)
 }
 
 
-void print_usage()
+void print_usage(void)
 {
 
 fprintf(stderr,\
@@ -1022,47 +1030,26 @@ int pitx_SetTuneFrequency(double Frequency)
 	return 1;
 }
 
+
+/** Wrapper around read. */
+static ssize_t readFile(void *buffer, const size_t count) {
+	return read(FileInHandle, buffer, count);
+}
+static void resetFile(void) {
+	lseek(FileInHandle, 0, SEEK_SET);
+}
+
+
 int
-main(int argc, char **argv)
+main(int argc, char* argv[])
 {
 	int a;
-	int i;
-	//char pagemap_fn[64];
-	
-	int OffsetModulation=1000;//TBR
-	int MicGain=100;
-	char NoUsePwmFrequency=0;
-	//unsigned char *data;
-	
-	#define MODE_IQ 0
-	#define MODE_RF 1
-	#define MODE_RFA 2
-	#define MODE_IQ_FLOAT 3
-	#define MODE_VFO 4
-        char Mode=0;
+	int anyargs = 0;
+	char Mode = MODE_IQ;  // By default
 	int SampleRate=48000;
 	float SetFrequency=1e6;//1MHZ
 	float ppmpll=0.0;
-
-	//Specific to ModeIQ
-	static signed short *IQArray=NULL;
-
-	//Specific to ModeIQ_FLOAT
-	static float *IQFloatArray=NULL;
-
-	//Specific to Mode RF 
-	typedef struct {
-		double Frequency;
-		uint32_t WaitForThisSample;
-	} samplerf_t;
-
-	samplerf_t *TabRfSample;
-		
-	fprintf(stdout,"rpitx Version %s compiled %s (F5OEO Evariste) running on ",PROGRAM_VERSION,__DATE__);
-	
-	Mode=MODE_IQ; //By default
-
-	int anyargs = 0;
+	char NoUsePwmFrequency=0;
 
 	while(1)
 	{
@@ -1077,7 +1064,7 @@ main(int argc, char **argv)
 
 	switch(a)
 		{
-		case 'i': // Frequency
+		case 'i': // File name
 			FileName = optarg;
 			break;
 		case 'f': // Frequency
@@ -1138,7 +1125,56 @@ main(int argc, char **argv)
 		}/* end switch a */
 	}/* end while getopt() */
 
+	//Open File Input for modes which need it
+	if((Mode==MODE_IQ)||(Mode==MODE_IQ_FLOAT)||(Mode==MODE_RF)||(Mode==MODE_RFA))
+	{
+		if(FileName && strcmp(FileName,"-")==0)
+		{
+			FileInHandle = STDIN_FILENO;
+			useStdin = 1;
+		}
+		else FileInHandle = open(FileName, O_RDONLY);
+		if (FileInHandle < 0)
+		{
+			fatal("Failed to read Filein %s\n",FileName);
+		}
+	}
 
+	resetFile();
+	return pitx_run(Mode, SampleRate, SetFrequency, ppmpll, NoUsePwmFrequency, readFile, resetFile, NULL);
+}
+
+int pitx_run(
+	const char Mode,
+	int SampleRate,
+	const float SetFrequency,
+	const float ppmpll,
+	const char NoUsePwmFrequency,
+	ssize_t (*readWrapper)(void *buffer, size_t count),
+	void (*reset)(void),
+	int* skipSignals
+) {
+	int i;
+	//char pagemap_fn[64];
+
+	int OffsetModulation=1000;//TBR
+	int MicGain=100;
+	//unsigned char *data;
+
+	//Specific to ModeIQ
+	static signed short *IQArray=NULL;
+
+	//Specific to ModeIQ_FLOAT
+	static float *IQFloatArray=NULL;
+
+	//Specific to Mode RF
+	typedef struct {
+		double Frequency;
+		uint32_t WaitForThisSample;
+	} samplerf_t;
+	samplerf_t *TabRfSample=NULL;
+
+	fprintf(stdout,"rpitx Version %s compiled %s (F5OEO Evariste) running on ",PROGRAM_VERSION,__DATE__);
 
 	// Init Plls Frequency using ppm (or default)
 
@@ -1152,28 +1188,11 @@ main(int argc, char **argv)
 	PllFreq19MHZ+=PllFreq19MHZ * (ppmpll / 1000000.0);
 
 	//End of Init Plls
-	//Open File Input for modes which need it
-	if((Mode==MODE_IQ)||(Mode==MODE_IQ_FLOAT)||(Mode==MODE_RF)||(Mode==MODE_RFA))
-	{
-		if(FileName && strcmp(FileName,"-")==0)
-		{
-			FileInHandle = STDIN_FILENO;
-		}
-		else FileInHandle = open(FileName, O_RDONLY);
-		if (FileInHandle < 0)
-		{
-			fatal("Failed to read Filein %s\n",FileName);
-		}
-	}
 
 	if(Mode==MODE_IQ)
 	{
 		IQArray=malloc(DmaSampleBurstSize*2*sizeof(signed short)); // TODO A FREE AT THE END OF SOFTWARE
-		char dummyheader[HEADER_SIZE];
-		if (read(FileInHandle,dummyheader,HEADER_SIZE) != HEADER_SIZE) {
-			fatal("Unable to read header\n");
-		}
-		
+		reset();
 	} 
 	if(Mode==MODE_IQ_FLOAT)
 	{
@@ -1195,7 +1214,7 @@ main(int argc, char **argv)
 
 	
 	pitx_SetTuneFrequency(SetFrequency*1000.0);
-	pitx_init(SampleRate,GlobalTuningFrequency);
+	pitx_init(SampleRate, GlobalTuningFrequency, skipSignals);
 	
 
 	
@@ -1343,7 +1362,7 @@ for (;;)
 					static int Min=32767;
 					static int CompteSample=0;
 					CompteSample++;
-					NbRead=read(FileInHandle,IQArray,DmaSampleBurstSize*2*2/*SHORT I,SHORT Q*/);
+					NbRead=readWrapper(IQArray,DmaSampleBurstSize*2*2/*SHORT I,SHORT Q*/);
 				
 					
 					if(NbRead!=DmaSampleBurstSize*2*2) 
@@ -1351,16 +1370,13 @@ for (;;)
 						if(loop_mode_flag==1)
 						{
 							printf("Looping FileIn\n");
-							close(FileInHandle);
-							FileInHandle = open(FileName, O_RDONLY);
-							char dummyheader[HEADER_SIZE];
-							if (read(FileInHandle,dummyheader,HEADER_SIZE) != HEADER_SIZE) {
-								fatal("Unable to read header\n");
-							}
-							NbRead=read(FileInHandle,IQArray,DmaSampleBurstSize*2*2);
+							reset();
+							NbRead=readWrapper(IQArray,DmaSampleBurstSize*2*2);
 						}
-						else
-							terminate(0);
+						else {
+							stop_dma();
+							return 0;
+						}
 					
 					}
 				
@@ -1425,18 +1441,19 @@ for (;;)
 					static int Min=32767;
 					static int CompteSample=0;
 					CompteSample++;
-					NbRead=read(FileInHandle,IQFloatArray,DmaSampleBurstSize*2*sizeof(float));
+					NbRead=readWrapper(IQFloatArray,DmaSampleBurstSize*2*sizeof(float));
 				
 					if(NbRead!=DmaSampleBurstSize*2*sizeof(float)) 
 					{
 						if(loop_mode_flag==1)
 						{
 							printf("Looping FileIn\n");
-							close(FileInHandle);
-							FileInHandle = open(FileName, O_RDONLY);
+							reset();
 						}
-						else if (FileInHandle != STDIN_FILENO) 
-							terminate(0);
+						else if (!useStdin) {
+							stop_dma();
+							return 0;
+						}
 						
 					
 					}
@@ -1500,20 +1517,19 @@ for (;;)
 						if(TimeRemaining==0)
 						{
 							
-								NbRead=read(FileInHandle,&SampleRf,sizeof(samplerf_t));
+								NbRead=readWrapper(&SampleRf,sizeof(samplerf_t));
 								if(NbRead!=sizeof(samplerf_t)) 
 								{
 									if(loop_mode_flag==1)
 									{
 										//printf("Looping FileIn\n");
-										close(FileInHandle);
-										FileInHandle = open(FileName, O_RDONLY);
-										NbRead=read(FileInHandle,&SampleRf,sizeof(samplerf_t));
+										reset();
+										NbRead=readWrapper(&SampleRf,sizeof(samplerf_t));
 									}
-									else if (FileInHandle != STDIN_FILENO) 
+									else if (!useStdin)
 									{
-										sleep(1);	
-										terminate(0);
+										stop_dma();
+										return 0;
 									}
 								}
 							
@@ -1612,7 +1628,7 @@ for (;;)
 				
 	
 
-	terminate(0);
+	stop_dma();
 	return(0);
 }
 

@@ -3,22 +3,29 @@
 #include <signal.h>
 #include "RpiDma.h"
 #include "RpiGpio.h"
-char InitDma(void *FunctionTerminate)
+
+static int compareInts(const void* first, const void* second) {
+	const int firstInt = *((int*)first);
+	const int secondInt = *((int*)second);
+	if (firstInt < secondInt) {
+		return -1;
+	}
+	if (firstInt == secondInt) {
+		return 0;
+	}
+	return 1;
+}
+
+
+char InitDma(void *FunctionTerminate, int* skipSignals)
 {
 	DMA_CHANNEL=4;
-	if (system("rm -f linuxversion.txt") != 0) {
-		fprintf(stderr, "rm failed\n");
-	}
-	if (system("uname -r >> linuxversion.txt") != 0) {
-		fprintf(stderr, "uname failed\n");
-	}
 	char *line = NULL;
 	size_t size;
-//	int fLinux=open("Flinuxversion.txt", "r');
-	FILE * flinux=fopen("linuxversion.txt", "r");
-	if (getline(&line, &size, flinux) == -1) 
+	FILE * flinux = popen("uname -r", "r");
+	if (flinux != NULL && getline(&line, &size, flinux) == -1)
 	{
-		printf("Could no get Linux version\n");
+		fprintf(stderr, "Could no get Linux version\n");
 	}
 	else
 	{
@@ -35,17 +42,35 @@ char InitDma(void *FunctionTerminate)
 		}
 
 	}
+	pclose(flinux);
 	//printf("Init DMA\n");
 	
+	int sentinel[] = {0};
+	if (skipSignals == NULL) {
+		skipSignals = sentinel;
+	}
+	int sentinelIndex;
+	for (sentinelIndex = 0; ; ++sentinelIndex) {
+		if (skipSignals[sentinelIndex] == 0) {
+			break;
+		}
+	}
+	qsort(skipSignals, sentinelIndex, sizeof(int), compareInts);
+
 	// Catch all signals possible - it is vital we kill the DMA engine
 	// on process exit!
 	int i;
 	for (i = 0; i < 64; i++) {
-		struct sigaction sa;
+		// Some signals are fine, so don't catch them
+		if (i == *skipSignals) {
+			++skipSignals;
+		} else {
+			struct sigaction sa;
 
-		memset(&sa, 0, sizeof(sa));
-		sa.sa_handler = FunctionTerminate;//terminate;
-		sigaction(i, &sa, NULL);
+			memset(&sa, 0, sizeof(sa));
+			sa.sa_handler = FunctionTerminate;//terminate;
+			sigaction(i, &sa, NULL);
+		}
 	}
 
 	//NUM_SAMPLES = NUM_SAMPLES_MAX;
