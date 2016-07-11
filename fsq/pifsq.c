@@ -78,111 +78,111 @@ typedef struct fsq_varicode
 
 const Varicode code_table[]  =
 {
-  {' ', {00, 00}}, // space
-  {'!', {11, 30}},
-  {'"', {12, 30}},
-  {'#', {13, 30}},
-  {'$', {14, 30}},
-  {'%', {15, 30}},
-  {'&', {16, 30}},
-  {'\'', {17, 30}},
-  {'(', {18, 30}},
-  {')', {19, 30}},
-  {'*', {20, 30}},
-  {'+', {21, 30}},
-  {',', {27, 29}},
-  {'-', {22, 30}},
-  {'.', {27, 00}},
-  {'/', {23, 30}},
-  {'0', {10, 30}},
-  {'1', {01, 30}},
-  {'2', {02, 30}},
-  {'3', {03, 30}},
-  {'4', {04, 30}},
-  {'5', {05, 30}},
-  {'6', {06, 30}},
-  {'7', {07, 30}},
-  {'8', {8, 30}},
-  {'9', {9, 30}},
-  {':', {24, 30}},
-  {';', {25, 30}},
-  {'<', {26, 30}},
-  {'=', {00, 31}},
-  {'>', {27, 30}},
-  {'?', {28, 29}},
-  {'@', {00, 29}},
-  {'A', {01, 29}},
-  {'B', {02, 29}},
-  {'C', {03, 29}},
-  {'D', {04, 29}},
-  {'E', {05, 29}},
-  {'F', {06, 29}},
-  {'G', {07, 29}},
-  {'H', {8, 29}},
-  {'I', {9, 29}},
-  {'J', {10, 29}},
-  {'K', {11, 29}},
-  {'L', {12, 29}},
-  {'M', {13, 29}},
-  {'N', {14, 29}},
-  {'O', {15, 29}},
-  {'P', {16, 29}},
-  {'Q', {17, 29}},
-  {'R', {18, 29}},
-  {'S', {19, 29}},
-  {'T', {20, 29}},
-  {'U', {21, 29}},
-  {'V', {22, 29}},
-  {'W', {23, 29}},
-  {'X', {24, 29}},
-  {'Y', {25, 29}},
-  {'Z', {26, 29}},
-  {'[', {01, 31}},
-  {'\\', {02, 31}},
-  {']', {03, 31}},
-  {'^', {04, 31}},
-  {'_', {05, 31}},
-  {'`', {9, 31}},
-  {'a', {01, 00}},
-  {'b', {02, 00}},
-  {'c', {03, 00}},
-  {'d', {04, 00}},
-  {'e', {05, 00}},
-  {'f', {06, 00}},
-  {'g', {07, 00}},
-  {'h', {8, 00}},
-  {'i', {9, 00}},
-  {'j', {10, 00}},
-  {'k', {11, 00}},
-  {'l', {12, 00}},
-  {'m', {13, 00}},
-  {'n', {14, 00}},
-  {'o', {15, 00}},
-  {'p', {16, 00}},
-  {'q', {17, 00}},
-  {'r', {18, 00}},
-  {'s', {19, 00}},
-  {'t', {20, 00}},
-  {'u', {21, 00}},
-  {'v', {22, 00}},
-  {'w', {23, 00}},
-  {'x', {24, 00}},
-  {'y', {25, 00}},
-  {'z', {26, 00}},
-  {'{', {06, 31}},
-  {'|', {07, 31}},
-  {'}', {8, 31}},
-  {'~', {00, 30}},
-  {127, {28, 31}}, // DEL
-  {13,  {28, 00}}, // CR
-  {10,  {28, 00}}, // LF
-  {0,   {28, 30}}, // IDLE
-  {241, {10, 31}}, // plus/minus
-  {246, {11, 31}}, // division sign
-  {248, {12, 31}}, // degrees sign
-  {158, {13, 31}}, // multiply sign
-  {156, {14, 31}}, // pound sterling sign
-  {8,   {27, 31}}  // BS
+	{' ', {00, 00}}, // space
+	{'!', {11, 30}},
+	{'"', {12, 30}},
+	{'#', {13, 30}},
+	{'$', {14, 30}},
+	{'%', {15, 30}},
+	{'&', {16, 30}},
+	{'\'', {17, 30}},
+	{'(', {18, 30}},
+	{')', {19, 30}},
+	{'*', {20, 30}},
+	{'+', {21, 30}},
+	{',', {27, 29}},
+	{'-', {22, 30}},
+	{'.', {27, 00}},
+	{'/', {23, 30}},
+	{'0', {10, 30}},
+	{'1', {01, 30}},
+	{'2', {02, 30}},
+	{'3', {03, 30}},
+	{'4', {04, 30}},
+	{'5', {05, 30}},
+	{'6', {06, 30}},
+	{'7', {07, 30}},
+	{'8', {8, 30}},
+	{'9', {9, 30}},
+	{':', {24, 30}},
+	{';', {25, 30}},
+	{'<', {26, 30}},
+	{'=', {00, 31}},
+	{'>', {27, 30}},
+	{'?', {28, 29}},
+	{'@', {00, 29}},
+	{'A', {01, 29}},
+	{'B', {02, 29}},
+	{'C', {03, 29}},
+	{'D', {04, 29}},
+	{'E', {05, 29}},
+	{'F', {06, 29}},
+	{'G', {07, 29}},
+	{'H', {8, 29}},
+	{'I', {9, 29}},
+	{'J', {10, 29}},
+	{'K', {11, 29}},
+	{'L', {12, 29}},
+	{'M', {13, 29}},
+	{'N', {14, 29}},
+	{'O', {15, 29}},
+	{'P', {16, 29}},
+	{'Q', {17, 29}},
+	{'R', {18, 29}},
+	{'S', {19, 29}},
+	{'T', {20, 29}},
+	{'U', {21, 29}},
+	{'V', {22, 29}},
+	{'W', {23, 29}},
+	{'X', {24, 29}},
+	{'Y', {25, 29}},
+	{'Z', {26, 29}},
+	{'[', {01, 31}},
+	{'\\', {02, 31}},
+	{']', {03, 31}},
+	{'^', {04, 31}},
+	{'_', {05, 31}},
+	{'`', {9, 31}},
+	{'a', {01, 00}},
+	{'b', {02, 00}},
+	{'c', {03, 00}},
+	{'d', {04, 00}},
+	{'e', {05, 00}},
+	{'f', {06, 00}},
+	{'g', {07, 00}},
+	{'h', {8, 00}},
+	{'i', {9, 00}},
+	{'j', {10, 00}},
+	{'k', {11, 00}},
+	{'l', {12, 00}},
+	{'m', {13, 00}},
+	{'n', {14, 00}},
+	{'o', {15, 00}},
+	{'p', {16, 00}},
+	{'q', {17, 00}},
+	{'r', {18, 00}},
+	{'s', {19, 00}},
+	{'t', {20, 00}},
+	{'u', {21, 00}},
+	{'v', {22, 00}},
+	{'w', {23, 00}},
+	{'x', {24, 00}},
+	{'y', {25, 00}},
+	{'z', {26, 00}},
+	{'{', {06, 31}},
+	{'|', {07, 31}},
+	{'}', {8, 31}},
+	{'~', {00, 30}},
+	{127, {28, 31}}, // DEL
+	{13,  {28, 00}}, // CR
+	{10,  {28, 00}}, // LF
+	{0,   {28, 30}}, // IDLE
+	{241, {10, 31}}, // plus/minus
+	{246, {11, 31}}, // division sign
+	{248, {12, 31}}, // degrees sign
+	{158, {13, 31}}, // multiply sign
+	{156, {14, 31}}, // pound sterling sign
+	{8,   {27, 31}}  // BS
 };
  
 void encode_tone(uint8_t tone);
@@ -206,17 +206,16 @@ void encode_tone(uint8_t tone);
 
 void WriteTone(double Frequency,uint32_t Timing)
 {
-typedef struct {
+	typedef struct {
 		double Frequency;
 		uint32_t WaitForThisSample;
 	} samplerf_t;
 	samplerf_t RfSample;
 	
-
 	RfSample.Frequency=Frequency;
 	RfSample.WaitForThisSample=Timing*1000L; //en 100 de nanosecond
 	//printf("Freq =%f Timing=%d\n",RfSample.Frequency,RfSample.WaitForThisSample);
-	if (write(FileFreqTiming,&RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
+	if (write(FileFreqTiming, &RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
 		fprintf(stderr, "Unable to write sample\n");
 	}
 
@@ -224,165 +223,157 @@ typedef struct {
 
 void encode_char(int ch)
 {
-    uint8_t i, fch, vcode1, vcode2;
+	uint8_t i, fch, vcode1, vcode2;
+	
+	for(i = 0; i < NGLYPHS; i++)
+	{
+		// Check each element of the varicode table to see if we've found the
+		// character we're trying to send.
+		fch = code_table[i].ch;
+		
+		if(fch == ch)
+		{
+			// Found the character, now fetch the varicode chars
+			vcode1 = code_table[i].var[0];
+			vcode2 = code_table[i].var[1];
+			
+			// Transmit the appropriate tone per a varicode char
+			if(vcode2 == 0)
+			{
+				// If the 2nd varicode char is a 0 in the table,
+				// we are transmitting a lowercase character, and thus
+				// only transmit one tone for this character.
 
-    for(i = 0; i < NGLYPHS; i++)
-    {
-        // Check each element of the varicode table to see if we've found the
-        // character we're trying to send.
-        fch = code_table[i].ch;
+				// Generate tone
+				encode_tone(vcode1);
+			}
+			else
+			{
+				// If the 2nd varicode char is anything other than 0 in
+				// the table, then we need to transmit both
 
-        if(fch == ch)
-        {
-            // Found the character, now fetch the varicode chars
-            vcode1 = code_table[i].var[0];
-            vcode2 = code_table[i].var[1];
-            
-            // Transmit the appropriate tone per a varicode char
-            if(vcode2 == 0)
-            {
-              // If the 2nd varicode char is a 0 in the table,
-              // we are transmitting a lowercase character, and thus
-              // only transmit one tone for this character.
-
-              // Generate tone
-              encode_tone(vcode1);
-             
-            }
-            else
-            {
-              // If the 2nd varicode char is anything other than 0 in
-              // the table, then we need to transmit both
-
-              // Generate 1st tone
-              encode_tone(vcode1);
-          
-
-              // Generate 2nd tone
-              encode_tone(vcode2);
-              
-            }           
-            break; // We've found and transmitted the char,
-               // so exit the for loop
-        }
-    }
+				// Generate 1st tone
+				encode_tone(vcode1);
+				
+				// Generate 2nd tone
+				encode_tone(vcode2);
+			}           
+			break; // We've found and transmitted the char,
+			// so exit the for loop
+		}
+	}
 }
-
 
 void encode_tone(uint8_t tone)
 {
-  cur_tone = ((cur_tone + tone + 1) % 33);
-  //printf("Current tone =%d\n",cur_tone);
-  WriteTone(1000 + (cur_tone * TONE_SPACING*0.001),500000L);
-  //TO DO FREQUENCY PI si5351.set_freq((freq * 100) + (cur_tone * TONE_SPACING), 0, SI5351_CLK0);
-
+	cur_tone = ((cur_tone + tone + 1) % 33);
+	//printf("Current tone =%d\n",cur_tone);
+	WriteTone(1000 + (cur_tone * TONE_SPACING*0.001),500000L);
+	//TO DO FREQUENCY PI si5351.set_freq((freq * 100) + (cur_tone * TONE_SPACING), 0, SI5351_CLK0);
 }
  
 // Loop through the string, transmitting one character at a time.
 void encode(char *str)
 {
-    // Reset the tone to 0 and turn on the output
-    cur_tone = 0;
-   /*
-    si5351.output_enable(SI5351_CLK0, 1);
-    digitalWrite(LED_PIN, HIGH);
+	// Reset the tone to 0 and turn on the output
+	cur_tone = 0;
+	/*
+	si5351.output_enable(SI5351_CLK0, 1);
+	digitalWrite(LED_PIN, HIGH);
 	*/
-    //Serial.println("=======");
-
-    // Transmit BOT
-    //noInterrupts();
-   
-   
-    encode_char(' '); // Send a space for the dummy character
-   //Do wait
-
-    // Send another space
-    encode_char(' ');
-    //Do wait
-
-    // Now send LF
-    encode_char(10);
-    //Do wait
-    
-    // Now do the rest of the message
-    while (*str != '\0')
-    {
-        encode_char(*str++);
-    }
-        
-    // Turn off the output
-    //si5351.output_enable(SI5351_CLK0, 0);
-    //digitalWrite(LED_PIN, LOW);
+	//Serial.println("=======");
+	
+	// Transmit BOT
+	//noInterrupts();
+	
+	
+	encode_char(' '); // Send a space for the dummy character
+	//Do wait
+	
+	// Send another space
+	encode_char(' ');
+	//Do wait
+	
+	// Now send LF
+	encode_char(10);
+	//Do wait
+	
+	// Now do the rest of the message
+	while (*str != '\0')
+	{
+		encode_char(*str++);
+	}
+	   
+	// Turn off the output
+	//si5351.output_enable(SI5351_CLK0, 0);
+	//digitalWrite(LED_PIN, LOW);
 }
 
 static void init_crc8(void)
 {
-  int i,j;
-  uint8_t crc;
+	int i,j;
+	uint8_t crc;
 
-  for(i = 0; i < 256; i++)
-  {
-    crc = i;
-    for(j = 0; j < 8; j++)
-    {
-      crc = (crc << 1) ^ ((crc & 0x80) ? 0x07 : 0);
-    }
-    crc8_table[i] = crc & 0xFF;
-  }
+	for(i = 0; i < 256; i++)
+	{
+		crc = i;
+		for(j = 0; j < 8; j++)
+		{
+			crc = (crc << 1) ^ ((crc & 0x80) ? 0x07 : 0);
+		}
+		crc8_table[i] = crc & 0xFF;
+	}
 }
 
 uint8_t crc8(char * text)
 {
-  uint8_t crc='\0';
-  uint8_t ch;
-  int i;
-  for(i = 0; i < strlen(text); i++)
-  {
-    ch = text[i];
-    crc = crc8_table[(crc) ^ ch];
-    crc &= 0xFF;
-  }
+	uint8_t crc='\0';
+	uint8_t ch;
+	int i;
+	for(i = 0; i < strlen(text); i++)
+	{
+		ch = text[i];
+		crc = crc8_table[(crc) ^ ch];
+		crc &= 0xFF;
+	}
 
-  return crc;
+	return crc;
 }
  
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-
 	char *sText;
-	if (argc > 2) {
-		
+	if (argc > 2) 
+	{
 		sText=(char *)argv[1];
-	       	//FileText = open(argv[1], O_RDONLY);
+		//FileText = open(argv[1], O_RDONLY);
 
 		char *sFileFreqTiming=(char *)argv[2];
-	       	FileFreqTiming = open(argv[2], O_WRONLY|O_CREAT, 0644);
-		}
-		else
-		{
-			printf("usage : pifsq StringToTransmit file.ft\n");
-			exit(0);
-		}
+		FileFreqTiming = open(argv[2], O_WRONLY|O_CREAT, 0644);
+	}
+	else
+	{
+		printf("usage : pifsq StringToTransmit file.ft\n");
+		exit(0);
+	}
   
-  // Initialize the CRC table
-  init_crc8();
+	// Initialize the CRC table
+	init_crc8();
 
-  // Generate the CRC for the callsign
-  callsign_crc = crc8(callsign);
+	// Generate the CRC for the callsign
+	callsign_crc = crc8(callsign);
 
-  // We are building a directed message here, but you can do whatever.
-  // So apparently, FSQ very specifically needs "  \b  " in
-  // directed mode to indicate EOT. A single backspace won't do it.
-  sprintf(tx_buffer, "%s:%02x%s%s", callsign, callsign_crc,sText,"  \b  ");
- encode(tx_buffer);
-  int i;
-  for(i=0;i<10;i++)
-  {
-	WriteTone(0,500000L);
-  }
+	// We are building a directed message here, but you can do whatever.
+	// So apparently, FSQ very specifically needs "  \b  " in
+	// directed mode to indicate EOT. A single backspace won't do it.
+	sprintf(tx_buffer, "%s:%02x%s%s", callsign, callsign_crc,sText,"  \b  ");
+	encode(tx_buffer);
+	int i;
+	for(i=0;i<10;i++)
+	{
+		WriteTone(0,500000L);
+	}
   
-  close(FileFreqTiming);
-  
+	close(FileFreqTiming);
 }
  
