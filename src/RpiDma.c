@@ -4,7 +4,8 @@
 #include "RpiDma.h"
 #include "RpiGpio.h"
 
-static int compareInts(const void* first, const void* second) {
+static int compareInts(const void* first, const void* second) 
+{
 	const int firstInt = *((int*)first);
 	const int secondInt = *((int*)second);
 	if (firstInt < secondInt) {
@@ -15,7 +16,6 @@ static int compareInts(const void* first, const void* second) {
 	}
 	return 1;
 }
-
 
 char InitDma(void *FunctionTerminate, int* skipSignals)
 {
@@ -31,13 +31,13 @@ char InitDma(void *FunctionTerminate, int* skipSignals)
 	{
 		if(line[0]=='3')
 		{
-			 printf("Wheezy\n");
-			 DMA_CHANNEL=DMA_CHANNEL_WHEEZY;
+			printf("Wheezy\n");
+			DMA_CHANNEL=DMA_CHANNEL_WHEEZY;
 		}
 		
 		if(line[0]=='4')
 		{
-			 printf("Jessie\n");
+			printf("Jessie\n");
 			DMA_CHANNEL=DMA_CHANNEL_JESSIE;
 		}
 
@@ -99,23 +99,17 @@ char InitDma(void *FunctionTerminate, int* skipSignals)
 	virtbase = (uint8_t *)((uint32_t *)mbox.virt_addr);
 	//printf("virtbase %p\n", virtbase);
 	return(1);
-	
 }
 
-uint32_t
-mem_virt_to_phys(volatile void *virt)
+uint32_t mem_virt_to_phys(volatile void *virt)
 {	
-	
 	//MBOX METHOD
 	uint32_t offset = (uint8_t *)virt - mbox.virt_addr;
 	return mbox.bus_addr + offset;
-
 }
 
-uint32_t
-mem_phys_to_virt(volatile uint32_t phys)
+uint32_t mem_phys_to_virt(volatile uint32_t phys)
 {
-	
 	//MBOX METHOD
 	uint32_t offset=phys-mbox.bus_addr;
 	uint32_t result=(uint32_t)((uint8_t *)mbox.virt_addr+offset);
