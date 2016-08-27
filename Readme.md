@@ -1,8 +1,10 @@
-**rpitx** is a radio transmitter for Raspberry Pi (B,B+ and PI2) which output directly to GPIO. 
+**rpitx** is a radio transmitter for Raspberry Pi (B,B+,PI2,PI3 and Pizero) which transmit RF directly to GPIO 5KHZ to 500MHZ. 
+
+ 
 *(Created by Evariste Courjaud F5OEO. Code is GPL)*
 *
 <h1> Installation </h1>
-git clone the repository
+git clone https://github.com/F5OEO/rpitx
 cd rpitx
 make sure to have access to Internet to download packages : libsndfile1-dev and imagemagick otherwise install them manualy
 ./install.sh
@@ -30,6 +32,7 @@ Usage:
     -l            loop mode for file input
     -p float      frequency correction in parts per million (ppm), positive or negative, for calibration, default 0.
     -d int 	      DMABurstSize (default 1000) but for very short message, could be decrease
+    -c 1          Transmit on GPIO 4 (Pin 7) instead of GPIO 18	
     -h            help (this help).
     
 <h2> Modulation samples </h2>
