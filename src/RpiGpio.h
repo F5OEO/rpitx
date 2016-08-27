@@ -11,7 +11,8 @@
 #include <ctype.h>
 
 char InitGpio(void);
-void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted);
+
+void DisplayInfo();
 
 int model;
 uint32_t mem_flag;
