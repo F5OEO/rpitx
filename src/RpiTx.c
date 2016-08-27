@@ -67,13 +67,17 @@ Optimize CPU on PWMFrequency
 
 //#define WITH_MEMORY_BUFFER
 
-#define PROGRAM_VERSION "0.1"
+#define PROGRAM_VERSION "0.2"
 
 #define PLL_FREQ_500MHZ		500000000	// PLLD is running at 500MHz
 #define PLL_500MHZ 		0x6
 
-#define PLL_FREQ_1GHZ             1000000000	//PLLC = 1GHZ
-#define PLL_1GHZ			0x5
+//#define PLL_FREQ_1GHZ             1000000000	//PLLC = 1GHZ
+//#define PLL_1GHZ			0x5
+
+#define PLL_FREQ_1GHZ             1000000000	//PLL = 1GHZ
+#define PLL_1GHZ			0x6     //PLLD = 1GHZ ONLY AFTER APLYINg DT-BLOB.BIN !!!! WARNING !!!
+
 
 #define PLLFREQ_192             19200000	//PLLA = 19.2MHZ
 #define PLL_192			0x1
@@ -1090,9 +1094,13 @@ int pitx_run(
 		printf(" SampleRate=%d ",SampleRate);	
 	}
 
+
+	
+
 	pitx_SetTuneFrequency(SetFrequency*1000.0);
 	pitx_init(SampleRate, GlobalTuningFrequency, skipSignals);
 	
+
 	static volatile uint32_t cur_cb,last_cb;
 	int last_sample;
 	int this_sample; 
