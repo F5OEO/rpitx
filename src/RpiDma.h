@@ -70,7 +70,7 @@ struct {
 // USE CHANNEL 4 AND 5 which seems to be free
 // On Jessie, channel 4 and 5 seems to crash : set to DMA 8 .
 #define DMA_CHANNEL_WHEEZY 14
-#define DMA_CHANNEL_JESSIE 14  
+#define DMA_CHANNEL_JESSIE 5  
 //#define DMA_CHANNEL_PWMFREQUENCY 5
 
 char DMA_CHANNEL;
