@@ -99,6 +99,7 @@ double TuneFrequency=62500000;
 unsigned char FreqDivider=2;
 int DmaSampleBurstSize=1000;
 int NUM_SAMPLES=NUM_SAMPLES_MAX;
+int Randomize=0;
 
 uint32_t GlobalTabPwmFrequency[50];
 
@@ -135,11 +136,12 @@ static void stop_dma(void)
 		dma_reg[DMA_CS+DMA_CHANNEL*0x40] = BCM2708_DMA_RESET;
 		udelay(100);
 		//Stop  DMA PWMFrequency
+		/*
 		dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_INT | BCM2708_DMA_END;
 		udelay(100);
 		dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_RESET;
 		udelay(100);
-
+		*/
 
 		//printf("Reset DMA Done\n");
 		clk_reg[GPCLK_CNTL] = 0x5A << 24  | 0 << 9 | 1 << 4 | 6; //NO MASH !!!
@@ -463,14 +465,14 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	//dma_reg[DMA_CS+DMA_CHANNEL*0x40] = 0x10FF0001;	// go, mid priority, wait for outstanding writes :7 Seems Max Priorit
 	//WAIT FOR OUTSTADING_WRITE make 50ns de plus pour ecrire dans un registre
 	//printf("END INIT SSTV\n");
-	dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_RESET;
+	/*dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_RESET;
 	udelay(1000);
 	dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_INT | BCM2708_DMA_END;
 	udelay(100);
 	dma_reg[DMA_CONBLK_AD+DMA_CHANNEL_PWMFREQUENCY*0x40]=mem_virt_to_phys((void *)(ctl->cbdma2) );
 	udelay(100);
 	dma_reg[DMA_DEBUG+DMA_CHANNEL_PWMFREQUENCY*0x40] = 7; // clear debug error flags
-
+	*/
 	return 1;		
 }
 
@@ -509,6 +511,38 @@ void IQToFreqAmp(int I,int Q,double *Frequency,int *Amp,int SampleRate)
 	*Frequency = dp*SampleRate/(2.0f*M_PI);
 	prev_phase = phase;
 	//printf("I=%d Q=%d Amp=%d Freq=%d\n",I,Q,*Amp,*Frequency);
+}
+
+
+// A utility function to swap to integers
+void swap (uint32_t *a, uint32_t *b)
+{
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+ 
+
+ 
+// A function to generate a random permutation of arr[]
+void randomize ( uint32_t arr[], int n )
+{
+    // Use a different seed value so that we don't get same
+    // result each time we run this program
+    srand ( time(NULL) );
+ 
+    // Start from the last element and swap one by one. We don't
+    // need to run for the first element that's why i > 0
+    int i;
+    for ( i = n-1; i > 0; i--)
+    {
+	
+        // Pick a random index from 0 to i
+        int j = rand() % (i+1);
+ 
+        // Swap arr[i] with the element at random index
+        swap(&arr[i], &arr[j]);
+    }
 }
 
 inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude,int NoSample,uint32_t WaitNanoSecond,uint32_t SampleRate,char NoUsePWMF,int debug)
@@ -681,6 +715,8 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				NbF1F2++;
 			}
 		}
+		if (Randomize)
+			randomize(ctl->sample[NoSample].FrequencyTab,i);
 		//SHould finished by F2
 		ctl->sample[NoSample].FrequencyTab[i++]=RegisterF2;
 		NbF2++;
@@ -879,7 +915,7 @@ int pitx_SetTuneFrequency(double Frequency)
 	#define MAX_HARMONIC 41
 	int harmonic;
 	
-	if(Frequency<PLL_FREQ_1GHZ*2/4096) // For very Low Frequency we used 19.2 MHZ PLL 
+	if(Frequency<PLL_FREQ_1GHZ/2048L) //2/4096-> For very Low Frequency we used 19.2 MHZ PLL 
 	{
 		PllUsed=PllFreq19MHZ;
 		PllNumber=PLL_192;
@@ -935,7 +971,7 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		a = getopt(argc, argv, "i:f:m:s:p:hld:w:c:");
+		a = getopt(argc, argv, "i:f:m:s:p:hld:w:c:r");
 	
 		if(a == -1) 
 		{
@@ -983,6 +1019,10 @@ int main(int argc, char* argv[])
 			break;
 		case 'w': // No use pwmfrequency 
 			NoUsePwmFrequency = atoi(optarg);
+			
+			break;
+		case 'r': // Randomize PWM frequency 
+			Randomize=1;
 			
 			break;
         	case -1:
