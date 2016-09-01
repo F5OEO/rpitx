@@ -35,38 +35,38 @@ byte StundenBits[anzahlStundenBits] = { 0 };
 int parity = 0;
 int FileFreqTiming;
 
+double HI = 32767;
+double LO;
+
 void modulate(byte b);
 void playtone(double Amplitude,uint32_t Timing);
 
 void loop()
 {
-  int i;
-  for ( i = 0;i<58;++i)
-  {
-    modulate(dcfBits[i]);
-    
-  }
+	int i;
+	for (i = 0; i<58; ++i)
+	{
+		modulate(dcfBits[i]);
+	}
 
 }
 
-
 void DCF_BITS(int Minuten, int Stunden)
 {
-   int i;	  
-  //MINUTE
+	int i;	  
+	//MINUTE
 
-		if (Minuten > 39)
+	if (Minuten > 39)
 	{
 		MinutenBits[6] = 1;
 		Minuten -= 40;
 	}
-		if (Minuten > 19)
+	if (Minuten > 19)
 	{
 		MinutenBits[5] = 1;
 		Minuten -= 20;
 	}
-	
-		if (Minuten > 9)
+	if (Minuten > 9)
 	{
 		MinutenBits[4] = 1;
 		Minuten -= 10;
@@ -85,188 +85,176 @@ void DCF_BITS(int Minuten, int Stunden)
 			MinutenBits[i] = false;
 		}
 	}
+	
 	for ( i = 0; i < anzahlMinutenBits; ++i)
-			{
-				dcfBits[offsetMinutenBits + i] = MinutenBits[i];
-			}
+	{
+		dcfBits[offsetMinutenBits + i] = MinutenBits[i];
+	}
+	
 	//Stunde
-
-		if (Stunden > 19)
+	if (Stunden > 19)
 	{
 		StundenBits[5] = 1;
 		Stunden -= 20;
 	}
-		 if (Stunden > 9)
+	if (Stunden > 9)
 	{
 		StundenBits[4] = 1;
 		Stunden -= 10;
 	}
 	 
+	for ( i = 0; i < 4; ++i)
+	{
+		//MinutenBits[i] = (Minuten & (1 << i)) ? true : false;
 
-	
+		if ((Stunden & (1 << i)) > 0)
+		{
+			StundenBits[i] = true;
+		}
+		else
+		{
+			StundenBits[i] = false;
+		}
+	}
 
-	 for ( i = 0; i < 4; ++i)
-	 {
-		 //MinutenBits[i] = (Minuten & (1 << i)) ? true : false;
+	for ( i = 0; i < anzahlStundenBits; ++i)
+	{
+		dcfBits[offsetStundenBits + i] = StundenBits[i];
+	}
 
-		 if ((Stunden & (1 << i)) > 0)
-		 {
-			 StundenBits[i] = true;
-		 }
-		 else
-		 {
-			 StundenBits[i] = false;
-		 }
-	 }
+	/*for (int n = 0; n < 6; ++n)
+	{
 
-	 for ( i = 0; i < anzahlStundenBits; ++i)
-	 {
-		 dcfBits[offsetStundenBits + i] = StundenBits[i];
-	 }
-
-	 /*for (int n = 0; n < 6; ++n)
-	 {
-
-	 }*/
-	 ////////////////////////////
-	 {
-		 parity += dcfBits[21];
-		 parity += dcfBits[22];
-		 parity += dcfBits[23];
-		 parity += dcfBits[24];
-		 parity += dcfBits[25];
-		 parity += dcfBits[26];
-		 parity += dcfBits[27];
-		 if (parity % 2 == 0)
-		 {
-			 dcfBits[28] = 0;
-		 }
-		 else
-		 {
-			 dcfBits[28] = 1;
-		 }
-		 parity = 0;
-	 }
-	 ////////////////////////////
-	 {
-		 parity += dcfBits[29];
-		 parity += dcfBits[30];
-		 parity += dcfBits[31];
-		 parity += dcfBits[32];
-		 parity += dcfBits[33];
-		 parity += dcfBits[34];
-		 if (parity % 2 == 0)
-		 {
-			 dcfBits[35] = 0;
-		 }
-		 else
-		 {
-			 dcfBits[35] = 1;
-		 }
-		 parity = 0;
-	 }
-	 /////////////////////////////
-	 {
-		 parity += dcfBits[36];
-		 parity += dcfBits[37];
-		 parity += dcfBits[38];
-		 parity += dcfBits[39];
-		 parity += dcfBits[40];
-		 parity += dcfBits[41];
-		 parity += dcfBits[42];
-		 parity += dcfBits[43];
-		 parity += dcfBits[44];
-		 parity += dcfBits[45];
-		 parity += dcfBits[46];
-		 parity += dcfBits[47];
-		 parity += dcfBits[48];
-		 parity += dcfBits[49];
-		 parity += dcfBits[50];
-		 parity += dcfBits[51];
-		 parity += dcfBits[52];
-		 parity += dcfBits[53];
-		 parity += dcfBits[54];
-		 parity += dcfBits[55];
-		 parity += dcfBits[56];
-		 parity += dcfBits[57];
-		 if (parity % 2 == 0)
-		 {
-			 dcfBits[58] = 0;
-		 }
-		 else
-		 {
-			 dcfBits[58] = 1;
-		 }
-		 parity = 0;
-	 }
+	}*/
+	////////////////////////////
+	{
+		parity += dcfBits[21];
+		parity += dcfBits[22];
+		parity += dcfBits[23];
+		parity += dcfBits[24];
+		parity += dcfBits[25];
+		parity += dcfBits[26];
+		parity += dcfBits[27];
+		
+		//dcfBits[28] = parity % 2; ???
+		if (parity % 2 == 0)
+		{
+			dcfBits[28] = 0;
+		}
+		else
+		{
+			dcfBits[28] = 1;
+		}
+		parity = 0;
+	}
+	////////////////////////////
+	{
+		parity += dcfBits[29];
+		parity += dcfBits[30];
+		parity += dcfBits[31];
+		parity += dcfBits[32];
+		parity += dcfBits[33];
+		parity += dcfBits[34];
+		if (parity % 2 == 0)
+		{
+			dcfBits[35] = 0;
+		}
+		else
+		{
+			dcfBits[35] = 1;
+		}
+		parity = 0;
+	}
+	/////////////////////////////
+	{
+		parity += dcfBits[36];
+		parity += dcfBits[37];
+		parity += dcfBits[38];
+		parity += dcfBits[39];
+		parity += dcfBits[40];
+		parity += dcfBits[41];
+		parity += dcfBits[42];
+		parity += dcfBits[43];
+		parity += dcfBits[44];
+		parity += dcfBits[45];
+		parity += dcfBits[46];
+		parity += dcfBits[47];
+		parity += dcfBits[48];
+		parity += dcfBits[49];
+		parity += dcfBits[50];
+		parity += dcfBits[51];
+		parity += dcfBits[52];
+		parity += dcfBits[53];
+		parity += dcfBits[54];
+		parity += dcfBits[55];
+		parity += dcfBits[56];
+		parity += dcfBits[57];
+		if (parity % 2 == 0)
+		{
+			dcfBits[58] = 0;
+		}
+		else
+		{
+			dcfBits[58] = 1;
+		}
+		parity = 0;
+	}
 }
-
 
 void modulate(byte b)
 {
-  
-   if (b == 0)
-   {
-     
-	playtone(32667/8,100e6);
-	playtone(32767,900e6);
-    
-   }
-   else
-   {
-	playtone(32767/8,200e6);
-	playtone(32767,800e6);
-    
-   }
-  
+	if (b == 0)
+	{
+		playtone(32667/8,100e6);
+		playtone(32767,900e6);
+	}
+	else
+	{
+		playtone(32767/8,200e6);
+		playtone(32767,800e6);
+	}
 }
-
-
-
 
 void playtone(double Amplitude,uint32_t Timing)
 {
-	
 	typedef struct {
 		double Amplitude;
 		uint32_t WaitForThisSample;
 	} samplerf_t;
 	samplerf_t RfSample;
 	
-
 	RfSample.Amplitude=Amplitude;
 	RfSample.WaitForThisSample=Timing; //en 100 de nanosecond
-	printf("%f %ld\n",Amplitude,Timing);
-	if (write(FileFreqTiming,&RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
+	printf("%f %d\n",Amplitude,Timing);
+	if (write(FileFreqTiming, &RfSample, sizeof(samplerf_t)) != sizeof(samplerf_t)) {
 		fprintf(stderr, "Unable to write sample\n");
 	}
-
 }
 
-
-
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-
-if (argc > 1) {
-		
-		
+	if (argc > 1) 
+	{
 		char *sFileFreqTiming=(char *)argv[1];
-	       	FileFreqTiming = open(argv[1], O_WRONLY|O_CREAT, 0644);
+		FileFreqTiming = open(argv[1], O_WRONLY|O_CREAT, 0644);
 		
 		DCF_BITS(7,59);
+                int i;
+                for ( i = 0;i<60;i++)
+                {
+                   printf("%i", dcfBits[i]);
+                }
+                printf("\n");
 		loop();
-		playtone(0,1000e6);//last second
 		close(FileFreqTiming);
-		}
-		else
-		{
-			printf("usage : pidfc77  dcfpatern.bin\n");
-			exit(0);
-		}
+	}
+	else
+	{
+		printf("usage : pidfc77  dcfpatern.bin\n");
+		exit(0);
+	}
 		
-		return 0;
+	return 0;
 }
 	
 
