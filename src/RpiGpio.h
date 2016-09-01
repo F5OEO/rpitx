@@ -10,18 +10,19 @@
 #include <stdint.h>
 #include <ctype.h>
 
-char InitGpio();
-void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted);
+char InitGpio(void);
+
+void DisplayInfo();
 
 int model;
- uint32_t mem_flag;
+uint32_t mem_flag;
 
 volatile uint32_t *pwm_reg;
- volatile uint32_t *clk_reg;
- volatile uint32_t *dma_reg;
+volatile uint32_t *clk_reg;
+volatile uint32_t *dma_reg;
 volatile uint32_t *gpio_reg;
- volatile uint32_t *pcm_reg;
- volatile uint32_t *pad_gpios_reg;
+volatile uint32_t *pcm_reg;
+volatile uint32_t *pad_gpios_reg;
 
 void * map_peripheral(uint32_t base, uint32_t len);
 int gpioSetMode(unsigned gpio, unsigned mode);

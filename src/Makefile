@@ -5,8 +5,8 @@ CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS	= -lm -lrt -lpthread 
 
 
-../rpitx: RpiGpio.c RpiTx.c  mailbox.c RpiDma.c 
-		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c RpiGpio.c mailbox.c RpiDma.c $(LDFLAGS) 
+../rpitx: RpiGpio.c RpiTx.c  mailbox.c RpiDma.c raspberry_pi_revision.c
+		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c RpiGpio.c mailbox.c RpiDma.c raspberry_pi_revision.c $(LDFLAGS) 
 		
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pissb	= -lm -lrt -lpthread -lsndfile
@@ -50,3 +50,5 @@ install: all
 	install -m 0755 ../pifsq /usr/bin
 	install -m 0755 ../rpitx /usr/bin
 	install -m 0755 ../pidcf77 /usr/bin
+	cp dt-blob.bin /boot/
+	$(info !!! You should reboot if it is the first installation !!!)

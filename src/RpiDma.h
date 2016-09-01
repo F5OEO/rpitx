@@ -16,7 +16,7 @@
 #include <sys/mman.h>
 #include "mailbox.h"
 
-char InitDma(void *FunctionTerminate);
+char InitDma(void *FunctionTerminate, int* skipSignals);
 uint32_t mem_virt_to_phys(volatile void *virt);
 uint32_t mem_phys_to_virt(volatile uint32_t phys);
 
@@ -28,21 +28,17 @@ uint32_t mem_phys_to_virt(volatile uint32_t phys);
 #define NUM_CBS_MAIN 		((NUM_SAMPLES_MAX * CBS_SIZE_BY_SAMPLE))
 #define NUM_CBS			(NUM_CBS_MAIN)
 
-
 #define BCM2708_DMA_SRC_IGNOR           (1<<11)
 #define BCM2708_DMA_SRC_INC		(1<<8)
 #define BCM2708_DMA_DST_IGNOR           (1<<7)
 #define BCM2708_DMA_NO_WIDE_BURSTS	(1<<26)
 #define BCM2708_DMA_WAIT_RESP		(1<<3)
 
-
 #define BCM2708_DMA_D_DREQ		(1<<6)
 #define BCM2708_DMA_PER_MAP(x)		((x)<<16)
 #define BCM2708_DMA_END			(1<<1)
 #define BCM2708_DMA_RESET		(1<<31)
 #define BCM2708_DMA_INT			(1<<2)
-
-
 
 #define DMA_CS			(0x00/4)
 #define DMA_CONBLK_AD		(0x04/4)
@@ -74,7 +70,7 @@ struct {
 // USE CHANNEL 4 AND 5 which seems to be free
 // On Jessie, channel 4 and 5 seems to crash : set to DMA 8 .
 #define DMA_CHANNEL_WHEEZY 14
-#define DMA_CHANNEL_JESSIE 8  
+#define DMA_CHANNEL_JESSIE 5  
 //#define DMA_CHANNEL_PWMFREQUENCY 5
 
 char DMA_CHANNEL;
@@ -122,10 +118,7 @@ struct control_data_s {
 	uint32_t SharedFrequency2;
 	uint32_t DmaPwmfControlRegister;
 	uint32_t SharedFrequencyTab[100];
-	
 };
-
-
 
 struct control_data_s *ctl;
 
