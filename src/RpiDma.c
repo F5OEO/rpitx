@@ -89,6 +89,7 @@ char InitDma(void *FunctionTerminate, int* skipSignals)
 		printf("Failed to open mailbox\n");
 		return(0);
 	}
+	printf("%d Size NUM PAGES %d PAGE_SIZE %d\n",(sizeof(struct control_data_s)),NUM_PAGES,PAGE_SIZE); 
 	mbox.mem_ref = mem_alloc(mbox.handle, NUM_PAGES* PAGE_SIZE, PAGE_SIZE, mem_flag);
 	/* TODO: How do we know that succeeded? */
 	//printf("mem_ref %x\n", mbox.mem_ref);

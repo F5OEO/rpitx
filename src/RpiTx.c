@@ -65,7 +65,6 @@ Optimize CPU on PWMFrequency
 
 #define SCHED_PRIORITY 30 //Linux scheduler priority. Higher = more realtime
 
-//#define WITH_MEMORY_BUFFER
 
 #define PROGRAM_VERSION "0.2"
 
@@ -83,6 +82,12 @@ Optimize CPU on PWMFrequency
 #define PLL_192			0x1
 
 #define HEADER_SIZE 44
+
+// DMA TIMING : depends on Pi Model : Calibration is better
+#define FREQ_DELAY_TIME 0
+int FREQ_MINI_TIMING=157;
+int PWMF_MARGIN = 1120; //A Margin for now at 1us with PCM ->OK
+int globalppmpll=0;
 
 typedef unsigned char 	uchar;      // 8 bit
 typedef unsigned short	uint16;     // 16 bit
@@ -120,33 +125,25 @@ static void udelay(int us)
 
 static void stop_dma(void)
 {
-	#ifdef WITH_MEMORY_BUFFER
-	//pthread_cancel(th1);
-	EndOfApp=1;
-	 pthread_join(th1, NULL);
-	#endif
+	
 	if (FileInHandle != -1) {
 		close(FileInHandle);
 		FileInHandle = -1;
 	}
 	if (dma_reg) {
 		//Stop Main DMA
-		dma_reg[DMA_CS+DMA_CHANNEL*0x40] = BCM2708_DMA_INT | BCM2708_DMA_END;
+		//STop DMA
+		dma_reg[DMA_CS+DMA_CHANNEL*0x40] |= DMA_CS_ABORT;
 		udelay(100);
-		dma_reg[DMA_CS+DMA_CHANNEL*0x40] = BCM2708_DMA_RESET;
+		dma_reg[DMA_CS+DMA_CHANNEL*0x40]&= ~DMA_CS_ACTIVE;
+		dma_reg[DMA_CS+DMA_CHANNEL*0x40] |= DMA_CS_RESET;
 		udelay(100);
-		//Stop  DMA PWMFrequency
-		/*
-		dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_INT | BCM2708_DMA_END;
-		udelay(100);
-		dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_RESET;
-		udelay(100);
-		*/
+		
 
 		//printf("Reset DMA Done\n");
 		clk_reg[GPCLK_CNTL] = 0x5A << 24  | 0 << 9 | 1 << 4 | 6; //NO MASH !!!
 		udelay(500);
-		gpio_reg[GPFSEL0] = (gpio_reg[GPFSEL0] & ~(7 << 12)) | (0 << 12); //DISABLE CLOCK - In case used by digilite
+		gpio_reg[GPFSEL0] = (gpio_reg[GPFSEL0] & ~(7 << 12)) | (0 << 12); //DISABLE CLOCK -
 		clk_reg[PWMCLK_CNTL] = 0x5A000006 | (0 << 9) ;
 		udelay(500);	
 		clk_reg[PCMCLK_CNTL] = 0x5A000006;	
@@ -201,7 +198,7 @@ void setSchedPriority(int priority)
 }
 
 uint32_t DelayFromSampleRate=0;
-int Instrumentation=1;
+int Instrumentation=0;
 int UsePCMClk=0;
 uint32_t Originfsel=0;
 
@@ -224,18 +221,12 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	if(UsePCMClk==1)
 			gpio_reg[GPFSEL0] = (Originfsel & ~(7 << 12)) | (4 << 12); //ENABLE CLOCK ON GPIO CLK
 
-	/*
-	gpio_reg[GPFSEL0] = (gpio_reg[GPFSEL0] & ~(7 << 12)) | (4 << 12); //ENABLE CLOCK ON GPIO CLK
-	usleep(1000);
-	clk_reg[GPCLK_CNTL] = 0x5A << 24 |0<<4 | PLL_1GHZ;
-	usleep(1000);
-	clk_reg[GPCLK_CNTL] = 0x5A << 24  | MASH << 9 | 1 << 4 | PLL_1GHZ; // MASH 1
-	*/
 		
 	// ------------------- MAKE MAX OUTPUT CURRENT FOR GPIO -----------------------
 	char OutputPower=7;
 	pad_gpios_reg[PADS_GPIO_0] = 0x5a000000 + (OutputPower&0x7) + (1<<4) + (0<<3); // Set output power for I/Q GPIO18/GPIO19 
 
+#ifdef USE_PCM
 	//------------------- Init PCM ------------------
 	pcm_reg[PCM_CS_A] = 1;				// Disable Rx+Tx, Enable PCM block
 	udelay(100);
@@ -247,8 +238,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	
 	FreqDividerPCM=(int) ((double)PllFreq1GHZ/(SymbolRate*NbStepPCM/**PwmNumberStep*/));
 	FreqFractionnalPCM=4096.0 * (((double)PllFreq1GHZ/(SymbolRate*NbStepPCM/**PwmNumberStep*/))-FreqDividerPCM);
-	//FreqDividerPCM=(int) ((double)PllFreq1GHZ/(1000000L*NbStepPCM/**PwmNumberStep*/)); //SET TO 10MHZ = 100ns
-	//FreqFractionnalPCM=4096.0 * (((double)PllFreq1GHZ/(1000000L*NbStepPCM/**PwmNumberStep*/))-FreqDividerPCM);
+	
 	printf("SampleRate=%d\n",SymbolRate);
 	if((FreqDividerPCM>4096)||(FreqDividerPCM<2)) printf("Warning : SampleRate is not valid\n"); 
 	clk_reg[PCMCLK_DIV] = 0x5A000000 | ((FreqDividerPCM)<<12) | FreqFractionnalPCM;
@@ -256,17 +246,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	//printf("Div PCM %d FracPCM %d\n",FreqDividerPCM,FreqFractionnalPCM);
 	
 	 DelayFromSampleRate=(1e9/(SymbolRate));
-	//printf("Delay PCM (min step)=%d\n",DelayFromSampleRate);
-	//uint32_t DelayFromSampleRate=(1000000.0-2080.0)/27.4425;
-	//uint32_t DelayFromSampleRate=1000000;
-	//uint32_t DelayFromSampleRate=round((1000000-(2300))/27.4425);
-	//TimeDelay=0 : 2.08us
-	//TimeDelay=10000 : 280us
-	//TimdeDelay=100000 :2774us
-	//TimdeDelay=1000000 : 27400 us
-	//uint32_t DelayFromSampleRate=5000;
-	//printf("DelaySample %d Delay %d\n",DelayFromSampleRate,(int)(27.4425*DelayFromSampleRate+2300));
-		
+			
 	pcm_reg[PCM_TXC_A] = 0<<31 | 1<<30 | 0<<20 | 0<<16; // 1 channel, 8 bits
 	udelay(100);
 	
@@ -282,10 +262,10 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	clk_reg[PCMCLK_CNTL] = 0x5A000010 |(1 << 9)| PLL_1GHZ	/*PLL_1GHZ*/;		// Source=PLLC and enable
 	udelay(100);
 	pcm_reg[PCM_CS_A] |= 1<<2; //START TX PCM
-
+#endif
 	// FIN PCM
 
-	//INIT PWM in Serial Mode
+	//INIT PWM in Serial Mode : WE USE PWM OUPUT
 	if(UsePCMClk==0)
 	{
 		gpioSetMode(18, 2); /* set to ALT5, PWM1 : RF On PIN */	
@@ -310,7 +290,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	}
 	// FIN INIT PWM
 
-	//******************* INIT CLK MODE
+	//******************* INIT CLK MODE : WE OUTPUT CLK INSTEAD OF PWM OUTPUT
 	if(UsePCMClk==1)
 	{
 		clk_reg[GPCLK_CNTL] = 0x5A000000 | (MASH << 9) |PllNumber/*PLL_1GHZ*/ ;
@@ -319,6 +299,8 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 		udelay(300);
 		clk_reg[GPCLK_CNTL] = 0x5A000010 | (MASH << 9) | PllNumber /*PLL_1GHZ*/; //MASH3 : A TESTER SI MIEUX en MASH1
 	}
+
+
 	ctl = (struct control_data_s *)virtbase; // Struct ctl is mapped to the memory allocated by RpiDMA (Mailbox)
 	dma_cb_t *cbp = ctl->cb;
 
@@ -333,30 +315,16 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	uint32_t phys_gpio_pads_addr =0x7e10002c;		      
 	uint32_t phys_pcm_clock =     0x7e10109c ;
 	uint32_t phys_pcm_clock_div_addr = 0x7e10109c;//CLOCK Frequency Setting
-	uint32_t phys_DmaPwmfRegCtrl = 0x7e007000+DMA_CHANNEL_PWMFREQUENCY*0x100+0x4;
+	
 	uint32_t phys_gpfsel = 0x7E200000 ; 
 	int samplecnt;
 	
-	gpioSetMode(27,1); // OSCILO SUR PIN 27
-	ctl->GpioDebugSampleRate=1<<27; // GPIO 27/ PIN 13 HEADER IS DEBUG SIGNAL OF SAMPLERATE
-	ctl->DmaPwmfControlRegister=mem_virt_to_phys((void *)(ctl->cbdma2) ); 
-	
+		
 	for (samplecnt = 0; samplecnt <  NUM_SAMPLES ; samplecnt++)
 	{
-		//ctl->sample[samplecnt].WaitForThisSample=DelayFromSampleRate;
-		ctl->sample[samplecnt].PCMRegister=0x5A000000 | ((FreqDividerPCM)<<12) | FreqFractionnalPCM;
-//@0
-		cbp->info = 0;//BCM2708_DMA_WAIT_RESP|BCM2708_DMA_NO_WIDE_BURSTS;//BCM2708_DMA_NO_WIDE_BURSTS /*| BCM2708_DMA_WAIT_RESP | */;
-		cbp->src = mem_virt_to_phys(&ctl->GpioDebugSampleRate); //Clear
-		if(Instrumentation==1)
-			cbp->dst = phys_gpio_clear_addr;
-		else
-			cbp->dst = dummy_gpio;
-		cbp->length = 4;
-		cbp->stride = 0;
-		cbp->next = mem_virt_to_phys(cbp + 1);
-		cbp++;
-//@1				
+		
+
+//@0				
 		//Set Amplitude by writing to PWM_SERIAL via PADS	
 		cbp->info = 0;//BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP  ;
 		cbp->src = mem_virt_to_phys(&ctl->sample[samplecnt].Amplitude1);
@@ -365,7 +333,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 		cbp->stride = 0;
 		cbp->next = mem_virt_to_phys(cbp + 1);		
 		cbp++;
-//@2				
+//@1				
 		//Set Amplitude by writing to PWM_SERIAL via Patern	
 		cbp->info = 0;//BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP  ;
 		cbp->src = mem_virt_to_phys(&ctl->sample[samplecnt].Amplitude2); 
@@ -377,80 +345,25 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 		cbp->stride = 0;
 		cbp->next = mem_virt_to_phys(cbp + 1); 
 		cbp++;
-//@3
+//2
 		//Set PWMFrequency
-		cbp->info =/*BCM2708_DMA_NO_WIDE_BURSTS |BCM2708_DMA_WAIT_RESP|*/BCM2708_DMA_SRC_INC;
+		cbp->info =/*BCM2708_DMA_NO_WIDE_BURSTS*/ BCM2708_DMA_SRC_INC|BCM2708_DMA_NO_WIDE_BURSTS;
+		// BCM2708_DMA_WAIT_RESP : without 160ns, with 300ns
 		cbp->src = mem_virt_to_phys(&ctl->sample[samplecnt].FrequencyTab[0]);
 		if(UsePCMClk==0)		
 			cbp->dst = phys_pwm_clock_div_addr;
 		if(UsePCMClk==1)		
 			cbp->dst = phys_clock_div_addr;
-		cbp->length = 4;//mem_virt_to_phys(&ctl->sample[samplecnt].PWMF1); //Be updated by main DMA
+		cbp->length = 4; //Be updated by main DMA
 		cbp->stride = 0;
 		cbp->next = mem_virt_to_phys(cbp + 1); 
 		cbp++;
-//@4
-		cbp->info =0;// BCM2708_DMA_WAIT_RESP|BCM2708_DMA_NO_WIDE_BURSTS  ; //A
-		cbp->src = mem_virt_to_phys(&ctl->GpioDebugSampleRate); //Set
-				
-		if(Instrumentation==1)
-			cbp->dst = phys_gpio_set_addr;
-		else
-			cbp->dst = dummy_gpio;
-		cbp->length = 4;
-		cbp->stride = 0;
-		cbp->next = mem_virt_to_phys(cbp + 1);
-		cbp++;
-//@5
-		//SET PCM_FIFO TO WAIT	
-
-		/*cbp->info = 0;//BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP|BCM2708_DMA_D_DREQ |BCM2708_DMA_PER_MAP(2);
-		cbp->src = mem_virt_to_phys(virtbase); //Dummy DATA
-		cbp->dst = dummy_gpio;//phys_pcm_fifo_addr;
-		cbp->length = 4;
-		cbp->stride = 0;
-		cbp->next = mem_virt_to_phys(cbp + 1);
-		cbp++;*/
 	}
 			
 	cbp--;
 	cbp->next = mem_virt_to_phys((void*)virtbase);
 			
-// *************************************** DMA CHANNEL 2 : PWM FREQUENCY *********************************************
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!! NOT USED ANYMORE ************************************************************
-	cbp = ctl->cbdma2;
 
-	//printf("DMA2 %x\n",mem_virt_to_phys(&ctl->cb[NUM_CBS_MAIN]));
-
-	gpioSetMode(17,1); // OSCILO SUR PIN 17
-	ctl->GpioDebugPWMF=1<<17; // GPIO 17/ PIN 11 HEADER IS DEBUG SIGNAL OF PWMFREQUENCY
-				
-//@0 = CBS_MAIN+0 1280 ns for 2 instructions
-	cbp->info = BCM2708_DMA_NO_WIDE_BURSTS /*| BCM2708_DMA_WAIT_RESP | */;
-	cbp->src = mem_virt_to_phys(&ctl->GpioDebugPWMF); //Clear
-	cbp->dst = phys_gpio_set_addr;
-	cbp->length = 4;
-	cbp->stride = 0;
-	cbp->next = mem_virt_to_phys(cbp + 1);
-	cbp++;
-
-//@1 = CBS_MAIN+1	Length*27ns			
-	cbp->info =BCM2708_DMA_WAIT_RESP |/*BCM2708_DMA_NO_WIDE_BURSTS| BCM2708_DMA_WAIT_RESP|*//*(0x8<< 21) |*/ BCM2708_DMA_SRC_INC;
-	cbp->src = mem_virt_to_phys(&ctl->SharedFrequencyTab[0]);//mem_virt_to_phys(&ctl->SharedFrequencyTab[0]);//mem_virt_to_phys(&ctl->SharedFrequency1); 
-	cbp->dst = phys_pwm_clock_div_addr;
-	cbp->length = ctl->sample[0].PWMF1; //Be updated by main DMA
-	cbp->stride = 0;
-	cbp->next = mem_virt_to_phys(cbp + 1);
-	cbp++;
-//@2 = CBS_MAIN+2
-	//** PWM LOW
-	cbp->info = BCM2708_DMA_NO_WIDE_BURSTS /*| BCM2708_DMA_WAIT_RESP |*/ ; //A
-	cbp->src = mem_virt_to_phys(&ctl->GpioDebugPWMF); //Set
-	cbp->dst = phys_gpio_clear_addr;
-	cbp->length = 4;
-	cbp->stride = 0;
-	cbp->next = mem_virt_to_phys(ctl->cbdma2); // Loop to begin of DMA 2
-				
 	// ------------------------------ END DMA INIT ---------------------------------
 	
 	dma_reg[DMA_CS+DMA_CHANNEL*0x40] = BCM2708_DMA_RESET;
@@ -461,18 +374,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	udelay(100);
 	dma_reg[DMA_DEBUG+DMA_CHANNEL*0x40] = 7; // clear debug error flags
 	udelay(100);
-	// START DMA will be later when data coming in 
-	//dma_reg[DMA_CS+DMA_CHANNEL*0x40] = 0x10FF0001;	// go, mid priority, wait for outstanding writes :7 Seems Max Priorit
-	//WAIT FOR OUTSTADING_WRITE make 50ns de plus pour ecrire dans un registre
-	//printf("END INIT SSTV\n");
-	/*dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_RESET;
-	udelay(1000);
-	dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = BCM2708_DMA_INT | BCM2708_DMA_END;
-	udelay(100);
-	dma_reg[DMA_CONBLK_AD+DMA_CHANNEL_PWMFREQUENCY*0x40]=mem_virt_to_phys((void *)(ctl->cbdma2) );
-	udelay(100);
-	dma_reg[DMA_DEBUG+DMA_CHANNEL_PWMFREQUENCY*0x40] = 7; // clear debug error flags
-	*/
+	
 	return 1;		
 }
 
@@ -514,36 +416,24 @@ void IQToFreqAmp(int I,int Q,double *Frequency,int *Amp,int SampleRate)
 }
 
 
-// A utility function to swap to integers
-void swap (uint32_t *a, uint32_t *b)
-{
-    int temp = *a;
-    *a = *b;
-    *b = temp;
-}
- 
 
- 
-// A function to generate a random permutation of arr[]
-void randomize ( uint32_t arr[], int n )
-{
-    // Use a different seed value so that we don't get same
-    // result each time we run this program
-    srand ( time(NULL) );
- 
-    // Start from the last element and swap one by one. We don't
-    // need to run for the first element that's why i > 0
-    int i;
-    for ( i = n-1; i > 0; i--)
-    {
-	
-        // Pick a random index from 0 to i
-        int j = rand() % (i+1);
- 
-        // Swap arr[i] with the element at random index
-        swap(&arr[i], &arr[j]);
-    }
-}
+
+inline void shuffle_int(uint32_t list[], size_t len)
+{		
+	int j;						
+	uint32_t tmp;					
+	while(len)
+	{					
+		j = rand() % (len+1);				
+		if (j != len - 1)
+		{			
+			tmp = list[j];			
+			list[j] = list[len - 1];	
+			list[len - 1] = tmp;		
+		}					
+		len--;					
+	}						
+}	
 
 inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude,int NoSample,uint32_t WaitNanoSecond,uint32_t SampleRate,char NoUsePWMF,int debug)
 {
@@ -559,10 +449,8 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 									0xAAAA8000,0xAAAAA000,0xAAAAA800,0xAAAAAA00,
 									0xAAAAAA80,0xAAAAAAA0,0xAAAAAAA8,0xAAAAAAAA,0xAAAAAAAA};
 	
-	static double FixedNumberStepForGpio=(1280.0)/27.0; // Gpio set is 1280ns, Wait is Number of 27ns
-	#define	STEP_AVERAGE_AMPLITUDE 1000
-	static uint32_t HistoryAmplitude[STEP_AVERAGE_AMPLITUDE];
-	static uint32_t OldAmplitude=0;
+	
+	
 	static char First=1;
 				
 	ctl = (struct control_data_s *)virtbase; // Struct ctl is mapped to the memory allocated by RpiDMA (Mailbox)
@@ -576,27 +464,9 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 	// WITH DMA_CTL WITHOUT BCM2708_DMA_WAIT_RESP
 	// Time = NBStep * 157 ns + 1360 ns
 				
-	#define FREQ_MINI_TIMING 157 
-	#define FREQ_DELAY_TIME 0
-	//#define PWMF_MARGIN 2700 //A Margin for now at 1us with PCM
-	//#define PWMF_MARGIN 2400 //A Margin for now at 1us with PCM ->OK
-	#define PWMF_MARGIN 2198 // Seems to work well with SSTV
-	#define PWM_STEP_MAXI 200
+	
 				
-	// WITH BCM2708_DMA_WAIT_RESP
-	// Time = NBStep * 420 ns + 420 ns
-	// GOOD BY EXPERIMENT
-	/*#define FREQ_MINI_TIMING 500
-	#define FREQ_DELAY_TIME 500
-	#define PWMF_MARGIN (1000) //A Margin for now at 1us
-	#define PWM_STEP_MAXI 200
-	*/
-				
-	/*#define FREQ_MINI_TIMING 420
-	#define FREQ_DELAY_TIME 0
-	#define PWMF_MARGIN (3000) //A Margin for now at 1us
-	#define PWM_STEP_MAXI 200
-	*/	
+	
 	if(WaitNanoSecond==0)
 	{
 		if(SampleRate!=0)
@@ -604,19 +474,8 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 	}	
 				
 	PwmNumberStep=WaitNanoSecond/FREQ_MINI_TIMING;
-	//if((PwmNumberStep%2)!=0) PwmNumberStep++; // Paire
-				
-	/*
-	if(WaitNanoSecond<FREQ_DELAY_TIME) SkipFrequency=1; else SkipFrequency=0; 
-		if(WaitNanoSecond>(FREQ_DELAY_TIME+PWMF_MARGIN))
-				PwmNumberStep=(WaitNanoSecond-FREQ_DELAY_TIME-PWMF_MARGIN)/FREQ_MINI_TIMING;
-		else 	
-				PwmNumberStep=2; // Mini
-	*/
 	if(PwmNumberStep>PWM_STEP_MAXI) PwmNumberStep=PWM_STEP_MAXI;
 				
-	//PwmNumberStep=100;
-	//printf("Waitnano %d NbStep=%d\n",WaitNanoSecond,PwmNumberStep);
 
 	// ********************************** PWM FREQUENCY PROCESSING *****************************
 				
@@ -630,8 +489,6 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 	uint32_t FreqDividerf1=(FreqFractionnalf2!=4095)?FreqDividerf2:FreqDividerf2+1;				
 	uint32_t FreqFractionnalf1=(FreqFractionnalf2!=4095)?FreqFractionnalf2+1:0;
 	
-	//FreqDividerf2=FreqDividerf2*2;//debug
-
 	double f1=PllUsed/(FreqDividerf1+(double)FreqFractionnalf1/4096.0);
 	double f2=PllUsed/(FreqDividerf2+(double)FreqFractionnalf2/4096.0); // f2 is the higher frequency
 	double FreqTuningUp=PllUsed/(FreqDividerf2+(double)FreqFractionnalf2/4096.0);
@@ -667,7 +524,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 	NbF2=0;
 	NbF1F2=0;
 
-	//if(CompteurDebug%2000==0) printf("PwmNumberStep %d PWMFrequency %d\n",PwmNumberStep,PWMFrequency);
+	
 	int AdaptPWMFrequency;			
 	if((PwmNumberStep-PWMFrequency-(PWMF_MARGIN+FREQ_DELAY_TIME)/FREQ_MINI_TIMING)>PwmNumberStep/2)
 	{
@@ -676,7 +533,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 		AdaptPWMFrequency=PWMFrequency;
 		NbF1=0;
 		NbF2=(PWMF_MARGIN+FREQ_DELAY_TIME)/FREQ_MINI_TIMING;
-		//NbF2=0;
+		
 	}
 	else // SWAP F1 AND F2
 	{
@@ -684,13 +541,13 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 		RegisterF2=0x5A000000 | (FreqDividerf1<<12) | (FreqFractionnalf1);
 		RegisterF1=0x5A000000 | (FreqDividerf2<<12) | (FreqFractionnalf2);
 		AdaptPWMFrequency=PwmNumberStep-PWMFrequency;
-		NbF1=0;//(PWMF_MARGIN+FREQ_DELAY_TIME)/FREQ_MINI_TIMING;
+		NbF1=0;
 		NbF2=(PWMF_MARGIN+FREQ_DELAY_TIME)/FREQ_MINI_TIMING;
 	}
 				
 	i=0;
 	NbF1F2=NbF1+NbF2;
-	//if((CompteurDebug%DEBUG_RATE)==0)	printf("F1 %d \n",AdaptPWMFrequency);
+	
 	if(NoUsePWMF==1)
 	{
 		RegisterF1=0x5A000000 | (FreqDividerf1<<12) | (FreqFractionnalf1);
@@ -716,46 +573,22 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 			}
 		}
 		if (Randomize)
-			randomize(ctl->sample[NoSample].FrequencyTab,i);
+			shuffle_int(ctl->sample[NoSample].FrequencyTab,i);
+			
 		//SHould finished by F2
 		ctl->sample[NoSample].FrequencyTab[i++]=RegisterF2;
 		NbF2++;
 		NbF1F2++;
 	}	
 				
-	//if((CompteurDebug%DEBUG_RATE)==0)	printf("NbF1=%d NbF2=%d i=%d\n",NbF1,NbF2,i);
-				
-	cbpwrite=cbp+3;
+	cbpwrite=cbp+2;
 	cbpwrite->length=i*4;
 
-	//ctl->sample[NoSample].PWMF1=i*4;//((PWMFrequency-FixedNumberStepForGpio)/4)*4;
-	//ctl->sample[NoSample].PWMF2=0;
+	
 				
 	// ****************************** AMPLITUDE PROCESSING **********************************************
 				
-	// ---------------- MAKE AN AVERAGE  AMPLITUDE ---------------------
-	/*
-	if(First==1)
-	{
-		memset(HistoryAmplitude,0,STEP_AVERAGE_AMPLITUDE*sizeof(uint32_t));
-		First=0;
-	}
-	memcpy(HistoryAmplitude,HistoryAmplitude+1,(STEP_AVERAGE_AMPLITUDE-1)*sizeof(uint32_t));
-	HistoryAmplitude[STEP_AVERAGE_AMPLITUDE-1]=Amplitude;
-	static uint32_t AverageAmplitude;
-	static int StepAmplitude;
-	AverageAmplitude=0;
-				
-	for(StepAmplitude=0;StepAmplitude<STEP_AVERAGE_AMPLITUDE;StepAmplitude++)
-		AverageAmplitude+= HistoryAmplitude[StepAmplitude];
-	if((NoSample%STEP_AVERAGE_AMPLITUDE)==0)
-	{
-		Amplitude=AverageAmplitude/STEP_AVERAGE_AMPLITUDE;
-		OldAmplitude=Amplitude;
-	}
-	else
-		Amplitude=OldAmplitude;
-	*/
+	
 	Amplitude=(Amplitude>32767)?32767:Amplitude;	
 	int IntAmplitude=(Amplitude*7.0)/32767.0; // Convert to 8 amplitude step
 				
@@ -784,103 +617,136 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 
 	static int OldIntAmplitude=0;
 				
-	/*if(((OldIntAmplitude!=0)&&(IntAmplitude==0))||((OldIntAmplitude==0)&&(IntAmplitude!=0)))
-	{
-		cbpwrite=cbp+1; 
-		cbpwrite->next=mem_virt_to_phys(cbpwrite + 1); //Set Patern	
-	}
-	else
-	{
-		cbpwrite=cbp+1; 
-		cbpwrite->next=mem_virt_to_phys(cbpwrite + 2); //DOn't set patern
-	}
-	OldIntAmplitude=IntAmplitude;	*/			
-				
-	//IntAmplitude=IntAmplitude+3; // Make a little more gain if amplitude not 0
+	
 	if(IntAmplitude>7) IntAmplitude=7;
-	//printf("%d\n",IntAmplitude);
-	ctl->sample[NoSample].Amplitude1=0x5a000000 + (IntAmplitude&0x7) + (1<<4) + (0<<3); // Set output power for I/Q GPIO18/GPIO19;//TEST +1
+	
+	ctl->sample[NoSample].Amplitude1=0x5a000000 + (IntAmplitude&0x7) + (1<<4) + (0<<3); 
 				
-	static uint32_t phys_pwm_fifo_addr = 0x7e20c000 + 0x18;//PWM Fifo
-	static uint32_t dummy_gpio = 0x7e20b000;
-	static uint32_t phys_gpio_pads_addr =0x7e10002c;	
-	/*
-	cbpwrite=cbp+1;
-	cbpwrite->dst= phys_gpio_pads_addr;
-	cbpwrite=cbp+2;
-	cbpwrite->dst=phys_pwm_fifo_addr;
-	*/
-				
-	// ****************************** WAIT PROCESSING **********************************************
-				
-	if(WaitNanoSecond!=0) //ModeRF
-	{
-		/*if(WaitNanoSecond<PWMF_MARGIN) // Skip Frequency setting, just waiting
-		{
-			cbp->next=mem_virt_to_phys(cbp + 6);
-			printf("WaitNano Mini %d\n",WaitNanoSecond);
-		}
-		else
-			cbp->next=mem_virt_to_phys(cbp + 1);
-		*/
 
-		static uint32_t NbRepeat;
-		static int Relicat=0;
-		NbRepeat=WaitNanoSecond/DelayFromSampleRate; // 1GHZ/(SAMPLERATE*NbStepPCM)
-		Relicat+=(WaitNanoSecond%DelayFromSampleRate);
-		if(Relicat>=DelayFromSampleRate) 
-		{
-			Relicat=Relicat-DelayFromSampleRate;
-			NbRepeat+=1;
-		}
-		if((DelayFromSampleRate+Relicat)<0)
-		{
-			Relicat=DelayFromSampleRate+Relicat;
-			NbRepeat-=1;
-		}
-					
-		//static uint32_t NbRepeat=1;
-
-		//	cbpwrite=cbp+5; // Set a repeat to wait PCM
-		//	cbpwrite->length=4*(NbRepeat); //-> OK
-					
-		//printf("NbRepeat %d Relicat %d WaitNanoSecond%d DelayFromSampleRate%d\n",NbRepeat,Relicat,WaitNanoSecond,DelayFromSampleRate);
-	}
 }
 
-// Call ntp_adjtime() to obtain the latest calibration coefficient.
-void update_ppm(double  ppm) 
+
+
+
+
+int GetDMADelay(int Step)
+{
+	
+	//Calibrate DMA Rate
+	// =====================================================
+	static volatile uint32_t cur_cb,last_cb;
+	struct timespec gettime_now;
+	int32_t start_time,time_difference;
+	int last_sample;
+	int this_sample; 
+	int free_slots;
+
+	dma_cb_t *cbp = ctl->cb;
+	cur_cb = (uint32_t)virtbase; // DMA AT 1st CBS
+	dma_reg[DMA_CONBLK_AD+DMA_CHANNEL*0x40]=mem_virt_to_phys((void*)cur_cb);
+	usleep(100);
+	int samplecnt;
+	for (samplecnt = 0; samplecnt <  NUM_SAMPLES ; samplecnt++)
+	{
+		
+		cbp+=2;
+		cbp->length = (uint32_t)4L*Step;
+		cbp++;
+	}
+	
+	dma_reg[DMA_CS+DMA_CHANNEL*0x40] = DMA_CS_PRIORITY(7) | DMA_CS_PANIC_PRIORITY(7) | DMA_CS_DISDEBUG |DMA_CS_ACTIVE;	// START DMA : go, mid priority, wait for outstanding writes :7 Seems Max Priority
+	usleep(5000); //Wait to be sure DMA is running stable
+	int i;
+	int SumDelay=0;
+	for(i=0;i<10;i++)
+	{
+
+	
+
+		last_cb = mem_phys_to_virt((uint32_t)(dma_reg[DMA_CONBLK_AD+DMA_CHANNEL*0x40]));
+		last_sample = (last_cb - (uint32_t)virtbase) / (sizeof(dma_cb_t) * CBS_SIZE_BY_SAMPLE);
+
+		clock_gettime(CLOCK_REALTIME, &gettime_now);
+		start_time = gettime_now.tv_nsec;
+
+		// ONE SAMPLE SHOULD BE MINIMUM AROUND Time = NBStep * 157 ns + 1360 ns +1360*4 ns = 6us and MAX 200*157+1360*5 = 35us
+		// Sleep at 80% de DELAY*NUM_SAMPLE
+		// BY removing 2 CBP = 300ns gain
+		do
+		{
+			usleep(10);
+			cur_cb = mem_phys_to_virt((uint32_t)(dma_reg[DMA_CONBLK_AD+DMA_CHANNEL*0x40]));
+			this_sample = (cur_cb - (uint32_t)virtbase) / (sizeof(dma_cb_t) * CBS_SIZE_BY_SAMPLE);
+			free_slots = this_sample - last_sample;
+			if (free_slots < 0) // WARNING : ORIGINAL CODE WAS < strictly
+				free_slots += NUM_SAMPLES;
+			clock_gettime(CLOCK_REALTIME, &gettime_now);
+		
+		}
+		while(free_slots<=NUM_SAMPLES*0.6);
+	 	
+	
+
+		time_difference = gettime_now.tv_nsec - start_time;
+		if(time_difference<0) time_difference+=1E9;
+
+		//printf("Delay = %d\n",time_difference/free_slots);
+
+		SumDelay+=time_difference/free_slots;
+	}
+	
+	//STop DMA
+	dma_reg[DMA_CS+DMA_CHANNEL*0x40] |= DMA_CS_ABORT;//BCM2708_DMA_INT | BCM2708_DMA_END;
+	udelay(100);
+	dma_reg[DMA_CS+DMA_CHANNEL*0x40]&= ~DMA_CS_ACTIVE;
+	dma_reg[DMA_CS+DMA_CHANNEL*0x40] |= DMA_CS_RESET; //BCM2708_DMA_ABORT|BCM2708_DMA_RESET;
+	udelay(100);
+
+	return SumDelay/10;
+}
+
+int CalibrateSystem(int *ppm,int *BaseDelayDMA,int *StepDelayDMA)
 {
 	struct timex ntx;
 	int status;
-	double ppm_new;
+	//Calibrate Clock system (surely depends also on PLL PPM
+	// =====================================================
 
 	ntx.modes = 0; /* only read */
-	status = ntp_adjtime(&ntx);
+  	status = ntp_adjtime(&ntx);
+	double clockppm;
 
-	if (status != TIME_OK) {
-		//cerr << "Error: clock not synchronized" << endl;
-		//return;
-	}
+  	if (status != TIME_OK)
+	{
+    		printf("Error: NTP\n");
+		return 0;
+ 	}
+	clockppm = (double)ntx.freq/(double)(1 << 16);
+	if(abs(clockppm)<200)
+		*ppm=clockppm;
+	//printf("Clock PPM = %f\n",ppm);
+	int i; 
+	int BaseDelay=0;
+	BaseDelay=GetDMADelay(0);
 
-	ppm_new = (double)ntx.freq/(double)(1 << 16); /* frequency scale */
-	if (abs(ppm_new)>200) {
-		printf( "Warning: absolute ppm value is greater than 200 and is being ignored!\n");
-	} else {
-		if (ppm!=ppm_new) {
-			printf("  Obtained new ppm value: %f\n",ppm_new);
-		}
-		ppm=ppm_new;
-	}
+	*BaseDelayDMA=BaseDelay;
+	*StepDelayDMA=(GetDMADelay(PWM_STEP_MAXI/2)-(*BaseDelayDMA))/(PWM_STEP_MAXI/2);
+	//for(i=1;i<200;i+=10)
+		//printf("Step %d =%d\n",i,(GetDMADelay(i)-BaseDelay)/i);
+	return 1;
 }
 
-int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals)
-{
+int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals,int SetDma)
+{	
 	InitGpio();
 	InitDma(terminate, skipSignals);
-	
+	if(SetDma) DMA_CHANNEL=SetDma;
 	SetupGpioClock(SampleRate,TuningFrequency);
-	
+//int FREQ_MINI_TIMING=157;
+//int PWMF_MARGIN = 1120; //A Margin for now at 1us with PCM ->OK
+
+	if(CalibrateSystem(&globalppmpll,&PWMF_MARGIN,&FREQ_MINI_TIMING))
+		printf("Calibrate : ppm=%d DMA %dns:%dns\n",globalppmpll,FREQ_MINI_TIMING,PWMF_MARGIN);
 	//printf("Timing : 1 cyle=%dns 1sample=%dns\n",NBSAMPLES_PWM_FREQ_MAX*400*3,(int)(1e9/(float)SampleRate));
 	return 1;
 }
@@ -906,6 +772,8 @@ Usage:\nrpitx [-i File Input][-m ModeInput] [-f frequency output] [-s Samplerate
 PROGRAM_VERSION);
 
 } /* end function print_usage */
+
+
 
 double GlobalTuningFrequency;
 int HarmonicNumber =1;
@@ -968,10 +836,10 @@ int main(int argc, char* argv[])
 	float SetFrequency=1e6;//1MHZ
 	float ppmpll=0.0;
 	char NoUsePwmFrequency=0;
-
+	int SetDma=0;
 	while(1)
 	{
-		a = getopt(argc, argv, "i:f:m:s:p:hld:w:c:r");
+		a = getopt(argc, argv, "i:f:m:s:p:hld:w:c:ra:");
 	
 		if(a == -1) 
 		{
@@ -1009,7 +877,7 @@ int main(int argc, char* argv[])
 		case 'l': // loop mode
 			loop_mode_flag = 1;
 			break;
-		case 'd': // loop mode
+		case 'd': // Dma Sample Burst
 			DmaSampleBurstSize = atoi(optarg);
 			NUM_SAMPLES=4*DmaSampleBurstSize;
 			break;
@@ -1024,6 +892,15 @@ int main(int argc, char* argv[])
 		case 'r': // Randomize PWM frequency 
 			Randomize=1;
 			
+			break;
+		case 'a': // DMA Channel 1-14
+			 if((atoi(optarg)>0)&&(atoi(optarg)<15))
+			 {
+				SetDma=atoi(optarg);
+				//DMA_CHANNEL=SetDma; Should be set after initdma
+			 }
+			 else
+				SetDma=0;
 			break;
         	case -1:
         	break;
@@ -1063,18 +940,19 @@ int main(int argc, char* argv[])
 	}
 
 	resetFile();
-	return pitx_run(Mode, SampleRate, SetFrequency, ppmpll, NoUsePwmFrequency, readFile, resetFile, NULL);
+	return pitx_run(Mode, SampleRate, SetFrequency, ppmpll, NoUsePwmFrequency, readFile, resetFile, NULL,SetDma);
 }
 
 int pitx_run(
 	const char Mode,
 	int SampleRate,
 	const float SetFrequency,
-	const float ppmpll,
+	float ppmpll,
 	const char NoUsePwmFrequency,
 	ssize_t (*readWrapper)(void *buffer, size_t count),
 	void (*reset)(void),
-	int* skipSignals) 
+	int* skipSignals,
+	int SetDma) 
 {
 	int i;
 	//char pagemap_fn[64];
@@ -1099,7 +977,7 @@ int pitx_run(
 	fprintf(stdout,"rpitx Version %s compiled %s (F5OEO Evariste) running on ",PROGRAM_VERSION,__DATE__);
 
 	// Init Plls Frequency using ppm (or default)
-
+	if(ppmpll!=0) ppmpll=(float)globalppmpll; // Use calibrate only if not setting by user
 	PllFreq500MHZ=PLL_FREQ_500MHZ;
 	PllFreq500MHZ+=PllFreq500MHZ * (ppmpll / 1000000.0);
 
@@ -1123,7 +1001,7 @@ int pitx_run(
 	if((Mode==MODE_RF)||(Mode==MODE_RFA))
 	{
 		//TabRfSample=malloc(DmaSampleBurstSize*sizeof(samplerf_t));
-		SampleRate=100000L; //NOT USED BUT BY CALCULATING TIMETOSLEEP IN RF MODE
+		SampleRate=50000L; //NOT USED BUT BY CALCULATING TIMETOSLEEP IN RF MODE
 	}
 	if(Mode==MODE_VFO)
 		SampleRate=50000L; //50000 BY EXPERIMENT
@@ -1138,7 +1016,7 @@ int pitx_run(
 	
 
 	pitx_SetTuneFrequency(SetFrequency*1000.0);
-	pitx_init(SampleRate, GlobalTuningFrequency, skipSignals);
+	pitx_init(SampleRate, GlobalTuningFrequency, skipSignals,SetDma);
 	
 
 	static volatile uint32_t cur_cb,last_cb;
@@ -1178,7 +1056,12 @@ int pitx_run(
 			
 		if(Init==0)
 		{
-			TimeToSleep=(1e6*(NUM_SAMPLES-free_slots*2))/SampleRate; // Time to sleep in us
+			if((Mode==MODE_RF)||(Mode==MODE_RFA))
+			{
+				TimeToSleep=100; //Max 100KHZ
+			}
+			else
+				TimeToSleep=(1e6*(NUM_SAMPLES-free_slots*2))/SampleRate; // Time to sleep in us
 			//printf("TimeToSleep%d\n",TimeToSleep);
 		}
 		else
@@ -1232,7 +1115,8 @@ int pitx_run(
 			//dma_reg[DMA_CS+DMA_CHANNEL_PWMFREQUENCY*0x40] = 0x10880001;				
 
 			//Start Main DMA
-			dma_reg[DMA_CS+DMA_CHANNEL*0x40] = 0x10FF0001;	// go, mid priority, wait for outstanding writes :7 Seems Max Priority
+			dma_reg[DMA_CS+DMA_CHANNEL*0x40] = DMA_CS_PRIORITY(7) | DMA_CS_PANIC_PRIORITY(7) | DMA_CS_DISDEBUG |DMA_CS_ACTIVE;
+			
 				
 			Init=0;
 				
@@ -1386,7 +1270,7 @@ int pitx_run(
 			{
 				// SHOULD NOT EXEED 200 STEP*500ns; SAMPLERATE SHOULD BE MAX TO HAVE PRECISION FOR PCM 
 				// BUT FIFO OF PCM IS 16 : SAMPLERATE MAYBE NOT EXCESS 16*80000 ! CAREFULL BUGS HERE
-				#define MAX_DELAY_WAIT 25000 
+				#define MAX_DELAY_WAIT (PWM_STEP_MAXI/2*FREQ_MINI_TIMING-PWMF_MARGIN) 
 				static int CompteSample=0;
 				static uint32_t TimeRemaining=0;
 				static samplerf_t SampleRf;
