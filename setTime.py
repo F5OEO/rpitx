@@ -174,7 +174,7 @@ if __name__ == "__main__":
         # whaiting for start of minute
         if datetime.datetime.now() >= start:
             break
-    cmd = ["sudo", "rpitx", "-m", "RFA", "-i",
+    cmd = ["sudo", "./rpitx", "-m", "RFA", "-i",
            filename, "-f", "77.500"]
     if args.gpio4:
         cmd.extend(["-c", "1"])
