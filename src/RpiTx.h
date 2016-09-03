@@ -2,7 +2,7 @@
 #define RPITX_H
 #include <ctype.h>
 
-int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals);
+int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals,int SetDma);
 int pitx_SetTuneFrequencyu(uint32_t Frequency);
 
 #define MODE_IQ 0
@@ -21,7 +21,8 @@ int pitx_run(
 	ssize_t (*readWrapper)(void *buffer, size_t count),
 	// Wrapper to reset file for looping
 	void (*reset)(void),
-	int* skipSignals
+	int* skipSignals,
+	int SetDma
 );
 
 

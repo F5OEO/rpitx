@@ -93,4 +93,15 @@ int gpioSetMode(unsigned gpio, unsigned mode);
 #define GPFSEL0			(0x00/4)
 #define GPFSEL1    		(0x04/4)
 #define GPFSEL2   		(0x08/4)
+
+// ---- Memory allocating defines
+// https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
+#define MEM_FLAG_DISCARDABLE  (1 << 0) /* can be resized to 0 at any time. Use for cached data */
+#define MEM_FLAG_NORMAL  (0 << 2) /* normal allocating alias. Don't use from ARM */
+#define MEM_FLAG_DIRECT  (1 << 2) /* 0xC alias uncached */
+#define MEM_FLAG_COHERENT  (2 << 2) /* 0x8 alias. Non-allocating in L2 but coherent */
+#define MEM_FLAG_L1_NONALLOCATING  (MEM_FLAG_DIRECT | MEM_FLAG_COHERENT) /* Allocating in L2 */
+#define MEM_FLAG_ZERO  ( 1 << 4)  /* initialise buffer to all zeros */
+#define MEM_FLAG_NO_INIT  ( 1 << 5) /* don't initialise (default is initialise to all ones */
+#define MEM_FLAG_HINT_PERMALOCK  (1 << 6) /* Likely to be locked for long periods of time. */
 #endif

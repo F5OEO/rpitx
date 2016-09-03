@@ -20,14 +20,14 @@ char InitGpio()
 		{
 			BCM2708_PERI_BASE = info.peripheralBase ;
 			 dram_phys_base   =  0x40000000;
-			 mem_flag         =  0x0c;
+			 mem_flag         =  MEM_FLAG_L1_NONALLOCATING|MEM_FLAG_HINT_PERMALOCK|MEM_FLAG_NO_INIT;//0x0c;
 		}
 
 		if((info.peripheralBase==RPI_BROADCOM_2836_PERIPHERAL_BASE)||(info.peripheralBase==RPI_BROADCOM_2837_PERIPHERAL_BASE))
 		{
 			BCM2708_PERI_BASE = info.peripheralBase ;
 			 dram_phys_base   =  0xc0000000;
-			 mem_flag         =  0x04;
+			 mem_flag         =  MEM_FLAG_L1_NONALLOCATING/*MEM_FLAG_DIRECT*/|MEM_FLAG_HINT_PERMALOCK|MEM_FLAG_NO_INIT;//0x04;
 		}
 	}
 

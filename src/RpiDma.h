@@ -24,7 +24,7 @@ uint32_t mem_phys_to_virt(volatile uint32_t phys);
 #define NUM_CB_PWM_FREQUENCY 8
 //#define MBFILE			DEVICE_FILE_NAME	/* From mailbox.h */ 
 #define NUM_SAMPLES_MAX		(4000)
-#define CBS_SIZE_BY_SAMPLE	(5) 
+#define CBS_SIZE_BY_SAMPLE	(3) 
 #define NUM_CBS_MAIN 		((NUM_SAMPLES_MAX * CBS_SIZE_BY_SAMPLE))
 #define NUM_CBS			(NUM_CBS_MAIN)
 
@@ -38,6 +38,7 @@ uint32_t mem_phys_to_virt(volatile uint32_t phys);
 #define BCM2708_DMA_PER_MAP(x)		((x)<<16)
 #define BCM2708_DMA_END			(1<<1)
 #define BCM2708_DMA_RESET		(1<<31)
+#define BCM2708_DMA_ABORT		(1<<30)
 #define BCM2708_DMA_INT			(1<<2)
 
 #define DMA_CS			(0x00/4)
@@ -45,6 +46,14 @@ uint32_t mem_phys_to_virt(volatile uint32_t phys);
 #define DMA_DEBUG		(0x20/4)
 
 #define BUS_TO_PHYS(x) ((x)&~0xC0000000)
+
+#define DMA_CS_RESET    (1<<31)
+#define DMA_CS_ABORT    (1<<30)
+#define DMA_CS_DISDEBUG (1<<28)
+#define DMA_CS_END      (1<<1)
+#define DMA_CS_ACTIVE   (1<<0)
+#define DMA_CS_PRIORITY(x) ((x)&0xf << 16)
+#define DMA_CS_PANIC_PRIORITY(x) ((x)&0xf << 20)
 
 #define PAGE_SIZE	4096
 #define PAGE_SHIFT	12
@@ -93,31 +102,25 @@ page_map_t *page_map;
 
  uint8_t *virtbase;
 
+#define PWM_STEP_MAXI 200
+
 typedef struct {
-	//uint32_t Frequency1;
-	//uint32_t Frequency2;
+	
+	uint32_t FrequencyTab[PWM_STEP_MAXI];
 	uint32_t Amplitude1;
 	uint32_t Amplitude2;
-	uint32_t PWMF1;
-	uint32_t PWMF2;
-	uint32_t WaitForThisSample;
-	uint32_t PCMRegister;
-	uint32_t FrequencyTab[200];
-	uint32_t debugSet;
-	uint32_t debugClear;
+	
 } sample_t;
 
 
 struct control_data_s {
 	dma_cb_t cb[NUM_CBS];//+1 ??
-	dma_cb_t cbdma2[NUM_CB_PWM_FREQUENCY];
+	
 	sample_t sample[NUM_SAMPLES_MAX];
-	uint32_t GpioDebugPWMF;
-	uint32_t GpioDebugSampleRate;
-	uint32_t SharedFrequency1;
-	uint32_t SharedFrequency2;
-	uint32_t DmaPwmfControlRegister;
-	uint32_t SharedFrequencyTab[100];
+	
+	
+	
+	
 };
 
 struct control_data_s *ctl;
