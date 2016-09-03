@@ -13,6 +13,7 @@ from ctypes import *
 import datetime
 import struct
 from subprocess import call
+import tempfile
 
 
 class Sample(Structure):
