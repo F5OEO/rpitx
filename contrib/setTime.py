@@ -8,12 +8,17 @@ reference
 https://en.wikipedia.org/wiki/DCF77
 
 """
+import argparse
 from ctypes import *
 import datetime
+import logging
 import os
 import struct
 from subprocess import call
 import tempfile
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 
 class Sample(Structure):
@@ -119,43 +124,67 @@ class Dcf77(object):
 
 if __name__ == "__main__":
 
-    NUMS = 5  # transmit for NUMS minutes
+    parser = argparse.ArgumentParser(
+        description="Call rpitx to set dcf77 clock",
+        epilog="default wire on GPIO 18 ( pin 12)")
+    parser.add_argument("-v", "--verbose", help="increase output verbosity",
+                        action="store_true")
+    parser.add_argument("-4", "--gpio4", help="wire on GPIO 4 ( pin 7)",
+                        action="store_true")
+    parser.add_argument("-n", "--nums", help="number of minutes  of transmission",
+                        type=int,
+                        default=5)
+    args = parser.parse_args()
+
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
+    NUMS = args.nums  # transmit for NUMS minutes
     now = datetime.datetime.now()
     # tolgo secondi per arrivare a inizio minuto
     # aggiungo 1 per arrivare a prossimo minuto
     # aggiungo 1 perchè ad ogni minuto, comunico il minuto dopo
-    start = now  + datetime.timedelta(minutes=2) - \
-        datetime.timedelta(microseconds=now.microsecond,
-                           seconds=now.second)
+    start = now - datetime.timedelta(microseconds=now.microsecond,  # start of current minute
+                                     seconds=now.second) + \
+        datetime.timedelta(minutes=1)  # start of next minute
+
     if now.second >= 58:
-        # not enougth time
+        # not enougth time, add one more minute
         start = start + datetime.timedelta(minutes=1)
 
     filename = None
     with tempfile.NamedTemporaryFile("wb", delete=False) as f:
         filename = f.name
 
-        for i in range(NUMS):
-            data = start + datetime.timedelta(seconds=60 * i)
+        for i in range(1, NUMS + 1):
+            # i start with 1 because now whi transmit next minute ( now+1
+            # minute)
+            data = start + datetime.timedelta(minutes=i)
             encoded = Dcf77.to_dcf77(data)
 
-            print "%s -> %s" % (data, encoded)
+            logger.debug("%s -> %s", data, encoded)
 
             for amplitude, timing in Dcf77.modulate(encoded):
                 sample = Sample(amplitude, timing)
                 f.write(sample)
-                print "%s, %s" % (amplitude, timing)
+                logger.debug("%s, %s", amplitude, timing)
 
-    trigger = start - datetime.timedelta(minutes=1)
-
+    print "waiting %s for syncronization..." % start
     while True:
         # whaiting for start of minute
-        if datetime.datetime.now() >= trigger:
+        if datetime.datetime.now() >= start:
             break
     cmd = ["sudo", "rpitx", "-m", "RFA", "-i",
-           filename, "-f", "77.500", "-c", "1"]
-    print cmd
-    call(cmd)
+           filename, "-f", "77.500"]
+    if args.gpio4:
+        cmd.extend(["-c", "1"])
+    logger.debug(cmd)
+
+    ret = call(cmd)
+    logger.debug("ret = %s", ret)
+    if ret == 0:
+        print "End of transmission, hope your clock is set."
+    else:
+        print "Something got wrong, check for errors"
     if filename is not None:
         os.remove(filename)
-    print "FINITO !!!"
