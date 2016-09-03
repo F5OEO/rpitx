@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
             print "%s -> %s" % (data, encoded)
 
-            for amplitude, timing in modulate(encoded):
+            for amplitude, timing in Dcf77.modulate(encoded):
                 sample = Sample(amplitude, timing)
                 f.write(sample)
                 print "%s, %s" % (amplitude, timing)
