@@ -1,4 +1,4 @@
-#!/usr/local/bin/python2.7
+#!/usr/bin/env python
 # encoding: utf-8
 
 """
@@ -8,32 +8,30 @@ reference
 https://en.wikipedia.org/wiki/DCF77
 
 """
-
 from ctypes import *
 import datetime
+import os
 import struct
 from subprocess import call
 import tempfile
 
 
 class Sample(Structure):
+    '''
+    Helper for writing binary data to RFA file
+    '''
     _fields_ = [("amplitude", c_double), ("timing", c_uint)]
 
     def __init__(self, amplitude, timing):
         self.amplitude = amplitude
         self.timing = timing
 
-#     @staticmethod
-#     def read(filename):
-#         with open(filename, "rb") as file:
-#             result = []
-#             x = Sample()
-#             while file.readinto(x) == sizeof(x):
-#                 result.append((x.amplitude, x.timing))
-#             return result
-
 
 class Dcf77(object):
+    '''
+    Utility for working dcf77 standard
+    https://en.wikipedia.org/wiki/DCF77
+    '''
 
     BASE = [1, 2, 4, 8, 10, 20, 40, 80]
 
@@ -64,17 +62,20 @@ class Dcf77(object):
     def to_dcf77(cls, data):
         '''
         Convert datetime to list of bit in dcf77 encoding
+        see https://en.wikipedia.org/wiki/DCF77
 
         :param data: datetime.datetime 
         '''
-        time_code = ["011111111100000", ]
-        time_code.append("11")
-        if data.dst():
-            time_code.append("10")
-        else:
-            time_code.append("01")
+        time_code = ["0",  # start of minute
+                     "11111111100000",  # wheather, warnngs or other data
+                     "1",  # Abnormal transmitter / backup antenna
+                     "0",  # Summer time announcement
+                     ]
+
+        time_code.append("00")  # cest and cet bit
         time_code.append("0")  # leap second
-        time_code.append("1")
+        time_code.append("1")  # start encoding time
+
         time_code.append(cls.add_crc(cls.int_to_bcd(data.minute, 7)))
         time_code.append(cls.add_crc(cls.int_to_bcd(data.hour, 6)))
         date = [cls.int_to_bcd(data.day, 6), ]
@@ -82,21 +83,25 @@ class Dcf77(object):
         date.append(cls.int_to_bcd(data.month, 5))
         date.append(cls.int_to_bcd(data.year - 2000, 8))
         time_code.append(cls.add_crc("".join(date)))
+
         return "".join(time_code)
 
     @staticmethod
-    def modulate(encoded, UP=32767.0, ratio=0.15):
+    def modulate(encoded, UP=32767, DOWN=0):
         '''
+        dcf77 modulation
+        1 bit per second
+        0.1 sec down = 0
+        0.2 sec down = 1
+        1 sec up = end of second
 
+        return generator of tuple returning (value, time in milliseconds)
 
-
-
-        :param value:
+        :param encoded: sequence of 01 representing message
         :param UP:  value for 100% modulation
-        :param ratio: low modulation ( standard is 15% )
+        :param DOWN: value for 15% modulation
+                     I do not know why, but 0 seems to work
         '''
-
-        DOWN = 0
 
         for value in encoded:
 
@@ -107,21 +112,9 @@ class Dcf77(object):
                 yield (DOWN, 200000000)
                 yield (UP, 800000000)
             else:
-                raise ValueError("Only None|0|1")
+                raise ValueError("Only 0|1")
         # last second no modulation
         yield (UP, 1000000000)
-
-
-def test(value="000000000000000010010111000011011111000000011000010101000010"):
-    sample = Sample()
-    print value
-    with open(filename, "wb") as f:
-        for val in (int(v) for v in value):
-            for amplitude, timing in modulate(val):
-                sample.amplitude = amplitude
-                sample.timing = timing
-                f.write(sample)
-                print "%s  %i" % (amplitude, timing)
 
 
 if __name__ == "__main__":
@@ -163,4 +156,6 @@ if __name__ == "__main__":
            filename, "-f", "77.500", "-c", "1"]
     print cmd
     call(cmd)
+    if filename is not None:
+        os.remove(filename)
     print "FINITO !!!"
