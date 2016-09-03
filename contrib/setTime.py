@@ -96,7 +96,7 @@ class Dcf77(object):
         :param ratio: low modulation ( standard is 15% )
         '''
 
-        DOWN = UP * ratio
+        DOWN = 0
 
         for value in encoded:
 
