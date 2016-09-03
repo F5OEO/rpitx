@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="Call rpitx to set dcf77 clock",
-        epilog="default wire on GPIO 18 ( pin 12)")
+        epilog="default wire on GPIO 18 ( pin 12) and 5 minutes of transmission")
     parser.add_argument("-v", "--verbose", help="increase output verbosity",
                         action="store_true")
     parser.add_argument("-4", "--gpio4", help="wire on GPIO 4 ( pin 7)",
