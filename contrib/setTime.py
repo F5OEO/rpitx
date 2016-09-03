@@ -60,8 +60,8 @@ class Dcf77(object):
         else:
             return "%s0" % value
 
-    @staticmethod
-    def to_dcf77(data):
+    @classmethod
+    def to_dcf77(cls, data):
         '''
         Convert datetime to list of bit in dcf77 encoding
 
@@ -75,13 +75,13 @@ class Dcf77(object):
             time_code.append("01")
         time_code.append("0")  # leap second
         time_code.append("1")
-        time_code.append(add_crc(int_to_bcd(data.minute, 7)))
-        time_code.append(add_crc(int_to_bcd(data.hour, 6)))
-        date = [int_to_bcd(data.day, 6), ]
-        date.append(int_to_bcd(data.weekday() + 1, 3))
-        date.append(int_to_bcd(data.month, 5))
-        date.append(int_to_bcd(data.year - 2000, 8))
-        time_code.append(add_crc("".join(date)))
+        time_code.append(cls.add_crc(cls.int_to_bcd(data.minute, 7)))
+        time_code.append(cls.add_crc(cls.int_to_bcd(data.hour, 6)))
+        date = [cls.int_to_bcd(data.day, 6), ]
+        date.append(cls.int_to_bcd(data.weekday() + 1, 3))
+        date.append(cls.int_to_bcd(data.month, 5))
+        date.append(cls.int_to_bcd(data.year - 2000, 8))
+        time_code.append(cls.add_crc("".join(date)))
         return "".join(time_code)
 
     @staticmethod
@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
         for i in range(NUMS):
             data = start + datetime.timedelta(seconds=60 * i)
-            encoded = to_dcf77(data)
+            encoded = Dcf77.to_dcf77(data)
 
             print "%s -> %s" % (data, encoded)
 
