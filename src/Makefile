@@ -1,7 +1,7 @@
 all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
 
 #CFLAGS	= -Wall -g -O2 -D DIGITHIN
-CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
+CFLAGS	= -Wall -Wextra -g -O2 -Wno-unused-variable 
 LDFLAGS	= -lm -lrt -lpthread 
 
 
