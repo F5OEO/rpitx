@@ -1,5 +1,7 @@
 **rpitx** is a radio transmitter for Raspberry Pi (B, B+, PI2, PI3 and PI zero) that transmits RF directly to GPIO. It can handle frequencies from 5 KHz up to 500 MHz.
 
+Before you transmit, know your laws. **rpitx** has not been tested for compliance with regulations governing transmission of radio signals. You are responsible for using your **rpitx** legally.
+
 _Created by Evariste Courjaud F5OEO. Code is GPL_
 
 # Installation
