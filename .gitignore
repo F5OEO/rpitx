@@ -1,3 +1,9 @@
+.settings
+.pydevproject
+.project
+.preferences
+*.pyc
+*linuxversion.txt
 /piam
 /pidcf77
 /pifm
