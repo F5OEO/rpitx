@@ -153,7 +153,7 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		SIGWINCH,  // Window resized
 		0
 	};
-	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset, skipSignals);
+	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset, skipSignals, 0);
 	sf_close(sndFile);
 
 	Py_RETURN_NONE;

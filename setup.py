@@ -13,11 +13,12 @@ setup(
         Extension(
             '_rpitx',
             [
-                'src/python/_rpitxmodule.c',
-                'src/RpiTx.c',
-                'src/mailbox.c',
                 'src/RpiDma.c',
                 'src/RpiGpio.c',
+                'src/RpiTx.c',
+                'src/mailbox.c',
+                'src/python/_rpitxmodule.c',
+                'src/raspberry_pi_revision.c',
             ],
             extra_link_args=['-lrt', '-lsndfile'],
         ),
