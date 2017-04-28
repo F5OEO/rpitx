@@ -1,8 +1,8 @@
 """Hides imports and other irrelevant things so that ipython works nicely."""
 
 from pydub import AudioSegment
-import StringIO
 import _rpitx
+import io
 import array
 import logging
 import wave
@@ -29,7 +29,7 @@ def broadcast_fm(file_, frequency):
 
     raw_audio_data = _reencode(file_)
 
-    wav_data = StringIO.StringIO()
+    wav_data = io.BytesIO()
     wav_writer = wave.open(wav_data, 'w')
     wav_writer.setnchannels(1)
     wav_writer.setsampwidth(2)
@@ -37,6 +37,6 @@ def broadcast_fm(file_, frequency):
     wav_writer.writeframes(raw_audio_data.raw_data)
     wav_writer.close()
 
-    raw_array = array.array('c', wav_data.getvalue())
+    raw_array = array.array('b', wav_data.getvalue())
     array_address, length = raw_array.buffer_info()
     _rpitx.broadcast_fm(array_address, length, frequency)
