@@ -85,7 +85,7 @@ Optimize CPU on PWMFrequency
 
 // DMA TIMING : depends on Pi Model : Calibration is better
 int FREQ_DELAY_TIME=0;
-int FREQ_MINI_TIMING=157;
+float FREQ_MINI_TIMING=157;
 int PWMF_MARGIN = 2496;//1120; //A Margin for now at 1us with PCM ->OK
 int globalppmpll=0;
 
@@ -416,8 +416,8 @@ void IQToFreqAmp(int I,int Q,double *Frequency,int *Amp,int SampleRate)
 	if(dp < 0) dp = dp + 2*M_PI;
     
 	*Frequency = (dp*(double)SampleRate)/(2.0f*M_PI);
-	//if(*Frequency>2000) 
-    	//printf("I=%d Q=%d phase= %f dp = %f Correctdp=%f Amp=%d Freq=%f\n",I,Q,phase,phase - prev_phase,dp,*Amp,*Frequency);
+	//if(*Frequency<1000) 
+    //	printf("I=%d Q=%d phase= %f dp = %f Correctdp=%f Amp=%d Freq=%f\n",I,Q,phase,phase - prev_phase,dp,*Amp,*Frequency);
     prev_phase = phase;
 }
 
@@ -493,18 +493,18 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
     PwmNumberStep=i;		*/
     if(WaitNanoSecond<5000)
     {
-        FREQ_DELAY_TIME=850;
-        PWMF_MARGIN=724;
-        FREQ_MINI_TIMING=203;
+        FREQ_DELAY_TIME=0;//550;
+        PWMF_MARGIN=1562;
+        FREQ_MINI_TIMING=221;
     }
     else
     {
-        FREQ_DELAY_TIME=850;
-        PWMF_MARGIN=724;
-        FREQ_MINI_TIMING=154;
+        FREQ_DELAY_TIME=0;//1760;
+        PWMF_MARGIN=2496;
+        FREQ_MINI_TIMING=157.486;
     }
     
-	PwmNumberStep=WaitNanoSecond/FREQ_MINI_TIMING;
+	PwmNumberStep=(WaitNanoSecond)/FREQ_MINI_TIMING;//-FREQ_DELAY_TIME-PWMF_MARGIN)/FREQ_MINI_TIMING;
 	if(PwmNumberStep>PWM_STEP_MAXI) PwmNumberStep=PWM_STEP_MAXI;
 	if(PwmNumberStep==0) PwmNumberStep=6; 			
 
@@ -530,7 +530,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 							
 	if(ShowInfo==1)
 	{
-		printf("WaitNano=%d F1=%f TuneFrequency %f F2=%f Initial Resolution(Hz)=%f ResolutionPWMF %f NbStep=%d DELAYStep=%d\n",WaitNanoSecond,f1,TuneFrequency,f2,FreqStep,FreqStep/(PwmNumberStep),PwmNumberStep,(PWMF_MARGIN+FREQ_DELAY_TIME)/FREQ_MINI_TIMING);
+		printf("WaitNano=%d F1=%f TuneFrequency %f F2=%f Initial Resolution(Hz)=%f ResolutionPWMF %f NbStep=%d DELAYStep=%f\n",WaitNanoSecond,f1,TuneFrequency,f2,FreqStep,FreqStep/(PwmNumberStep),PwmNumberStep,(PWMF_MARGIN+FREQ_DELAY_TIME)/FREQ_MINI_TIMING);
 		ShowInfo=0;
 	}
 				
@@ -726,7 +726,7 @@ int GetDMADelay(int Step)
 	//usleep(500); //Wait to be sure DMA is running stable
 	int i;
 	int SumDelay=0;
-	for(i=0;i<4;i++)
+	for(i=0;i<10;i++)
 	{
 
 	
@@ -763,6 +763,7 @@ int GetDMADelay(int Step)
 		SumDelay+=time_difference/free_slots;
 	}
 	
+    
 	//STop DMA
 	dma_reg[DMA_CS+DMA_CHANNEL*0x40] |= DMA_CS_ABORT;//BCM2708_DMA_INT | BCM2708_DMA_END;
 	udelay(100);
@@ -770,10 +771,10 @@ int GetDMADelay(int Step)
 	dma_reg[DMA_CS+DMA_CHANNEL*0x40] |= DMA_CS_RESET; //BCM2708_DMA_ABORT|BCM2708_DMA_RESET;
 	udelay(100);
 
-	return SumDelay/4;
+	return SumDelay/10;
 }
 
-int CalibrateSystem(int *ppm,int *BaseDelayDMA,int *StepDelayDMA)
+int CalibrateSystem(int *ppm,int *BaseDelayDMA,float *StepDelayDMA)
 {
 	struct timex ntx;
 	int status;
@@ -791,9 +792,12 @@ int CalibrateSystem(int *ppm,int *BaseDelayDMA,int *StepDelayDMA)
     		printf("Error: NTP\n");
 		//return 0;
  	}
-	clockppm = (double)ntx.freq/(double)(1 << 16);
-	if(abs(clockppm)<200)
-		*ppm=clockppm;
+    else
+    {    
+	    clockppm = (double)ntx.freq/(double)(1 << 16);
+	    if(abs(clockppm)<200)
+		    *ppm=clockppm;
+    }    
 	//printf("Clock PPM = %f\n",ppm);
 	int i; 
 	int BaseDelay=1;
@@ -803,15 +807,16 @@ int CalibrateSystem(int *ppm,int *BaseDelayDMA,int *StepDelayDMA)
 	*StepDelayDMA=(GetDMADelay(PWM_STEP_MAXI/2)-(*BaseDelayDMA))/(PWM_STEP_MAXI/2);*/
     char csvline[255];
 	
-    /*for(i=0;i<200;i+=1)
+  /*  for(i=0;i<200;i+=1)
     {
         int Delay=GetDMADelay(i);
 		printf("Step %d :%d \n",i,Delay);//,(GetDMADelay(i)-BaseDelay)/i);
         sprintf(csvline,"%d:%d\n",i,Delay);
         CalibrationTab[i]=Delay;
         write(hFileCsv,csvline,strlen(csvline));
-
-    }*/
+        
+    }
+*/
     
 	return 1;
 }
@@ -831,15 +836,7 @@ void InitShuffle()
     }
 
 
-    for(i=1;i<10;i++)
-    {
-        printf("%d :",i);
-        for(j=0;j<i;j++)
-        {
-            printf("%d ",Shuffle[i][j]);
-        }
-        printf("\n");
-    }
+    
 
 }
 
@@ -853,8 +850,7 @@ int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals,int SetDm
 //int FREQ_MINI_TIMING=157;
 //int PWMF_MARGIN = 1120; //A Margin for now at 1us with PCM ->OK
 
-	if(CalibrateSystem(&globalppmpll,&PWMF_MARGIN,&FREQ_MINI_TIMING)) 
-		printf("Calibrate : ppm=%d DMA %dns:%dns\n",globalppmpll,FREQ_MINI_TIMING,PWMF_MARGIN);
+	if(CalibrateSystem(&globalppmpll,&PWMF_MARGIN,&FREQ_MINI_TIMING)) 	printf("Calibrate : ppm=%d DMA %fns:%dns\n",globalppmpll,FREQ_MINI_TIMING,PWMF_MARGIN);
 	//printf("Timing : 1 cyle=%dns 1sample=%dns\n",NBSAMPLES_PWM_FREQ_MAX*400*3,(int)(1e9/(float)SampleRate));
 	return 1;
 }
@@ -902,7 +898,7 @@ int pitx_SetTuneFrequency(double Frequency)
 		PllNumber=PLL_1GHZ;
 	}
 	
-	printf("Master PLL = %d\n",PllUsed);
+	printf("Master PLL = %u Hz\n",PllUsed);
 		
 	for(harmonic=1;harmonic<MAX_HARMONIC;harmonic+=2)
 	{
@@ -991,7 +987,7 @@ int main(int argc, char* argv[])
 			break;
 		case 'c': // Use clock instead of PWM pin
 			UsePCMClk = atoi(optarg);
-			if(UsePCMClk==1) printf("Use GPCLK Pin instead of PWM\n");
+			
 			break;
 		case 'w': // No use pwmfrequency 
 			NoUsePwmFrequency = atoi(optarg);
@@ -1046,7 +1042,10 @@ int main(int argc, char* argv[])
 			fatal("Failed to read Filein %s\n",FileName);
 		}
 	}
-
+    if(UsePCMClk==1)
+         printf("Output to GPCLK Pin (Header No 7)\n");
+    else
+          printf("Output to PWM Pin (Header No 12)\n");
 	resetFile();
 	return pitx_run(Mode, SampleRate, SetFrequency, ppmpll, NoUsePwmFrequency, readFile, resetFile, NULL,SetDma);
 }
@@ -1082,18 +1081,12 @@ int pitx_run(
 	} samplerf_t;
 	samplerf_t *TabRfSample=NULL;
 
-	fprintf(stdout,"rpitx Version %s compiled %s (F5OEO Evariste) running on ",PROGRAM_VERSION,__DATE__);
+	fprintf(stdout,"rpitx Version %s compiled %s (F5OEO Evariste) \n",PROGRAM_VERSION,__DATE__);
 
-	// Init Plls Frequency using ppm (or default)
-	if(ppmpll!=0) ppmpll=(float)globalppmpll; // Use calibrate only if not setting by user
 	PllFreq500MHZ=PLL_FREQ_500MHZ;
-	PllFreq500MHZ+=PllFreq500MHZ * (ppmpll / 1000000.0);
-
 	PllFreq1GHZ=PLL_FREQ_1GHZ;
-	PllFreq1GHZ+=PllFreq1GHZ * (ppmpll / 1000000.0);
-
 	PllFreq19MHZ=PLLFREQ_192;
-	PllFreq19MHZ+=PllFreq19MHZ * (ppmpll / 1000000.0);
+	
 
 	//End of Init Plls
 
@@ -1125,7 +1118,15 @@ int pitx_run(
 
 	pitx_SetTuneFrequency(SetFrequency*1000.0);
 	pitx_init(SampleRate, GlobalTuningFrequency, skipSignals,SetDma);
-	
+    //Correct PLL Frequency
+
+	if(ppmpll==0) ppmpll=(float)-globalppmpll; // Use calibrate only if not setting by user
+
+	PllUsed+=(PllUsed * ppmpll) / 1000000.0;
+    //printf("PLL ppm=%f -> PllUsed %u\n",ppmpll,PllUsed);
+
+
+
 
 	static volatile uint32_t cur_cb,last_cb;
 	int last_sample;
@@ -1270,7 +1271,7 @@ int pitx_run(
 					static int amp;
 					static double df;
 					
-					int CorrectionRpiFrequency=-1000; //TODO PPM / Offset=1KHZ at 144MHZ
+					int CorrectionRpiFrequency=000; //TODO PPM / Offset=1KHZ at 144MHZ
 					
 					CompteSample++;
 					//printf("i%d q%d\n",IQArray[2*i],IQArray[2*i+1]);
@@ -1385,7 +1386,7 @@ int pitx_run(
 				// SHOULD NOT EXEED 200 STEP*500ns; SAMPLERATE SHOULD BE MAX TO HAVE PRECISION FOR PCM 
 				// BUT FIFO OF PCM IS 16 : SAMPLERATE MAYBE NOT EXCESS 16*80000 ! CAREFULL BUGS HERE
 				//#define MAX_DELAY_WAIT (PWM_STEP_MAXI/2*FREQ_MINI_TIMING-PWMF_MARGIN) 
-                int MAX_DELAY_WAIT = 30000; //CalibrationTab[199];
+                int MAX_DELAY_WAIT = 20000; //CalibrationTab[199];
 				static int CompteSample=0;
 				static uint32_t TimeRemaining=0;
 				static samplerf_t SampleRf;
@@ -1475,7 +1476,8 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					//OutputPower=(CompteSample/10)%32768;
 
-					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.05),OutputPower,last_sample++,20833,0,NoUsePwmFrequency,debug);
+					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower/**(CompteSample%1000==0)?000:32000*/,last_sample++,20843,0,NoUsePwmFrequency,debug);
+                    
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	
 					if (last_sample == NUM_SAMPLES)	last_sample = 0;
