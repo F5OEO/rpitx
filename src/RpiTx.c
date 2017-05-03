@@ -911,8 +911,8 @@ int pitx_SetTuneFrequency(double Frequency)
 
 	if(HarmonicNumber>1) //Use Harmonic
 	{
-		GlobalTuningFrequency=Frequency/HarmonicNumber;			
-		printf("\n Warning : Using harmonic %d\n",HarmonicNumber);
+		GlobalTuningFrequency=Frequency/*/HarmonicNumber*/;			
+		printf("\n Warning : Using harmonic %d -> Frequency fundamental on %f\n",HarmonicNumber,GlobalTuningFrequency/HarmonicNumber);
 	}
 	else
 	{
@@ -1476,7 +1476,7 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					//OutputPower=(CompteSample/10)%32768;
 
-					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower/**(CompteSample%1000==0)?000:32000*/,last_sample++,20843,0,NoUsePwmFrequency,debug);
+					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.05),OutputPower/**(CompteSample%1000==0)?000:32000*/,last_sample++,20843,0,NoUsePwmFrequency,debug);
                     
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	
