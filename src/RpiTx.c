@@ -658,8 +658,22 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				
 	
 	Amplitude=(Amplitude>32767)?32767:Amplitude;	
-	int IntAmplitude=(Amplitude*7.0)/32767.0; // Convert to 8 amplitude step
-				
+	int IntAmplitude=0;
+    
+    float LogAmplitude=-(10.0*log10((Amplitude+1)/32767.0));
+    
+    if(LogAmplitude<=0.1) IntAmplitude=7;
+    if((LogAmplitude>0.1)&&(LogAmplitude<=0.3)) IntAmplitude=6;
+        if((LogAmplitude>0.3)&&(LogAmplitude<=0.7)) IntAmplitude=5;
+        if((LogAmplitude>0.7)&&(LogAmplitude<=1.1)) IntAmplitude=4;
+            if((LogAmplitude>1.1)&&(LogAmplitude<=2.1)) IntAmplitude=3;
+            if((LogAmplitude>2.1)&&(LogAmplitude<=4.1)) IntAmplitude=2;
+            if((LogAmplitude>4.1)&&(LogAmplitude<=7.9)) IntAmplitude=1;
+                if((LogAmplitude>7.9)&&(LogAmplitude<16.0)) IntAmplitude=0;
+                if((LogAmplitude>16)) IntAmplitude=-1;
+
+
+	//printf("Ampli %d Log=%f Pad=%d\n",Amplitude,LogAmplitude,IntAmplitude);			
 	if(UsePCMClk==0)
 	{
 		if(IntAmplitude==0)
@@ -673,13 +687,13 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 	}
 	if(UsePCMClk==1)
 	{
-		if(IntAmplitude==0)
+		if(IntAmplitude==-1)
 		{
-			ctl->sample[NoSample].Amplitude2=(Originfsel & ~(7 << 12)) | (0 << 12);
+			ctl->sample[NoSample].Amplitude2=(Originfsel & ~(7 << 12)) | (0 << 12); //Pin is in 
 		}
 		else
 		{
-			ctl->sample[NoSample].Amplitude2=(Originfsel & ~(7 << 12)) | (4 << 12);
+			ctl->sample[NoSample].Amplitude2=(Originfsel & ~(7 << 12)) | (4 << 12); //Alternate is CLK
 		}
 	}
 
@@ -687,7 +701,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				
 	
 	if(IntAmplitude>7) IntAmplitude=7;
-	
+	if(IntAmplitude<0) IntAmplitude=0;
 	ctl->sample[NoSample].Amplitude1=0x5a000000 + (IntAmplitude&0x7) + (1<<4) + (0<<3); 
 				
 
@@ -1286,7 +1300,7 @@ int pitx_run(
 					double A = 87.7f; // compression parameter
 					double ampf=amp/32767.0;
       				ampf = (fabs(ampf) < 1.0f/A) ? A*fabs(ampf)/(1.0f+ln(A)) : (1.0f+ln(A*fabs(ampf)))/(1.0f+ln(A)); //compand
-					amp= (int)(round(ampf * 32767.0f)) ;
+					//amp= (int)(round(ampf * 32767.0f)) ;
 						
 					if(amp>Max) Max=amp;
 					if(amp<Min) Min=amp;	
@@ -1347,7 +1361,7 @@ int pitx_run(
 					static int amp;
 					static double df;
 					
-					int CorrectionRpiFrequency=-1000; //TODO PPM / Offset=1KHZ at 144MHZ
+					int CorrectionRpiFrequency=000; //TODO PPM / Offset=1KHZ at 144MHZ
 					
 					CompteSample++;
 					//printf("i%d q%d\n",IQArray[2*i],IQArray[2*i+1]);
@@ -1386,7 +1400,7 @@ int pitx_run(
 				// SHOULD NOT EXEED 200 STEP*500ns; SAMPLERATE SHOULD BE MAX TO HAVE PRECISION FOR PCM 
 				// BUT FIFO OF PCM IS 16 : SAMPLERATE MAYBE NOT EXCESS 16*80000 ! CAREFULL BUGS HERE
 				//#define MAX_DELAY_WAIT (PWM_STEP_MAXI/2*FREQ_MINI_TIMING-PWMF_MARGIN) 
-                int MAX_DELAY_WAIT = 20000; //CalibrationTab[199];
+                int MAX_DELAY_WAIT = 30000; //CalibrationTab[199];
 				static int CompteSample=0;
 				static uint32_t TimeRemaining=0;
 				static samplerf_t SampleRf;
@@ -1432,12 +1446,13 @@ int pitx_run(
 					//printf("TimeRemaining %d WaitSample %d\n",TimeRemaining,WaitSample);
 					if(Mode==MODE_RF)
 					{
-						if(SampleRf.Frequency==0.0)
+						/*if(SampleRf.Frequency==0.0)
 						{
 							amp=0;
 							SampleRf.Frequency=00.0;// TODO change that ugly frequency
+                            printf("Zero\n");
 						}
-						else
+						else*/
 							amp=32767;
 						FrequencyAmplitudeToRegister((SampleRf.Frequency/HarmonicNumber+GlobalTuningFrequency)/HarmonicNumber,amp,last_sample++,WaitSample,0,NoUsePwmFrequency,debug);
 					}
@@ -1466,7 +1481,7 @@ int pitx_run(
                     {
                 
 					    CompteSample++;
-                        if(CompteSample==50000) Up=0;
+                        if(CompteSample==3276700) Up=0;
                     }
                     else
                     {
@@ -1476,7 +1491,7 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					//OutputPower=(CompteSample/10)%32768;
 
-					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.05),OutputPower/**(CompteSample%1000==0)?000:32000*/,last_sample++,20843,0,NoUsePwmFrequency,debug);
+					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),/*OutputPower*/((int)(CompteSample*0.1))%32767,last_sample++,20843,0,NoUsePwmFrequency,debug);
                     
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	
