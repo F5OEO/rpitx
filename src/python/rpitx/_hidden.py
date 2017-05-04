@@ -15,18 +15,19 @@ def broadcast_fm(media_file_name, frequency):
     logging.basicConfig()
     logger = logging.getLogger('rpitx')
 
-    if subprocess.call(('which', 'ffmpeg')) == 1:
+    dev_null = open(os.devnull, 'w')
+    if subprocess.call(('which', 'ffmpeg'), stdout=dev_null) == 0:
         Input = ffmpegwrapper.Input
         Output = ffmpegwrapper.Output
         VideoCodec = ffmpegwrapper.VideoCodec
-        AudioCoded = ffmpegwrapper.AudioCodec
+        AudioCodec = ffmpegwrapper.AudioCodec
         Stream = ffmpegwrapper.FFmpeg
         command = 'ffmpeg'
-    elif subprocess.call(('which', 'avconv')) == 1:
+    elif subprocess.call(('which', 'avconv'), stdout=dev_null) == 0:
         Input = libavwrapper.Input
         Output = libavwrapper.Output
         VideoCodec = libavwrapper.VideoCodec
-        AudioCoded = libavwrapper.AudioCodec
+        AudioCodec = libavwrapper.AudioCodec
         Stream = libavwrapper.AVConv
         command = 'avconv'
     else:
@@ -44,11 +45,17 @@ def broadcast_fm(media_file_name, frequency):
         """Runs the conversion command and writes to a FIFO."""
         input_media = Input(media_file_name)
         codec = AudioCodec('pcm_s16le').frequence(48000).channels(1)
-        output_audio = Output(pipe_name, pipe_out)
+        output_audio = Output(pipe_name, codec)
         stream = Stream(command, input_media, output_audio)
-        stream.add_option('-y', '')  # Force overwriting existing file
-        logger.debug('Extracting and converting audio')
-        stream.run()
+        # Force overwriting existing file (it's a FIFO, that's what we want)
+        if hasattr(stream, 'add_option'):
+            stream.add_option('-y', '')
+        else:
+            stream.add_parameter('-y', '')
+        logger.debug(str(stream).replace("'", '').replace(',', ''))
+        lines = stream.run()
+        for line in lines:
+            logger.debug(line)
 
     thread = threading.Thread(target=convert)
     thread.start()
