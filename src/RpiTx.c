@@ -212,24 +212,36 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	char MASH=1;
 	 	
 	if(UsePCMClk==0) TuningFrequency=TuningFrequency*2;	
-	if((TuningFrequency>=100e6)&&(TuningFrequency<=150e6))
+    printf("Gpioclokc Tuning=%f\n",TuningFrequency);
+	if((TuningFrequency>=250e6)&&(TuningFrequency<=400e6))
 	{
 		MASH=2;
 	}
-	if(TuningFrequency<100e6)
+	if(TuningFrequency<250e6)
 	{
 		MASH=3;
 	}
-	
+
 	printf("MASH %d Freq PLL# %d\n",MASH,PllNumber);
 	Originfsel=gpio_reg[GPFSEL0]; // Warning carefull if FSEL is used after !!!!!!!!!!!!!!!!!!!!
-	if(UsePCMClk==1)
-			gpio_reg[GPFSEL0] = (Originfsel & ~(7 << 12)) | (4 << 12); //ENABLE CLOCK ON GPIO CLK
-
+	
 		
 	// ------------------- MAKE MAX OUTPUT CURRENT FOR GPIO -----------------------
 	char OutputPower=7;
 	pad_gpios_reg[PADS_GPIO_0] = 0x5a000000 + (OutputPower&0x7) + (1<<4) + (0<<3); // Set output power for I/Q GPIO18/GPIO19 
+    #define PULL_OFF 0
+    #define PULL_DOWN 1
+    #define PULL_UP 2
+    gpio_reg[GPPUD]=PULL_OFF;
+    udelay(10);
+    gpio_reg[GPPUDCLK0]=(1<<4); //GPIO CLK is GPIO 4
+    udelay(10);
+    gpio_reg[GPPUDCLK0]=(0); //GPIO CLK is GPIO 4
+
+
+    if(UsePCMClk==1)
+			gpio_reg[GPFSEL0] = (Originfsel & ~(7 << 12)) | (4 << 12); //ENABLE CLOCK ON GPIO CLK
+
 
 #ifdef USE_PCM
 	//------------------- Init PCM ------------------
@@ -658,20 +670,20 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				
 	
 	Amplitude=(Amplitude>32767)?32767:Amplitude;	
-	int IntAmplitude=0;
+	int IntAmplitude=Amplitude*7/32767-1;
     
     float LogAmplitude=-(10.0*log10((Amplitude+1)/32767.0));
     
     if(LogAmplitude<=0.1) IntAmplitude=7;
     if((LogAmplitude>0.1)&&(LogAmplitude<=0.3)) IntAmplitude=6;
-        if((LogAmplitude>0.3)&&(LogAmplitude<=0.7)) IntAmplitude=5;
-        if((LogAmplitude>0.7)&&(LogAmplitude<=1.1)) IntAmplitude=4;
-            if((LogAmplitude>1.1)&&(LogAmplitude<=2.1)) IntAmplitude=3;
-            if((LogAmplitude>2.1)&&(LogAmplitude<=4.1)) IntAmplitude=2;
-            if((LogAmplitude>4.1)&&(LogAmplitude<=7.9)) IntAmplitude=1;
-                if((LogAmplitude>7.9)&&(LogAmplitude<16.0)) IntAmplitude=0;
-                if((LogAmplitude>16)) IntAmplitude=-1;
-
+    if((LogAmplitude>0.3)&&(LogAmplitude<=0.7)) IntAmplitude=5;
+    if((LogAmplitude>0.7)&&(LogAmplitude<=1.1)) IntAmplitude=4;
+    if((LogAmplitude>1.1)&&(LogAmplitude<=2.1)) IntAmplitude=3;
+    if((LogAmplitude>2.1)&&(LogAmplitude<=4.1)) IntAmplitude=2;
+    if((LogAmplitude>4.1)&&(LogAmplitude<=7.9)) IntAmplitude=1;
+    if((LogAmplitude>7.9)&&(LogAmplitude<16.0)) IntAmplitude=0;
+    if((LogAmplitude>16)) IntAmplitude=-1;
+    
 
 	//printf("Ampli %d Log=%f Pad=%d\n",Amplitude,LogAmplitude,IntAmplitude);			
 	if(UsePCMClk==0)
@@ -859,6 +871,7 @@ int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals,int SetDm
 	InitGpio();
 	InitDma(terminate, skipSignals);
 	if(SetDma) DMA_CHANNEL=SetDma;
+    printf("---------------- Init %f\n",TuningFrequency);
 	SetupGpioClock(SampleRate,TuningFrequency);
     InitShuffle();
 //int FREQ_MINI_TIMING=157;
@@ -917,7 +930,7 @@ int pitx_SetTuneFrequency(double Frequency)
 	for(harmonic=1;harmonic<MAX_HARMONIC;harmonic+=2)
 	{
 		//printf("->%lf harmonic %d\n",(TuneFrequency/(double)harmonic),harmonic);
-		if((Frequency/(double)harmonic)<=(double)PllUsed/4.0) break;
+		if((Frequency/(double)harmonic)<=(double)PllUsed/2.0) break;
 	}
 	HarmonicNumber=harmonic;	
 
@@ -1131,7 +1144,7 @@ int pitx_run(
 	
 
 	pitx_SetTuneFrequency(SetFrequency*1000.0);
-	pitx_init(SampleRate, GlobalTuningFrequency, skipSignals,SetDma);
+	pitx_init(SampleRate, GlobalTuningFrequency/HarmonicNumber, skipSignals,SetDma);
     //Correct PLL Frequency
 
 	if(ppmpll==0) ppmpll=(float)-globalppmpll; // Use calibrate only if not setting by user
@@ -1450,7 +1463,7 @@ int pitx_run(
 						{
 							amp=0;
 							SampleRf.Frequency=00.0;// TODO change that ugly frequency
-                            printf("Zero\n");
+                           
 						}
 						else*/
 							amp=32767;
@@ -1491,7 +1504,7 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					//OutputPower=(CompteSample/10)%32768;
 
-					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),/*OutputPower*/((int)(CompteSample*0.1))%32767,last_sample++,20843,0,NoUsePwmFrequency,debug);
+					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower/*((int)(CompteSample*0.1))%32767*/,last_sample++,20843,0,NoUsePwmFrequency,debug);
                     
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	
