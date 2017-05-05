@@ -833,7 +833,7 @@ int CalibrateSystem(int *ppm,int *BaseDelayDMA,float *StepDelayDMA)
 	*StepDelayDMA=(GetDMADelay(PWM_STEP_MAXI/2)-(*BaseDelayDMA))/(PWM_STEP_MAXI/2);*/
     char csvline[255];
 	
-  /*  for(i=0;i<200;i+=1)
+    /*for(i=0;i<200;i+=1)
     {
         int Delay=GetDMADelay(i);
 		printf("Step %d :%d \n",i,Delay);//,(GetDMADelay(i)-BaseDelay)/i);
@@ -841,8 +841,8 @@ int CalibrateSystem(int *ppm,int *BaseDelayDMA,float *StepDelayDMA)
         CalibrationTab[i]=Delay;
         write(hFileCsv,csvline,strlen(csvline));
         
-    }
-*/
+    }*/
+
     
 	return 1;
 }
