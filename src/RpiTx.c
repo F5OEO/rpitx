@@ -206,6 +206,7 @@ uint32_t DelayFromSampleRate=0;
 int Instrumentation=0;
 int UsePCMClk=0;
 uint32_t Originfsel=0;
+uint32_t Originfsel2=0;
 
 int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 {
@@ -224,7 +225,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 
 	printf("MASH %d Freq PLL# %d\n",MASH,PllNumber);
 	Originfsel=gpio_reg[GPFSEL0]; // Warning carefull if FSEL is used after !!!!!!!!!!!!!!!!!!!!
-	
+	Originfsel2=gpio_reg[GPFSEL2]; // Warning carefull if FSEL is used after !!!!!!!!!!!!!!!!!!!!
 		
 	// ------------------- MAKE MAX OUTPUT CURRENT FOR GPIO -----------------------
 	char OutputPower=7;
@@ -233,15 +234,18 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
     #define PULL_DOWN 1
     #define PULL_UP 2
     gpio_reg[GPPUD]=PULL_OFF;
-    udelay(10);
+    udelay(100);
     gpio_reg[GPPUDCLK0]=(1<<4); //GPIO CLK is GPIO 4
-    udelay(10);
+    udelay(100);
     gpio_reg[GPPUDCLK0]=(0); //GPIO CLK is GPIO 4
 
 
     if(UsePCMClk==1)
+    {
 			gpio_reg[GPFSEL0] = (Originfsel & ~(7 << 12)) | (4 << 12); //ENABLE CLOCK ON GPIO CLK
-
+            //Could add on other GPIOCLK to transmit
+            //gpio_reg[GPFSEL2] = (Originfsel2 & ~(3 )) | ( 2); //ENABLE CLOCK ON GPIO CLK on GPIO 20 / ALT 5
+    }
 
 #ifdef USE_PCM
 	//------------------- Init PCM ------------------
@@ -397,6 +401,31 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 
 #define ln(x) (log(x)/log(2.718281828459045235f))
 
+
+
+//Normalize to [-180,180):
+inline double constrainAngle(double x){
+    x = fmod(x + M_PI,2*M_PI);
+    if (x < 0)
+        x += 2*M_PI;
+    return x - M_PI;
+}
+// convert to [-360,360]
+inline double angleConv(double angle){
+    return fmod(constrainAngle(angle),2*M_PI);
+}
+inline double angleDiff(double a,double b){
+    double dif = fmod(b - a + M_PI,2*M_PI);
+    if (dif < 0)
+        dif += 2*M_PI;
+    return dif - M_PI;
+}
+
+inline double unwrap(double previousAngle,double newAngle){
+    return previousAngle - angleDiff(newAngle,angleConv(previousAngle));
+}
+
+
 int arctan2(int y, int x) // Should be replaced with fast_atan2 from rtl_fm
 {
 	int abs_y = abs(y);
@@ -423,14 +452,20 @@ void IQToFreqAmp(int I,int Q,double *Frequency,int *Amp,int SampleRate)
 		*Amp=32767; //Overload
 	}
 
-	phase = M_PI + atan2(I,Q);//((double)arctan2(I,Q) * M_PI)/180.0f;
-	double dp = phase - prev_phase;
+	//phase = M_PI + atan2(I,Q);//((double)arctan2(I,Q) * M_PI)/180.0f;
+    phase=atan2(I,Q);
+    phase=unwrap(prev_phase,phase);
+
+    double dp= phase-prev_phase;
+
+/*	double dp = phase - prev_phase;
 	if(dp < 0) dp = dp + 2*M_PI;
-    
+  */  
 	*Frequency = (dp*(double)SampleRate)/(2.0f*M_PI);
 	//if(*Frequency<1000) 
     //	printf("I=%d Q=%d phase= %f dp = %f Correctdp=%f Amp=%d Freq=%f\n",I,Q,phase,phase - prev_phase,dp,*Amp,*Frequency);
     prev_phase = phase;
+    //if(*Frequency>SampleRate/2) printf("%f\n",*Frequency);
 }
 
 
@@ -567,7 +602,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 	NbF2=0;
 	NbF1F2=0;
 
-    int BeginShuffle=rand()%(PwmNumberStep);
+    
 	
 	int AdaptPWMFrequency;
     //#define SIMPLE 1			
@@ -612,7 +647,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
     #endif			
 	i=0;
 	NbF1F2=NbF1+NbF2;
-	
+	 int BeginShuffle=rand()%(PwmNumberStep-NbStepInDelay);
 	if(NoUsePWMF==1)
 	{
 		RegisterF1=0x5A000000 | (FreqDividerf1<<12) | (FreqFractionnalf1);
@@ -629,7 +664,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 				//ctl->sample[NoSample].FrequencyTab[((i+BeginShuffle)<(PwmNumberStep))?(i+BeginShuffle):(i+BeginShuffle)-PwmNumberStep/*rand()%(PwmNumberStep)*/]=RegisterF1;
                 if(Randomize)
                 {
-                     ctl->sample[NoSample].FrequencyTab[Shuffle[PwmNumberStep-NbStepInDelay-1][i]]=RegisterF1;
+                     ctl->sample[NoSample].FrequencyTab[Shuffle[PwmNumberStep-NbStepInDelay-1][(i+BeginShuffle)%(PwmNumberStep-NbStepInDelay-1)]]=RegisterF1;
                     //if(i!=Shuffle[PwmNumberStep-NbStepInDelay-1][i]) printf("F1:%d:%d->%d\n",PwmNumberStep-NbStepInDelay-2,i,Shuffle[PwmNumberStep-NbF2-2][i]);
                 }
                 else
@@ -642,7 +677,7 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
 			{
                   if(Randomize)
                 {
-				        ctl->sample[NoSample].FrequencyTab[Shuffle[PwmNumberStep-NbStepInDelay-1][i]]=RegisterF2;
+				        ctl->sample[NoSample].FrequencyTab[Shuffle[PwmNumberStep-NbStepInDelay-1][(i+BeginShuffle)%(PwmNumberStep-NbStepInDelay-1)]]=RegisterF2;
                         //if(i!=Shuffle[PwmNumberStep-NbStepInDelay-1][i]) printf("F2:%d:%d->%d\n",PwmNumberStep-NbStepInDelay-2,i,Shuffle[PwmNumberStep-NbF2-2][i]);
                 }
                 else
@@ -681,8 +716,8 @@ inline void FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Amplitude
     if((LogAmplitude>1.1)&&(LogAmplitude<=2.1)) IntAmplitude=3;
     if((LogAmplitude>2.1)&&(LogAmplitude<=4.1)) IntAmplitude=2;
     if((LogAmplitude>4.1)&&(LogAmplitude<=7.9)) IntAmplitude=1;
-    if((LogAmplitude>7.9)&&(LogAmplitude<16.0)) IntAmplitude=0;
-    if((LogAmplitude>16)) IntAmplitude=-1;
+    if((LogAmplitude>7.9)&&(LogAmplitude<18.0)) IntAmplitude=0;
+    if((LogAmplitude>18)) IntAmplitude=-1;
     
 
 	//printf("Ampli %d Log=%f Pad=%d\n",Amplitude,LogAmplitude,IntAmplitude);			
@@ -1494,7 +1529,7 @@ int pitx_run(
                     {
                 
 					    CompteSample++;
-                        if(CompteSample==3276700) Up=0;
+                        if(CompteSample==327670) Up=0;
                     }
                     else
                     {
@@ -1504,7 +1539,7 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					//OutputPower=(CompteSample/10)%32768;
 
-					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower/*((int)(CompteSample*0.1))%32767*/,last_sample++,20843,0,NoUsePwmFrequency,debug);
+					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0),OutputPower/*((int)(CompteSample*0.1))%32767*/,last_sample++,30000,0,NoUsePwmFrequency,debug);
                     
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	

@@ -93,6 +93,8 @@ int gpioSetMode(unsigned gpio, unsigned mode);
 #define GPFSEL0			(0x00/4)
 #define GPFSEL1    		(0x04/4)
 #define GPFSEL2   		(0x08/4)
+#define GPPUD           (0x94/4)
+#define GPPUDCLK0       (0x9C/4)
 
 // ---- Memory allocating defines
 // https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface
