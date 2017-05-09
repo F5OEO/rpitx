@@ -74,7 +74,7 @@ Optimize CPU on PWMFrequency
 //#define PLL_FREQ_1GHZ             1000000000	//PLLC = 1GHZ
 //#define PLL_1GHZ			0x5
 
-#define PLL_FREQ_1GHZ             1000000000	//PLL = 1GHZ
+#define PLL_FREQ_1GHZ             1100000000	//PLL = 1GHZ
 #define PLL_1GHZ			0x6     //PLLD = 1GHZ ONLY AFTER APLYINg DT-BLOB.BIN !!!! WARNING !!!
 
 
@@ -1539,7 +1539,7 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					//OutputPower=(CompteSample/10)%32768;
 
-					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0),OutputPower/*((int)(CompteSample*0.1))%32767*/,last_sample++,30000,0,NoUsePwmFrequency,debug);
+					FrequencyAmplitudeToRegister(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.0),OutputPower/*((int)(CompteSample*0.1))%32767*/,last_sample++,30000,0,NoUsePwmFrequency,debug);
                     
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	
