@@ -18,46 +18,41 @@ struct module_state {
 static struct module_state _state;
 #endif
 
-static void* sampleBase;
-static sf_count_t sampleLength;
-static sf_count_t sampleOffset;
+int streamFileNo = 0;
 static SNDFILE* sndFile;
 static int bitRate;
 
 
 // These methods used by libsndfile's virtual file open function
 static sf_count_t virtualSndfileGetLength(void* unused) {
-	return sampleLength;
+	assert(0 && "virtualSndfileGetLength should not be called");
+	return 0;
 }
-static sf_count_t virtualSndfileRead(void* const dest, const sf_count_t count, void* const userData) {
-	const sf_count_t bytesAvailable = sampleLength - sampleOffset;
-	const int numBytes = bytesAvailable > count ? count : bytesAvailable;
-	memcpy(dest, ((char*)userData) + sampleOffset, numBytes);
-	sampleOffset += numBytes;
-	return numBytes;
+static sf_count_t virtualSndfileRead(void* const dest, sf_count_t count, void* const unused) {
+	// So, the WAV file format starts with 12 bytes: the letters "RIFF", 4 byte
+	// chunk size, and the letters "WAVE". Because we're streaming to a pipe, we
+	// don't know the size of the file, and avconv just sticks in 0xFFFFFFFF, so
+	// we'll just fudge a value in.
+	if (count == 12) {
+		read(streamFileNo, dest, count);  // Just skip these
+		memcpy(dest, "RIFF\x42\xB0\x0A\x00WAVE", count);
+		return count;
+	}
+
+	const ssize_t bytesRead = read(streamFileNo, dest, count);
+	return bytesRead;
 }
 static sf_count_t virtualSndfileTell(void* const unused) {
-	return sampleOffset;
+	assert(0 && "virtualSndfileTell should not be called");
+	return 0;
 }
 static sf_count_t virtualSndfileSeek(
 		const sf_count_t offset,
 		const int whence,
 		void* const unused
 ) {
-	switch (whence) {
-		case SEEK_CUR:
-			sampleOffset += offset;
-			break;
-		case SEEK_SET:
-			sampleOffset = offset;
-			break;
-		case SEEK_END:
-			sampleOffset = sampleLength - offset;
-			break;
-		default:
-			assert(!"Invalid whence");
-	}
-	return sampleOffset;
+	assert(0 && "virtualSndfileSeek should not be called");
+	return 0;
 }
 
 
@@ -66,7 +61,7 @@ typedef struct {
 	uint32_t waitForThisSample;
 } samplerf_t;
 /**
- * Formats a chunk of an array of a mono 44k wav at a time and outputs IQ
+ * Formats a chunk of an array of a mono 48k wav at a time and outputs IQ
  * formatted array for broadcast.
  */
 static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
@@ -105,8 +100,8 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 	}
 	return numBytesWritten;
 }
-static void reset(void) {
-	sampleOffset = 0;
+static void dummyFunction(void) {
+	assert(0 && "dummyFunction should not be called");
 }
 
 
@@ -114,31 +109,28 @@ static PyObject*
 _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	float frequency;
 
-	assert(sizeof(sampleBase) == sizeof(unsigned long));
-	if (!PyArg_ParseTuple(args, "Lif", &sampleBase, &sampleLength, &frequency)) {
+	if (!PyArg_ParseTuple(args, "if", &streamFileNo, &frequency)) {
 		struct module_state *st = GETSTATE(self);
 		PyErr_SetString(st->error, "Invalid arguments");
 		return NULL;
 	}
 
-	sampleOffset = 0;
-
-	SF_VIRTUAL_IO virtualIo = {
-		.get_filelen = virtualSndfileGetLength,
-		.seek = virtualSndfileSeek,
-		.read = virtualSndfileRead,
-		.write = NULL,
-		.tell = virtualSndfileTell
-	};
 	SF_INFO sfInfo;
-	sndFile = sf_open_virtual(&virtualIo, SFM_READ, &sfInfo, sampleBase);
+	SF_VIRTUAL_IO virtualIo = {
+			.get_filelen = virtualSndfileGetLength,
+			.seek = virtualSndfileSeek,
+			.read = virtualSndfileRead,
+			.write = NULL,
+			.tell = virtualSndfileTell
+	};
+	sndFile = sf_open_virtual(&virtualIo, SFM_READ, &sfInfo, NULL);
 	if (sf_error(sndFile) != SF_ERR_NO_ERROR) {
 		char message[100];
 		snprintf(
-				message,
-				COUNT_OF(message),
-				"Unable to open sound file: %s",
-				sf_strerror(sndFile));
+			message,
+			COUNT_OF(message),
+			"Unable to open pipe: %s",
+			sf_strerror(sndFile));
 		message[COUNT_OF(message) - 1] = '\0';
 		struct module_state *st = GETSTATE(self);
 		PyErr_SetString(st->error, message);
@@ -153,8 +145,8 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		SIGWINCH,  // Window resized
 		0
 	};
-	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset, skipSignals, 0);
-	sf_close(sndFile);
+
+	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, dummyFunction, skipSignals, 0);
 
 	Py_RETURN_NONE;
 }
@@ -166,10 +158,9 @@ static PyMethodDef _rpitx_methods[] = {
 		_rpitx_broadcast_fm,
 		METH_VARARGS,
 		"Low-level broadcasting.\n\n"
-			"Broadcast a WAV formatted 48KHz memory array.\n"
+			"Broadcast a WAV formatted 48KHz file.\n"
 			"Args:\n"
-			"    address (int): Address of the memory array.\n"
-			"    length (int): Length of the memory array.\n"
+			"    file_name (str): The WAV file to broadcast.\n"
 			"    frequency (float): The frequency, in MHz, to broadcast on.\n"
 	},
 	{NULL, NULL, 0, NULL}
