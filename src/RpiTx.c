@@ -521,7 +521,7 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
 	double DeltaFreq=f2-f1; //Frequency granularity of PLL (without PWMF)
     
     static int OverWaitNanoSecond=0; //To count how many nano we wait to much
-
+    //OverWaitNanoSecond=0;
     if(WaitNanoSecond-OverWaitNanoSecond<0) {printf("Overwait issue\n");} //Fixme do something clean to avoid this
 
    
@@ -532,13 +532,13 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
     int CompensateWait=WaitNanoSecond-OverWaitNanoSecond;
 	for(i=1;i<PWM_STEP_MAXI;i++)
     {
-        if(CalibrationTab[i]>=CompensateWait)
+        if(CalibrationTab[i]+150>=CompensateWait)
         {
              
              break;
         }
     }
-    OverWaitNanoSecond+=CalibrationTab[i]-WaitNanoSecond;
+    OverWaitNanoSecond+=CalibrationTab[i]+150-WaitNanoSecond;
     //printf("step %d Overwait=%d\n",i,OverWaitNanoSecond);
     int PwmStepDMA=i; //Number step performs by DMA
     int DelayStep=CalibrationTab[i+1]-CalibrationTab[i];		
@@ -1720,7 +1720,7 @@ int pitx_run(
                     {
                 
 					    CompteSample++;
-                        if(CompteSample==327670) Up=0;
+                       // if(CompteSample==327670) Up=0;
                     }
                     else
                     {
@@ -1730,8 +1730,8 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					OutputPower=((CompteSample/50)%2)*32767;
 
-					uint32_t RealWait=FrequencyAmplitudeToRegister2(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.0),OutputPower,last_sample++,10000,0,NoUsePwmFrequency,debug);
-                    //printf("RealWait %d\n",RealWait);
+					uint32_t RealWait=FrequencyAmplitudeToRegister2(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower,last_sample++,20000,0,NoUsePwmFrequency,debug);
+                    //printf("RealWait %d\n",(CompteSample/100)%15000+5000);
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	
 					if (last_sample == NUM_SAMPLES)	last_sample = 0;
