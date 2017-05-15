@@ -62,7 +62,7 @@ def broadcast_fm(media_file_name, frequency):
         for line in lines:
             logger.debug(line)
 
-    #thread = threading.Thread(target=log_stdout).start()
+    thread = threading.Thread(target=log_stdout).start()
 
     logger.debug('Calling broadcast_fm')
     _rpitx.broadcast_fm(stream_process.stdout.fileno(), frequency)
