@@ -5,7 +5,7 @@ CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS	= -lm -lrt -lpthread 
 
 
-../rpitx: RpiGpio.c RpiTx.c  mailbox.c RpiDma.c raspberry_pi_revision.c
+../rpitx: RpiGpio.c RpiTx.c  mailbox.c RpiDma.c raspberry_pi_revision.c calibrationpi2.h calibrationpizero.h calibrationpi3.h
 		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c RpiGpio.c mailbox.c RpiDma.c raspberry_pi_revision.c $(LDFLAGS) 
 		
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable

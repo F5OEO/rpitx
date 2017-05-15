@@ -86,6 +86,10 @@ Optimize CPU on PWMFrequency
 // DMA TIMING : depends on Pi Model : Calibration is better
 int FREQ_DELAY_TIME=0;
 float FREQ_MINI_TIMING=157;
+
+float DelayStep=157;
+float DelayMini=1200;
+
 int PWMF_MARGIN = 2496;//1120; //A Margin for now at 1us with PCM ->OK
 int globalppmpll=0;
 
@@ -112,8 +116,9 @@ int Randomize=1;
 uint32_t GlobalTabPwmFrequency[50];
 
 unsigned int CalibrationTab[200];
-
-
+ #include "calibrationpi2.h"
+ #include "calibrationpi3.h"
+ #include "calibrationpizero.h"
 
 
 //End F5OEO
@@ -405,6 +410,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 #define ln(x) (log(x)/log(2.718281828459045235f))
 
 
+// Again some functions taken gracefully from F4GKR : https://github.com/f4gkr/RadiantBee
 
 //Normalize to [-180,180):
 inline double constrainAngle(double x){
@@ -532,21 +538,22 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
     int CompensateWait=WaitNanoSecond-OverWaitNanoSecond;
 	for(i=1;i<PWM_STEP_MAXI;i++)
     {
-        if(CalibrationTab[i]+150>=CompensateWait)
+        if(CalibrationTab[i]+DelayStep>=CompensateWait)
         {
              
              break;
         }
     }
-    OverWaitNanoSecond+=CalibrationTab[i]+150-WaitNanoSecond;
+    OverWaitNanoSecond+=CalibrationTab[i]+DelayStep-WaitNanoSecond;
     //printf("step %d Overwait=%d\n",i,OverWaitNanoSecond);
     int PwmStepDMA=i; //Number step performs by DMA
-    int DelayStep=CalibrationTab[i+1]-CalibrationTab[i];		
+
+/*    int DelayStep=CalibrationTab[i+1]-CalibrationTab[i];		
     int DelayMini=CalibrationTab[i]-((CalibrationTab[i+1]-CalibrationTab[i])*i);
 
     DelayStep=157;
-    DelayMini=2400;
-
+    DelayMini=1200;
+*/
     int DelayMiniStep=DelayMini/DelayStep;
     int NbStepPWM=PwmStepDMA+DelayMiniStep; // Number step we use to calculate including delay of Minimum constant due to perform Amplitude and getting the AXI bus
     double UnitFrequency=DeltaFreq/(double)NbStepPWM; // Frequency granularity resulting in PWM Frequency
@@ -943,8 +950,52 @@ inline uint32_t FrequencyAmplitudeToRegister(double TuneFrequency,uint32_t Ampli
 
 }
 
+//Get from http://stackoverflow.com/questions/5083465/fast-efficient-least-squares-fit-algorithm-in-c
+
+    #define REAL double
 
 
+    inline static REAL sqr(REAL x) {
+        return x*x;
+    }
+
+
+    int linreg(int n, const REAL x[], const REAL y[], REAL* m, REAL* b, REAL* r)
+    {
+        REAL   sumx = 0.0;                        /* sum of x                      */
+        REAL   sumx2 = 0.0;                       /* sum of x**2                   */
+        REAL   sumxy = 0.0;                       /* sum of x * y                  */
+        REAL   sumy = 0.0;                        /* sum of y                      */
+        REAL   sumy2 = 0.0;                       /* sum of y**2                   */
+    int i;
+       for (i=0;i<n;i++)   
+          { 
+          sumx  += x[i];       
+          sumx2 += sqr(x[i]);  
+          sumxy += x[i] * y[i];
+          sumy  += y[i];      
+          sumy2 += sqr(y[i]); 
+          } 
+
+       REAL denom = (n * sumx2 - sqr(sumx));
+       if (denom == 0) {
+           // singular matrix. can't solve the problem.
+           *m = 0;
+           *b = 0;
+           if (r) *r = 0;
+           return 1;
+       }
+
+       *m = (n * sumxy  -  sumx * sumy) / denom;
+       *b = (sumy * sumx2  -  sumx * sumxy) / denom;
+       if (r!=NULL) {
+          *r = (sumxy - sumx * sumy / n) /          /* compute correlation coeff     */
+                sqrt((sumx2 - sqr(sumx)/n) *
+                (sumy2 - sqr(sumy)/n));
+       }
+
+       return 0; 
+    }
 
 
 int GetDMADelay(int Step)
@@ -1034,9 +1085,16 @@ int CalibrateSystem(int *ppm,int *BaseDelayDMA,float *StepDelayDMA)
 	ntx.modes = 0; /* only read */
   	status = ntp_adjtime(&ntx);
 	double clockppm;
-    int hFileCsv;
-    hFileCsv=open("calib.csv",O_CREAT | O_WRONLY);
-    
+   
+
+    switch(info.model)
+    {
+        case RPI_MODEL_B_PI_2:InitCalibrationTabPi2();break;
+         case RPI_MODEL_ZERO:InitCalibrationTabPiZero();break;
+        case RPI_MODEL_B_PI_3:InitCalibrationTabPi3();break;
+        default:printf("Warning: No calibration for this pi model \n");InitCalibrationTabPiZero();break;
+    }
+
   	if (status != TIME_OK)
 	{
     		printf("Error: NTP\n");
@@ -1057,19 +1115,50 @@ int CalibrateSystem(int *ppm,int *BaseDelayDMA,float *StepDelayDMA)
 	*StepDelayDMA=(GetDMADelay(PWM_STEP_MAXI/2)-(*BaseDelayDMA))/(PWM_STEP_MAXI/2);*/
     char csvline[255];
 	
-    #include "calibration.h"
+   
+    REAL x[PWM_STEP_MAXI];
+    REAL y[PWM_STEP_MAXI];
 
-   /* for(i=1;i<200;i+=1)
+  /* 
+     int hFileCsv;
+    hFileCsv=open("calib.csv",O_CREAT | O_WRONLY);
+    
+    for(i=1;i<PWM_STEP_MAXI;i+=1)
     {
-        int Delay=GetDMADelay(111);
+        int Delay=GetDMADelay(i);
 		printf("Step %d :%d \n",i,Delay);//,(GetDMADelay(i)-BaseDelay)/i);
-        sprintf(csvline,"CalibrationTab[%d]=%d\n",i,Delay);
+        sprintf(csvline,"CalibrationTab[%d]=%d;\n",i,Delay);
         CalibrationTab[i]=Delay;
         write(hFileCsv,csvline,strlen(csvline));
         
     }*/
 
+    REAL m,b,r;
+   
+    for(i=1;i<PWM_STEP_MAXI;i++)
+    {
+        x[i]=i;
+        y[i]=CalibrationTab[i];   
+    }
+    #define TangentWindow 10
     
+    float Sum[2]={0.0,0.0};
+    int NumberToAverage=0;    
+    for(i=20;i<PWM_STEP_MAXI-20;i++)
+    {
+           int n=TangentWindow+i<PWM_STEP_MAXI?TangentWindow:PWM_STEP_MAXI-i;
+           int Begin=((i-TangentWindow)<0)?i:i-TangentWindow; 
+            linreg(n*2,x+Begin,y+Begin,&m,&b,&r);
+            Sum[0]+=m;
+            Sum[1]+=b;
+            NumberToAverage++;
+            //printf("Timing step %d = %f step + %f\n",i,m,b);
+    }
+    
+    DelayStep=Sum[0]/NumberToAverage;
+    DelayMini=Sum[1]/NumberToAverage;
+    
+    printf("DMA Delay Step =%f Delay =%f\n",DelayStep,DelayMini);   
 	return 1;
 }
 
@@ -1103,7 +1192,7 @@ int pitx_init(int SampleRate, double TuningFrequency, int* skipSignals,int SetDm
 //int FREQ_MINI_TIMING=157;
 //int PWMF_MARGIN = 1120; //A Margin for now at 1us with PCM ->OK
 
-	if(CalibrateSystem(&globalppmpll,&PWMF_MARGIN,&FREQ_MINI_TIMING)) 	printf("Calibrate : ppm=%d DMA %fns:%dns\n",globalppmpll,FREQ_MINI_TIMING,PWMF_MARGIN);
+	if(CalibrateSystem(&globalppmpll,&PWMF_MARGIN,&FREQ_MINI_TIMING)) 	printf("Calibrate : ppm=%d DMA %fns:%fns\n",globalppmpll,DelayStep,DelayMini);
 	//printf("Timing : 1 cyle=%dns 1sample=%dns\n",NBSAMPLES_PWM_FREQ_MAX*400*3,(int)(1e9/(float)SampleRate));
 	return 1;
 }
@@ -1720,7 +1809,7 @@ int pitx_run(
                     {
                 
 					    CompteSample++;
-                       // if(CompteSample==327670) Up=0;
+                        if(CompteSample==327670) Up=0;
                     }
                     else
                     {
@@ -1728,9 +1817,9 @@ int pitx_run(
                         if(CompteSample==0) Up=1;
                     }
 					debug=1;//(debug+1)%2;	
-					OutputPower=((CompteSample/50)%2)*32767;
+					//OutputPower=((CompteSample/50)%2)*32767;
 
-					uint32_t RealWait=FrequencyAmplitudeToRegister2(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower,last_sample++,20000,0,NoUsePwmFrequency,debug);
+					uint32_t RealWait=FrequencyAmplitudeToRegister2(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.05),OutputPower,last_sample++,20000,0,NoUsePwmFrequency,debug);
                     //printf("RealWait %d\n",(CompteSample/100)%15000+5000);
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	

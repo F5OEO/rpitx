@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <ctype.h>
+#include "raspberry_pi_revision.h"
 
 char InitGpio(void);
 
@@ -26,7 +27,7 @@ volatile uint32_t *pad_gpios_reg;
 
 void * map_peripheral(uint32_t base, uint32_t len);
 int gpioSetMode(unsigned gpio, unsigned mode);
-
+RASPBERRY_PI_INFO_T info;
 
 #define DMA_BASE		(BCM2708_PERI_BASE + 0x00007000 )
 #define DMA_LEN			0xF00

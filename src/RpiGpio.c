@@ -2,7 +2,7 @@
 
 #include "RpiGpio.h"
 #include "mailbox.h"
-#include "raspberry_pi_revision.h"
+
 
 static volatile unsigned int BCM2708_PERI_BASE;	
 static uint32_t dram_phys_base;
@@ -67,7 +67,7 @@ int gpioSetMode(unsigned gpio, unsigned mode)
 
 void DisplayInfo()
 {
-	RASPBERRY_PI_INFO_T info;
+	
     
     	if (getRaspberryPiInformation(&info) > 0)
 	{
