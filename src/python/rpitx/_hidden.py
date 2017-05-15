@@ -6,6 +6,7 @@ import libavwrapper
 import logging
 import os
 import subprocess
+import sys
 import threading
 
 PIPE = 'pipe:1'
@@ -17,6 +18,22 @@ def broadcast_fm(media_file_name, frequency):
 
     logging.basicConfig()
     logger = logging.getLogger('rpitx')
+
+    # Python < 3.3 throws IOError instead of PermissionError
+    if sys.version_info.major <= 2 or (sys.version_info.major == 3 and sys.version_info.minor < 3):
+        Error = IOError
+    else:
+        Error = PermissionError
+
+    # mailbox.c calls exit if /dev/mem can't be opened, which causes the avconv
+    # pipe to be left open and messes with the terminal, so try it here first
+    # just to be safe
+    try:
+        open('/dev/mem')
+    except Error:
+        raise Error(
+                'This program should be run as root. Try prefixing command with: sudo'
+                )
 
     dev_null = open(os.devnull, 'w')
     if subprocess.call(('which', 'ffmpeg'), stdout=dev_null) == 0:
