@@ -93,7 +93,7 @@ void addvistrailer ()
 void ProcessMartin1()
 {
 	static uint32_t FrequencyMartin1[3]={1200,1500,1500};
-	static uint32_t TimingMartin1[3]={48720,5720,4576};
+	static uint32_t TimingMartin1[3]={48620,5720,4576};
 	
 	int EndOfPicture=0;
 	int NbRead=0;
@@ -156,6 +156,12 @@ int main(int argc, char **argv)
 	}
 		
 	ProcessMartin1();
+    /*int i;
+    for(i=0;i<320*240;i++)
+    {
+        playtone(1200,5720);
+        playtone(0,5720);
+    }*/
 	close(FilePicture);
 	close(FileFreqTiming);
 	return 0;
