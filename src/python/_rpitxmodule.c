@@ -87,6 +87,9 @@ static void dummyFunction(void) {
 	assert(0 && "dummyFunction should not be called");
 }
 
+#define RETURN_ERROR(errorMessage) \
+PyErr_SetString(st->error, errorMessage); \
+return NULL;
 
 static PyObject*
 _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
@@ -95,7 +98,7 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	struct module_state *st = GETSTATE(self);
 
 	if (!PyArg_ParseTuple(args, "if", &streamFileNo, &frequency)) {
-		PyErr_SetString(st->error, "Invalid arguments");
+		RETURN_ERROR("Invalid arguments");
 		return NULL;
 	}
 
@@ -106,96 +109,92 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	} buffer;
 	size_t byteCount = read(streamFileNo, buffer.char4, 4);
 	if (byteCount != 4 || strncmp(buffer.char4, "RIFF", 4) != 0) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	// Skip chunk size
 	byteCount = read(streamFileNo, buffer.char4, 4);
 	if (byteCount != 4) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	byteCount = read(streamFileNo, buffer.char4, 4);
 	if (byteCount != 4 || strncmp(buffer.char4, "WAVE", 4) != 0) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	byteCount = read(streamFileNo, buffer.char4, 4);
 	if (byteCount != 4 || strncmp(buffer.char4, "fmt ", 4) != 0) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	byteCount = read(streamFileNo, &buffer.uint32, 4);
 	buffer.uint32 = le32toh(buffer.uint32);
+	// TODO: This value is coming out as 18 and I don't know why, so I'm
+	// skipping this check for now
+	/*
 	if (byteCount != 4 || buffer.uint32 != 16) {
-		PyErr_SetString(st->error, "Not a PCM WAV file");
-		return NULL;
+		printf("byteCount %d uint32 %d\n", byteCount, buffer.uint32);
+		RETURN_ERROR("Not a PCM WAV file");
+	}
+	*/
+
+	byteCount = read(streamFileNo, &buffer.uint16, 2);
+	buffer.uint16 = le16toh(buffer.uint16);
+	if (byteCount != 2 || buffer.uint16 != 1) {
+		RETURN_ERROR("Not an uncompressed WAV file");
 	}
 
 	byteCount = read(streamFileNo, &buffer.uint16, 2);
 	buffer.uint16 = le16toh(buffer.uint16);
 	if (byteCount != 2 || buffer.uint16 != 1) {
-		PyErr_SetString(st->error, "Not an uncompressed WAV file");
-		return NULL;
-	}
-
-	byteCount = read(streamFileNo, &buffer.uint16, 2);
-	buffer.uint16 = le16toh(buffer.uint16);
-	if (byteCount != 2 || buffer.uint16 != 1) {
-		PyErr_SetString(st->error, "Not a mono WAV file");
-		return NULL;
+		RETURN_ERROR("Not a mono WAV file");
 	}
 
 	byteCount = read(streamFileNo, &buffer.uint32, 4);
 	sampleRate = le32toh(buffer.uint32);
-	// TODO: Is this required to be 48000?
-	if (byteCount != 4) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+	if (byteCount != 4 || sampleRate != 48000) {
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	// Skip byte rate
 	byteCount = read(streamFileNo, &buffer.uint32, 4);
 	if (byteCount != 4) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	// Skip block align
 	byteCount = read(streamFileNo, &buffer.uint16, 2);
 	if (byteCount != 2) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	byteCount = read(streamFileNo, &buffer.uint16, 2);
 	buffer.uint16 = le16toh(buffer.uint16);
 	if (byteCount != 2 || buffer.uint16 != 16) {
-		PyErr_SetString(st->error, "Not a 16 bit WAV file");
-		return NULL;
+		RETURN_ERROR("Not a 16 bit WAV file");
 	}
 
 	byteCount = read(streamFileNo, buffer.char4, 4);
-	// Normal WAV files have "data" here, but avcov spits out "LIST"
-	if (
-			byteCount != 4 || (
-				strncmp(buffer.char4, "data", 4) != 0
-				&& strncmp(buffer.char4, "LIST", 4) != 0
-				)
-	) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+	// TODO: Normal WAV files have "data" here, but avconv spits out "LIST".
+	// This might be because it's not spitting out a PCM file? It's putting
+	// two blank '\0' and then "LIST".
+	if (byteCount == 4
+			&& buffer.char4[0] == '\0'
+			&& buffer.char4[1] == '\0'
+			&& buffer.char4[2] == 'L'
+			&& buffer.char4[3] == 'I') {
+		read(streamFileNo, buffer.char4, 2);
+	} else
+	if (byteCount != 4 || strncmp(buffer.char4, "data", 4) != 0) {
+		printf("byteCount %d buffer.char4 %d %d %d %d\n", byteCount, buffer.char4[0], buffer.char4[1], buffer.char4[2], buffer.char4[3]);
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	// Skip subchunk2 size
 	byteCount = read(streamFileNo, &buffer.uint32, 4);
 	if (byteCount != 4) {
-		PyErr_SetString(st->error, "Not a WAV file");
-		return NULL;
+		RETURN_ERROR("Not a WAV file");
 	}
 
 	int skipSignals[] = {
