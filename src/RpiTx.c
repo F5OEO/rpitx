@@ -230,7 +230,7 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 	{
 		MASH=3;
 	}
-
+    
 	printf("MASH %d Freq PLL# %d\n",MASH,PllNumber);
 	Originfsel=gpio_reg[GPFSEL0]; // Warning carefull if FSEL is used after !!!!!!!!!!!!!!!!!!!!
 	Originfsel2=gpio_reg[GPFSEL2]; // Warning carefull if FSEL is used after !!!!!!!!!!!!!!!!!!!!
@@ -508,6 +508,7 @@ inline void shuffle_int(uint32_t *list, int len)
 
 inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Amplitude,int NoSample,uint32_t WaitNanoSecond,uint32_t SampleRate,char NoUsePWMF,int debug)
 {
+    static char ShowInfo=1;	
 
     ctl = (struct control_data_s *)virtbase; // Struct ctl is mapped to the memory allocated by RpiDMA (Mailbox)
 	dma_cb_t *cbp = ctl->cb+NoSample*CBS_SIZE_BY_SAMPLE;
@@ -543,17 +544,17 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
     //Determine NbStepDMA which correpond to WaitNanosecond
      //FixMe if WaitNanoSecond is too large !
     int i;
-    int CompensateWait=WaitNanoSecond-OverWaitNanoSecond;
+    int CompensateWait=(WaitNanoSecond-OverWaitNanoSecond);
 	for(i=1;i<PWM_STEP_MAXI;i++)
     {
-        if(CalibrationTab[i]+DelayStep>=CompensateWait)
+        if(CalibrationTab[i]/*+DelayStep*/>=CompensateWait)
         {
              
              break;
         }
     }
-    OverWaitNanoSecond+=CalibrationTab[i]+DelayStep-WaitNanoSecond;
-    //printf("step %d Overwait=%d\n",i,OverWaitNanoSecond);
+    OverWaitNanoSecond+=CalibrationTab[i]/*+DelayStep*/-WaitNanoSecond;
+   // printf("step %d Overwait=%d\n",i,OverWaitNanoSecond);
     int PwmStepDMA=i; //Number step performs by DMA
 
 /*    int DelayStep=CalibrationTab[i+1]-CalibrationTab[i];		
@@ -579,8 +580,11 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
          NbF2=NbStepPWM-NbF1;
     }
 
-
-    //printf("FTune=%f f1=%f f2=%f PLL Granularity=%f NbStepDMA=%d NbStepExtended=%d PWMFGranularity=%f\n",TuneFrequency,f1,f2,DeltaFreq,PwmStepDMA,NbStepPWM,UnitFrequency);
+    if(ShowInfo)
+    {	
+       printf("FTune=%f f1=%f f2=%f PLL Granularity=%f NbStepDMA=%d NbStepExtended=%d PWMFGranularity=%f\n",TuneFrequency,f1,f2,DeltaFreq,PwmStepDMA,NbStepPWM,UnitFrequency);
+        ShowInfo=0;
+    }
 
     uint32_t RegisterF1;
 	uint32_t RegisterF2;
@@ -1035,7 +1039,7 @@ int GetDMADelay(int Step)
 	}
 	
 	dma_reg[DMA_CS+DMA_CHANNEL*0x40] = DMA_CS_PRIORITY(7) | DMA_CS_PANIC_PRIORITY(7) | DMA_CS_DISDEBUG |DMA_CS_ACTIVE;	// START DMA : go, mid priority, wait for outstanding writes :7 Seems Max Priority
-	//usleep(500); //Wait to be sure DMA is running stable
+	usleep(100); //Wait to be sure DMA is running stable
 	int i;
 	int SumDelay=0;
     int NbLoopToAverage=1;
@@ -1064,7 +1068,7 @@ int GetDMADelay(int Step)
 			clock_gettime(CLOCK_REALTIME, &gettime_now);
 		
 		}
-		while(free_slots<=NUM_SAMPLES*0.4);
+		while(free_slots<=100/*NUM_SAMPLES*0.4*/);
 	 	
 	
 
@@ -1110,6 +1114,7 @@ int CalibrateSystem(double *ppm,int *BaseDelayDMA,float *StepDelayDMA)
   	if (status != TIME_OK)
 	{
     		printf("Error: NTP\n");
+            *ppm=0;
 		//return 0;
  	}
     else
@@ -1130,22 +1135,26 @@ int CalibrateSystem(double *ppm,int *BaseDelayDMA,float *StepDelayDMA)
    
     REAL x[PWM_STEP_MAXI];
     REAL y[PWM_STEP_MAXI];
-
-   
+    #define WRITE_CALIBRATION 1 
+   #ifdef WRITE_CALIBRATION
      int hFileCsv;
     hFileCsv=open("calib.csv",O_CREAT | O_WRONLY);
-    
+    #endif
     printf("Performs calibration ");
     for(i=1;i<PWM_STEP_MAXI;i+=1)
     {
         int Delay=GetDMADelay(i);
 		//printf("Step %d :%d \n",i,Delay);//,(GetDMADelay(i)-BaseDelay)/i);
-        sprintf(csvline,"CalibrationTab[%d]=%d;\n",i,Delay);
+
         CalibrationTab[i]=Delay;
-        write(hFileCsv,csvline,strlen(csvline));
-        if((i%10)==0)printf(".");fflush(stdout);
+               if((i%10)==0)printf(".");fflush(stdout);
+           #ifdef WRITE_CALIBRATION
+                    sprintf(csvline,"CalibrationTab[%d]=%d;\n",i,Delay);
+             write(hFileCsv,csvline,strlen(csvline));
+            #endif
+ 
     }
-    
+
     printf("\n");
     REAL m,b,r;
    
@@ -1824,7 +1833,7 @@ int pitx_run(
                     {
                 
 					    CompteSample++;
-                      //  if(CompteSample==327670) Up=0;
+                        if(CompteSample==327670) Up=0;
                     }
                     else
                     {
@@ -1834,7 +1843,7 @@ int pitx_run(
 					debug=1;//(debug+1)%2;	
 					//OutputPower=((CompteSample/50)%2)*32767;
 
-					uint32_t RealWait=FrequencyAmplitudeToRegister2(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower,last_sample++,10000,0,NoUsePwmFrequency,debug);
+					uint32_t RealWait=FrequencyAmplitudeToRegister2(GlobalTuningFrequency/HarmonicNumber+(CompteSample*0.00),OutputPower,last_sample++,30000,0,NoUsePwmFrequency,debug);
                     //printf("RealWait %d\n",(CompteSample/100)%15000+5000);
 					free_slots--;
 					//printf("%f \n",GlobalTuningFrequency+(((CompteSample/10)*1)%50000));	
