@@ -46,7 +46,7 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 	samplerf.waitForThisSample = 1e9 / ((float)sampleRate);  //en 100 de nanosecond
 	char* const out = outBuffer;
 
-	while (numBytesWritten < count - sizeof(samplerf_t)) {
+	while (numBytesWritten <= count - sizeof(samplerf_t)) {
 		for (
 				;
 				numBytesWritten <= count - sizeof(samplerf_t) && wavOffset < wavFilled;
@@ -70,7 +70,8 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 static size_t read_float(int streamFileNo, float* wavBuffer, const size_t count) {
 	// Samples are stored as 16 bit signed integers in range of -32768 to 32767
 	uint16_t sample;
-	for (int i = 0; i < count; ++i) {
+	int i;
+	for (i = 0; i < count; ++i) {
 		const int byteCount = read(streamFileNo, &sample, sizeof(sample));
 		if (byteCount != sizeof(sample)) {
 			return i;
