@@ -10,7 +10,7 @@ import sys
 import threading
 
 PIPE = 'pipe:1'
-DUMMY_FILE = 'dummy-file'
+DUMMY_FILE = 'dummy-file.wav'
 
 
 def broadcast_fm(media_file_name, frequency):
@@ -71,16 +71,25 @@ def broadcast_fm(media_file_name, frequency):
     command_line.remove(DUMMY_FILE)
     command_line += ('-f', 'wav', PIPE)
     logger.debug('Running command "%s"', ' '.join(command_line))
-    stream_process = subprocess.Popen(command_line, stdout=subprocess.PIPE)
+    stream_process = subprocess.Popen(
+            command_line,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
     def log_stdout():
-        """Log stdout from the stream process."""
-        lines = stream.run()
-        for line in lines:
-            logger.debug(line)
+        """Log output from the stream process."""
+        for line in stream_process.stderr:
+            logger.debug(line.rstrip())
 
-    thread = threading.Thread(target=log_stdout).start()
+    thread = threading.Thread(target=log_stdout)
+    thread.start()
 
     logger.debug('Calling broadcast_fm')
-    _rpitx.broadcast_fm(stream_process.stdout.fileno(), frequency)
+    try:
+        _rpitx.broadcast_fm(stream_process.stdout.fileno(), frequency)
+    except Exception as exc:
+        stream_process.stdout.close()
+        thread.join()
+        raise exc
+
     thread.join()
