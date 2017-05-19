@@ -512,11 +512,14 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
 
     ctl = (struct control_data_s *)virtbase; // Struct ctl is mapped to the memory allocated by RpiDMA (Mailbox)
 	dma_cb_t *cbp = ctl->cb+NoSample*CBS_SIZE_BY_SAMPLE;
-
+    
+    
     if(WaitNanoSecond==0)
 	{
 		if(SampleRate!=0)
 				WaitNanoSecond = (1e9/SampleRate);
+        else
+            printf("No samplerate neither Wait..Quit\n");
 	}	
 
     // ********************************** PWM FREQUENCY PROCESSING *****************************
@@ -609,18 +612,20 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
         //printf("Ftune %f NbStepPWM=%d NbF1=%d NbF2=%d DelayMini=%d DelayStep=%d DelayMiniStep%d\n",FTunePercentage,NbStepPWM,NbF1,NbF2,DelayMini,DelayStep,DelayMiniStep);
     
     //Fill DMA 
-    int BeginShuffle=rand()%(PwmStepDMA-1); //-1 cause last value should always be f2
-    for(i=0;i<NbF1DMA;i++)
-    {	  
-        //ctl->sample[NoSample].FrequencyTab[i]=RegisterF1;     
-        ctl->sample[NoSample].FrequencyTab[Shuffle[PwmStepDMA-1][(i+BeginShuffle)%(PwmStepDMA-1)]]=RegisterF1;
+    if(PwmStepDMA>1)
+    {
+        int BeginShuffle=rand()%(PwmStepDMA-1); //-1 cause last value should always be f2
+        for(i=0;i<NbF1DMA;i++)
+        {	  
+            //ctl->sample[NoSample].FrequencyTab[i]=RegisterF1;     
+            ctl->sample[NoSample].FrequencyTab[Shuffle[PwmStepDMA-1][(i+BeginShuffle)%(PwmStepDMA-1)]]=RegisterF1;
+        }
+        for(i=NbF1DMA;i<PwmStepDMA-1;i++)
+        {	       
+            //ctl->sample[NoSample].FrequencyTab[i]=RegisterF2;
+            ctl->sample[NoSample].FrequencyTab[Shuffle[PwmStepDMA-1][(i+BeginShuffle)%(PwmStepDMA-1)]]=RegisterF2;
+        }
     }
-    for(i=NbF1DMA;i<PwmStepDMA-1;i++)
-    {	       
-        //ctl->sample[NoSample].FrequencyTab[i]=RegisterF2;
-        ctl->sample[NoSample].FrequencyTab[Shuffle[PwmStepDMA-1][(i+BeginShuffle)%(PwmStepDMA-1)]]=RegisterF2;
-    }
-    
     ctl->sample[NoSample].FrequencyTab[PwmStepDMA-1]=RegisterF2; //Always finish by f2 to be played later
 		
 	dma_cb_t *cbpwrite=cbp+2;
@@ -669,9 +674,7 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
 		}
 	}
 
-	static int OldIntAmplitude=0;
-				
-	
+		
 	if(IntAmplitude>7) IntAmplitude=7;
 	if(IntAmplitude<0) IntAmplitude=0;
 	ctl->sample[NoSample].Amplitude1=0x5a000000 + (IntAmplitude&0x7) + (1<<4) + (0<<3);
@@ -1426,6 +1429,8 @@ int pitx_run(
 					}
 				}
 				
+
+
 				for(i=0;i<DmaSampleBurstSize;i++)
 				{
 					//static float samplerate=48000;
@@ -1471,7 +1476,7 @@ int pitx_run(
 				// SHOULD NOT EXEED 200 STEP*500ns; SAMPLERATE SHOULD BE MAX TO HAVE PRECISION FOR PCM 
 				// BUT FIFO OF PCM IS 16 : SAMPLERATE MAYBE NOT EXCESS 16*80000 ! CAREFULL BUGS HERE
 				//#define MAX_DELAY_WAIT (PWM_STEP_MAXI/2*FREQ_MINI_TIMING-PWMF_MARGIN) 
-                int MAX_DELAY_WAIT = 20000; //CalibrationTab[199];
+                int MAX_DELAY_WAIT = 30000; //CalibrationTab[199];
 				static int CompteSample=0;
 				static uint32_t TimeRemaining=0;
 				static samplerf_t SampleRf;
@@ -1480,9 +1485,11 @@ int pitx_run(
 				int i;
 				for(i=0;i<DmaSampleBurstSize;i++)
 				{
+                    
 					if(TimeRemaining==0)
 					{
 						NbRead=readWrapper(&SampleRf,sizeof(samplerf_t));
+                        
 						if(NbRead!=sizeof(samplerf_t)) 
 						{
 							if(loop_mode_flag==1)
@@ -1518,13 +1525,13 @@ int pitx_run(
 					if(Mode==MODE_RF)
 					{
                         //Need to fix : in FM need a constant carrier, in SSTV need sometimes to pause
-						if(SampleRf.Frequency==0.0)
+						/*if(SampleRf.Frequency==0.0)
 						{
 							amp=0;
 							SampleRf.Frequency=00.0;// TODO change that ugly frequency
                            
 						}
-						else
+						else*/
 							amp=32767;
 						FrequencyAmplitudeToRegister2((SampleRf.Frequency/HarmonicNumber+GlobalTuningFrequency)/HarmonicNumber,amp,last_sample++,WaitSample,0,NoUsePwmFrequency,debug);
 					}
