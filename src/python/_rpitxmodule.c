@@ -1,5 +1,8 @@
 #include <Python.h>
 #include <assert.h>
+#include <endian.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "../RpiTx.h"
 #include "../RpiGpio.h"
@@ -62,6 +65,10 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 
 		if (wavOffset == wavFilled) {
 			wavFilled = read_float(streamFileNo, wavBuffer, COUNT_OF(wavBuffer));
+			if (wavFilled == 0) {
+				// End of file
+				return numBytesWritten;
+			}
 			wavOffset = 0;
 		}
 	}
@@ -134,7 +141,6 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	// skipping this check for now
 	/*
 	if (byteCount != 4 || buffer.uint32 != 16) {
-		printf("byteCount %d uint32 %d\n", byteCount, buffer.uint32);
 		RETURN_ERROR("Not a PCM WAV file");
 	}
 	*/
@@ -175,21 +181,44 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		RETURN_ERROR("Not a 16 bit WAV file");
 	}
 
-	byteCount = read(streamFileNo, buffer.char4, 4);
-	// TODO: Normal WAV files have "data" here, but avconv spits out "LIST".
-	// This might be because it's not spitting out a PCM file? It's putting
-	// two blank '\0' and then "LIST".
-	if (byteCount == 4
-			&& buffer.char4[0] == '\0'
-			&& buffer.char4[1] == '\0'
-			&& buffer.char4[2] == 'L'
-			&& buffer.char4[3] == 'I') {
-		read(streamFileNo, buffer.char4, 2);
-	} else
-	if (byteCount != 4 || strncmp(buffer.char4, "data", 4) != 0) {
-		printf("byteCount %d buffer.char4 %d %d %d %d\n", byteCount, buffer.char4[0], buffer.char4[1], buffer.char4[2], buffer.char4[3]);
+	// TODO: PCM WAV files have "data" here, but avconv spits out a bunch of extra
+	// parameters, starting with "LIST" and including the encoder I think. However,
+	// the marker "data" is still there where the data starts, so let's just skip
+	// to that.
+	byteCount = read(streamFileNo, buffer.char4, 1);
+	int dataLettersCount = 0;
+	while (byteCount == 1) {
+		const char letter = buffer.char4[0];
+		switch (letter) {
+			case 'd':
+				dataLettersCount = 1;
+				break;
+			case 'a':
+				if (dataLettersCount == 1) {
+					++dataLettersCount;
+				} else if (dataLettersCount == 3) {
+					++dataLettersCount;
+					goto foundDataMarker;
+				} else {
+					dataLettersCount = 0;
+				}
+				break;
+			case 't':
+				if (dataLettersCount == 2) {
+					++dataLettersCount;
+				} else {
+					dataLettersCount = 0;
+				}
+				break;
+			default:
+				dataLettersCount = 0;
+		}
+		byteCount = read(streamFileNo, buffer.char4, 1);
+	}
+	if (dataLettersCount != 4) {
 		RETURN_ERROR("Not a WAV file");
 	}
+foundDataMarker:
 
 	// Skip subchunk2 size
 	byteCount = read(streamFileNo, &buffer.uint32, 4);
