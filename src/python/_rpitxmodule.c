@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include "../RpiTx.h"
-#include "../RpiGpio.h"
 
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
@@ -28,10 +27,10 @@ typedef struct {
 	uint32_t waitForThisSample;
 } samplerf_t;
 
-static size_t read_float(int streamFileNo, float* wavBuffer, const size_t count);
+static size_t readFloat(int streamFileNo, float* wavBuffer, const size_t count);
 
 /**
- * Formats a chunk of an array of a mono 48k wav at a time and outputs IQ
+ * Formats a chunk of an array of a mono 48k wav at a time and outputs RF
  * formatted array for broadcast.
  */
 static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
@@ -64,7 +63,7 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 		assert(wavOffset <= wavFilled);
 
 		if (wavOffset == wavFilled) {
-			wavFilled = read_float(streamFileNo, wavBuffer, COUNT_OF(wavBuffer));
+			wavFilled = readFloat(streamFileNo, wavBuffer, COUNT_OF(wavBuffer));
 			if (wavFilled == 0) {
 				// End of file
 				return numBytesWritten;
@@ -74,9 +73,9 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 	}
 	return numBytesWritten;
 }
-static size_t read_float(int streamFileNo, float* wavBuffer, const size_t count) {
+static size_t readFloat(int streamFileNo, float* wavBuffer, const size_t count) {
 	// Samples are stored as 16 bit signed integers in range of -32768 to 32767
-	uint16_t sample;
+	int16_t sample;
 	int i;
 	for (i = 0; i < count; ++i) {
 		const int byteCount = read(streamFileNo, &sample, sizeof(sample));
@@ -106,7 +105,6 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 
 	if (!PyArg_ParseTuple(args, "if", &streamFileNo, &frequency)) {
 		RETURN_ERROR("Invalid arguments");
-		return NULL;
 	}
 
 	union {
