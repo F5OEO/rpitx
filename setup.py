@@ -4,7 +4,7 @@ from setuptools import setup, Extension
 
 setup(
     name='rpitx',
-    version='0.1',
+    version='0.2',
     description='Raspyberry Pi radio transmitter',
     author='Brandon Skari',
     author_email='brandon@skari.org',

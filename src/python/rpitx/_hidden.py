@@ -1,20 +1,23 @@
 """Hides imports and other irrelevant things so that ipython works nicely."""
 
-import _rpitx
-import ffmpegwrapper
-import libavwrapper
 import logging
 import os
 import subprocess
 import sys
 import threading
+import _rpitx
+import ffmpegwrapper
+import libavwrapper
 
 PIPE = 'pipe:1'
 DUMMY_FILE = 'dummy-file.wav'
 
 
 def broadcast_fm(media_file_name, frequency):
-    """Play a media file's audio over FM."""
+    """Broadcast a media file's audio over FM.
+Args:
+    media_file_name (str): The file to broadcast.
+    frequency (float): The frequency, in MHz, to broadcast on."""
 
     logging.basicConfig()
     logger = logging.getLogger('rpitx')

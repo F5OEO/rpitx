@@ -107,75 +107,75 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		RETURN_ERROR("Invalid arguments");
 	}
 
-	union {
-		char char4[4];
-		uint32_t uint32;
-		uint16_t uint16;
-	} buffer;
-	size_t byteCount = read(streamFileNo, buffer.char4, 4);
-	if (byteCount != 4 || strncmp(buffer.char4, "RIFF", 4) != 0) {
+	char char4[4];
+	uint32_t uint32;
+	uint16_t uint16;
+	char letter;
+
+	size_t byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4) || strncmp(char4, "RIFF", 4) != 0) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
 	// Skip chunk size
-	byteCount = read(streamFileNo, buffer.char4, 4);
-	if (byteCount != 4) {
+	byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4)) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
-	byteCount = read(streamFileNo, buffer.char4, 4);
-	if (byteCount != 4 || strncmp(buffer.char4, "WAVE", 4) != 0) {
+	byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4) || strncmp(char4, "WAVE", 4) != 0) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
-	byteCount = read(streamFileNo, buffer.char4, 4);
-	if (byteCount != 4 || strncmp(buffer.char4, "fmt ", 4) != 0) {
+	byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4) || strncmp(char4, "fmt ", 4) != 0) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
-	byteCount = read(streamFileNo, &buffer.uint32, 4);
-	buffer.uint32 = le32toh(buffer.uint32);
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	uint32 = le32toh(uint32);
 	// TODO: This value is coming out as 18 and I don't know why, so I'm
 	// skipping this check for now
 	/*
-	if (byteCount != 4 || buffer.uint32 != 16) {
+	if (byteCount != sizeof(uint32) || uint32 != 16) {
 		RETURN_ERROR("Not a PCM WAV file");
 	}
 	*/
 
-	byteCount = read(streamFileNo, &buffer.uint16, 2);
-	buffer.uint16 = le16toh(buffer.uint16);
-	if (byteCount != 2 || buffer.uint16 != 1) {
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	uint16 = le16toh(uint16);
+	if (byteCount != sizeof(uint16) || uint16 != 1) {
 		RETURN_ERROR("Not an uncompressed WAV file");
 	}
 
-	byteCount = read(streamFileNo, &buffer.uint16, 2);
-	buffer.uint16 = le16toh(buffer.uint16);
-	if (byteCount != 2 || buffer.uint16 != 1) {
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	uint16 = le16toh(uint16);
+	if (byteCount != sizeof(uint16) || uint16 != 1) {
 		RETURN_ERROR("Not a mono WAV file");
 	}
 
-	byteCount = read(streamFileNo, &buffer.uint32, 4);
-	sampleRate = le32toh(buffer.uint32);
-	if (byteCount != 4 || sampleRate != 48000) {
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	sampleRate = le32toh(uint32);
+	if (byteCount != sizeof(uint32) || sampleRate != 48000) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
 	// Skip byte rate
-	byteCount = read(streamFileNo, &buffer.uint32, 4);
-	if (byteCount != 4) {
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	if (byteCount != sizeof(uint32)) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
 	// Skip block align
-	byteCount = read(streamFileNo, &buffer.uint16, 2);
-	if (byteCount != 2) {
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	if (byteCount != sizeof(uint16)) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
-	byteCount = read(streamFileNo, &buffer.uint16, 2);
-	buffer.uint16 = le16toh(buffer.uint16);
-	if (byteCount != 2 || buffer.uint16 != 16) {
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	uint16 = le16toh(uint16);
+	if (byteCount != sizeof(uint16) || uint16 != 16) {
 		RETURN_ERROR("Not a 16 bit WAV file");
 	}
 
@@ -183,10 +183,9 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	// parameters, starting with "LIST" and including the encoder I think. However,
 	// the marker "data" is still there where the data starts, so let's just skip
 	// to that.
-	byteCount = read(streamFileNo, buffer.char4, 1);
+	byteCount = read(streamFileNo, &letter, sizeof(letter));
 	int dataLettersCount = 0;
 	while (byteCount == 1) {
-		const char letter = buffer.char4[0];
 		switch (letter) {
 			case 'd':
 				dataLettersCount = 1;
@@ -211,7 +210,7 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 			default:
 				dataLettersCount = 0;
 		}
-		byteCount = read(streamFileNo, buffer.char4, 1);
+		byteCount = read(streamFileNo, &letter, sizeof(letter));
 	}
 	if (dataLettersCount != 4) {
 		RETURN_ERROR("Not a WAV file");
@@ -219,8 +218,8 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 foundDataMarker:
 
 	// Skip subchunk2 size
-	byteCount = read(streamFileNo, &buffer.uint32, 4);
-	if (byteCount != 4) {
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	if (byteCount != sizeof(uint32)) {
 		RETURN_ERROR("Not a WAV file");
 	}
 
