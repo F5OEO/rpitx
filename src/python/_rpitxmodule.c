@@ -1,9 +1,10 @@
 #include <Python.h>
 #include <assert.h>
-#include <sndfile.h>
+#include <endian.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "../RpiTx.h"
-#include "../RpiGpio.h"
 
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
@@ -18,55 +19,18 @@ struct module_state {
 static struct module_state _state;
 #endif
 
-static void* sampleBase;
-static sf_count_t sampleLength;
-static sf_count_t sampleOffset;
-static SNDFILE* sndFile;
-static int bitRate;
-
-
-// These methods used by libsndfile's virtual file open function
-static sf_count_t virtualSndfileGetLength(void* unused) {
-	return sampleLength;
-}
-static sf_count_t virtualSndfileRead(void* const dest, const sf_count_t count, void* const userData) {
-	const sf_count_t bytesAvailable = sampleLength - sampleOffset;
-	const int numBytes = bytesAvailable > count ? count : bytesAvailable;
-	memcpy(dest, ((char*)userData) + sampleOffset, numBytes);
-	sampleOffset += numBytes;
-	return numBytes;
-}
-static sf_count_t virtualSndfileTell(void* const unused) {
-	return sampleOffset;
-}
-static sf_count_t virtualSndfileSeek(
-		const sf_count_t offset,
-		const int whence,
-		void* const unused
-) {
-	switch (whence) {
-		case SEEK_CUR:
-			sampleOffset += offset;
-			break;
-		case SEEK_SET:
-			sampleOffset = offset;
-			break;
-		case SEEK_END:
-			sampleOffset = sampleLength - offset;
-			break;
-		default:
-			assert(!"Invalid whence");
-	}
-	return sampleOffset;
-}
-
+static int streamFileNo = 0;
+static int sampleRate = 48000;
 
 typedef struct {
 	double frequency;
 	uint32_t waitForThisSample;
 } samplerf_t;
+
+static size_t readFloat(int streamFileNo, float* wavBuffer, const size_t count);
+
 /**
- * Formats a chunk of an array of a mono 44k wav at a time and outputs IQ
+ * Formats a chunk of an array of a mono 48k wav at a time and outputs RF
  * formatted array for broadcast.
  */
 static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
@@ -81,10 +45,10 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 	const int excursion = 6000;
 	int numBytesWritten = 0;
 	samplerf_t samplerf;
-	samplerf.waitForThisSample = 1e9 / ((float)bitRate);  //en 100 de nanosecond
+	samplerf.waitForThisSample = 1e9 / ((float)sampleRate);  //en 100 de nanosecond
 	char* const out = outBuffer;
 
-	while (numBytesWritten < count) {
+	while (numBytesWritten <= count - sizeof(samplerf_t)) {
 		for (
 				;
 				numBytesWritten <= count - sizeof(samplerf_t) && wavOffset < wavFilled;
@@ -99,52 +63,165 @@ static ssize_t formatRfWrapper(void* const outBuffer, const size_t count) {
 		assert(wavOffset <= wavFilled);
 
 		if (wavOffset == wavFilled) {
-			wavFilled = sf_readf_float(sndFile, wavBuffer, COUNT_OF(wavBuffer));
+			wavFilled = readFloat(streamFileNo, wavBuffer, COUNT_OF(wavBuffer));
+			if (wavFilled == 0) {
+				// End of file
+				return numBytesWritten;
+			}
 			wavOffset = 0;
 		}
 	}
 	return numBytesWritten;
 }
-static void reset(void) {
-	sampleOffset = 0;
+static size_t readFloat(int streamFileNo, float* wavBuffer, const size_t count) {
+	// Samples are stored as 16 bit signed integers in range of -32768 to 32767
+	int16_t sample;
+	int i;
+	for (i = 0; i < count; ++i) {
+		const int byteCount = read(streamFileNo, &sample, sizeof(sample));
+		if (byteCount != sizeof(sample)) {
+			return i;
+		}
+		// TODO: I don't know if this should be dividing by 32767 or 32768. Probably
+		// doesn't matter too much.
+		*wavBuffer = ((float)le16toh(sample)) / 32768;
+		++wavBuffer;
+	}
+	return count;
+}
+static void dummyFunction(void) {
+	assert(0 && "dummyFunction should not be called");
 }
 
+#define RETURN_ERROR(errorMessage) \
+PyErr_SetString(st->error, errorMessage); \
+return NULL;
 
 static PyObject*
 _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 	float frequency;
 
-	assert(sizeof(sampleBase) == sizeof(unsigned long));
-	if (!PyArg_ParseTuple(args, "Lif", &sampleBase, &sampleLength, &frequency)) {
-		struct module_state *st = GETSTATE(self);
-		PyErr_SetString(st->error, "Invalid arguments");
-		return NULL;
+	struct module_state *st = GETSTATE(self);
+
+	if (!PyArg_ParseTuple(args, "if", &streamFileNo, &frequency)) {
+		RETURN_ERROR("Invalid arguments");
 	}
 
-	sampleOffset = 0;
+	char char4[4];
+	uint32_t uint32;
+	uint16_t uint16;
+	char letter;
 
-	SF_VIRTUAL_IO virtualIo = {
-		.get_filelen = virtualSndfileGetLength,
-		.seek = virtualSndfileSeek,
-		.read = virtualSndfileRead,
-		.write = NULL,
-		.tell = virtualSndfileTell
-	};
-	SF_INFO sfInfo;
-	sndFile = sf_open_virtual(&virtualIo, SFM_READ, &sfInfo, sampleBase);
-	if (sf_error(sndFile) != SF_ERR_NO_ERROR) {
-		char message[100];
-		snprintf(
-				message,
-				COUNT_OF(message),
-				"Unable to open sound file: %s",
-				sf_strerror(sndFile));
-		message[COUNT_OF(message) - 1] = '\0';
-		struct module_state *st = GETSTATE(self);
-		PyErr_SetString(st->error, message);
-		return NULL;
+	size_t byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4) || strncmp(char4, "RIFF", 4) != 0) {
+		RETURN_ERROR("Not a WAV file");
 	}
-	bitRate = sfInfo.samplerate;
+
+	// Skip chunk size
+	byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4)) {
+		RETURN_ERROR("Not a WAV file");
+	}
+
+	byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4) || strncmp(char4, "WAVE", 4) != 0) {
+		RETURN_ERROR("Not a WAV file");
+	}
+
+	byteCount = read(streamFileNo, char4, sizeof(char4));
+	if (byteCount != sizeof(char4) || strncmp(char4, "fmt ", 4) != 0) {
+		RETURN_ERROR("Not a WAV file");
+	}
+
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	uint32 = le32toh(uint32);
+	// TODO: This value is coming out as 18 and I don't know why, so I'm
+	// skipping this check for now
+	/*
+	if (byteCount != sizeof(uint32) || uint32 != 16) {
+		RETURN_ERROR("Not a PCM WAV file");
+	}
+	*/
+
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	uint16 = le16toh(uint16);
+	if (byteCount != sizeof(uint16) || uint16 != 1) {
+		RETURN_ERROR("Not an uncompressed WAV file");
+	}
+
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	uint16 = le16toh(uint16);
+	if (byteCount != sizeof(uint16) || uint16 != 1) {
+		RETURN_ERROR("Not a mono WAV file");
+	}
+
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	sampleRate = le32toh(uint32);
+	if (byteCount != sizeof(uint32) || sampleRate != 48000) {
+		RETURN_ERROR("Not a WAV file");
+	}
+
+	// Skip byte rate
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	if (byteCount != sizeof(uint32)) {
+		RETURN_ERROR("Not a WAV file");
+	}
+
+	// Skip block align
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	if (byteCount != sizeof(uint16)) {
+		RETURN_ERROR("Not a WAV file");
+	}
+
+	byteCount = read(streamFileNo, &uint16, sizeof(uint16));
+	uint16 = le16toh(uint16);
+	if (byteCount != sizeof(uint16) || uint16 != 16) {
+		RETURN_ERROR("Not a 16 bit WAV file");
+	}
+
+	// TODO: PCM WAV files have "data" here, but avconv spits out a bunch of extra
+	// parameters, starting with "LIST" and including the encoder I think. However,
+	// the marker "data" is still there where the data starts, so let's just skip
+	// to that.
+	byteCount = read(streamFileNo, &letter, sizeof(letter));
+	int dataLettersCount = 0;
+	while (byteCount == 1) {
+		switch (letter) {
+			case 'd':
+				dataLettersCount = 1;
+				break;
+			case 'a':
+				if (dataLettersCount == 1) {
+					++dataLettersCount;
+				} else if (dataLettersCount == 3) {
+					++dataLettersCount;
+					goto foundDataMarker;
+				} else {
+					dataLettersCount = 0;
+				}
+				break;
+			case 't':
+				if (dataLettersCount == 2) {
+					++dataLettersCount;
+				} else {
+					dataLettersCount = 0;
+				}
+				break;
+			default:
+				dataLettersCount = 0;
+		}
+		byteCount = read(streamFileNo, &letter, sizeof(letter));
+	}
+	if (dataLettersCount != 4) {
+		RETURN_ERROR("Not a WAV file");
+	}
+foundDataMarker:
+
+	// Skip subchunk2 size
+	byteCount = read(streamFileNo, &uint32, sizeof(uint32));
+	if (byteCount != sizeof(uint32)) {
+		RETURN_ERROR("Not a WAV file");
+	}
 
 	int skipSignals[] = {
 		SIGALRM,
@@ -153,8 +230,8 @@ _rpitx_broadcast_fm(PyObject* self, PyObject* args) {
 		SIGWINCH,  // Window resized
 		0
 	};
-	pitx_run(MODE_RF, bitRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, reset, skipSignals);
-	sf_close(sndFile);
+
+	pitx_run(MODE_RF, sampleRate, frequency * 1000.0, 0.0, 0, formatRfWrapper, dummyFunction, skipSignals, 0);
 
 	Py_RETURN_NONE;
 }
@@ -166,10 +243,9 @@ static PyMethodDef _rpitx_methods[] = {
 		_rpitx_broadcast_fm,
 		METH_VARARGS,
 		"Low-level broadcasting.\n\n"
-			"Broadcast a WAV formatted 48KHz memory array.\n"
+			"Broadcast a WAV formatted 48KHz file from a pipe file descriptor.\n"
 			"Args:\n"
-			"    address (int): Address of the memory array.\n"
-			"    length (int): Length of the memory array.\n"
+			"    pipe_file_no (int): The fileno of the pipe that the WAV is being written to.\n"
 			"    frequency (float): The frequency, in MHz, to broadcast on.\n"
 	},
 	{NULL, NULL, 0, NULL}
