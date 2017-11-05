@@ -550,13 +550,13 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
     int CompensateWait=(WaitNanoSecond-OverWaitNanoSecond);
 	for(i=1;i<PWM_STEP_MAXI;i++)
     {
-        if(CalibrationTab[i]+DelayStep/2>=CompensateWait) //DelayStep on PI2 but not on other models ? 
+        if(CalibrationTab[i]/*+DelayStep/2*/>=CompensateWait) //DelayStep on PI2 but not on other models ? 
         {
              
              break;
         }
     }
-    OverWaitNanoSecond+=CalibrationTab[i]+DelayStep/2-WaitNanoSecond;
+    OverWaitNanoSecond+=CalibrationTab[i]/*+DelayStep/2*/-WaitNanoSecond;
     //printf("step %d Overwait=%d\n",i,OverWaitNanoSecond);
     int PwmStepDMA=i; //Number step performs by DMA
 
@@ -609,6 +609,12 @@ inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Ampl
         //NbF2DMA=NbF1-DelayMiniStep;
     }
     
+
+    if(NoUsePWMF==1)
+   {
+         RegisterF1=RegisterF2;      
+    } 
+
         //printf("Ftune %f NbStepPWM=%d NbF1=%d NbF2=%d DelayMini=%d DelayStep=%d DelayMiniStep%d\n",FTunePercentage,NbStepPWM,NbF1,NbF2,DelayMini,DelayStep,DelayMiniStep);
     
     //Fill DMA 
@@ -1255,7 +1261,7 @@ int pitx_run(
 		{
 			if((Mode==MODE_RF)||(Mode==MODE_RFA))
 			{
-				TimeToSleep=100; //Max 100KHZ
+				TimeToSleep=50; //Max 200KHZ
 			}
 			else
             {
@@ -1476,7 +1482,7 @@ int pitx_run(
 				// SHOULD NOT EXEED 200 STEP*500ns; SAMPLERATE SHOULD BE MAX TO HAVE PRECISION FOR PCM 
 				// BUT FIFO OF PCM IS 16 : SAMPLERATE MAYBE NOT EXCESS 16*80000 ! CAREFULL BUGS HERE
 				//#define MAX_DELAY_WAIT (PWM_STEP_MAXI/2*FREQ_MINI_TIMING-PWMF_MARGIN) 
-                int MAX_DELAY_WAIT = 30000; //CalibrationTab[199];
+                int MAX_DELAY_WAIT = 28000; //CalibrationTab[199];
 				static int CompteSample=0;
 				static uint32_t TimeRemaining=0;
 				static samplerf_t SampleRf;
@@ -1525,15 +1531,17 @@ int pitx_run(
 					if(Mode==MODE_RF)
 					{
                         //Need to fix : in FM need a constant carrier, in SSTV need sometimes to pause
-						/*if(SampleRf.Frequency==0.0)
+						if(SampleRf.Frequency==0.0)
 						{
 							amp=0;
 							SampleRf.Frequency=00.0;// TODO change that ugly frequency
                            
 						}
-						else*/
+						else
 							amp=32767;
-						FrequencyAmplitudeToRegister2((SampleRf.Frequency/HarmonicNumber+GlobalTuningFrequency)/HarmonicNumber,amp,last_sample++,WaitSample,0,NoUsePwmFrequency,debug);
+                        
+    					int RealWait=FrequencyAmplitudeToRegister2((SampleRf.Frequency/*/HarmonicNumber*/+GlobalTuningFrequency)/HarmonicNumber,amp,last_sample++,WaitSample,0,NoUsePwmFrequency,debug);
+                        //printf("Wait=%d RealWait=%d\n",WaitSample,RealWait);
 					}
 					if(Mode==MODE_RFA)
 						FrequencyAmplitudeToRegister2((GlobalTuningFrequency)/HarmonicNumber,SampleRf.Frequency,last_sample++,WaitSample,0,NoUsePwmFrequency,debug);
