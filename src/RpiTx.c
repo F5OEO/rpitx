@@ -357,7 +357,9 @@ int SetupGpioClock(uint32_t SymbolRate,double TuningFrequency)
 			ctl->sample[samplecnt].Amplitude2=0x0;
 		}
         else
+        {
           	ctl->sample[samplecnt].Amplitude2=(Originfsel & ~(7 << 12)) | (0 << 12); //Pin is in            
+        }
 		ctl->sample[samplecnt].Amplitude1=0x5a000000 + (0&0x7) + (1<<4) + (0<<3);
         
 
@@ -506,7 +508,7 @@ inline void shuffle_int(uint32_t *list, int len)
 }	
 
 
-inline uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Amplitude,int NoSample,uint32_t WaitNanoSecond,uint32_t SampleRate,char NoUsePWMF,int debug)
+ uint32_t FrequencyAmplitudeToRegister2(double TuneFrequency,uint32_t Amplitude,int NoSample,uint32_t WaitNanoSecond,uint32_t SampleRate,char NoUsePWMF,int debug)
 {
     static char ShowInfo=1;	
 
@@ -876,7 +878,7 @@ int CalibrateSystem(double *ppm,int *BaseDelayDMA,float *StepDelayDMA)
 		//printf("Step %d :%d \n",i,Delay);//,(GetDMADelay(i)-BaseDelay)/i);
 
         CalibrationTab[i]=Delay;
-               if((i%10)==0)printf(".");fflush(stdout);
+               if((i%10)==0){printf(".");fflush(stdout);}
            #ifdef WRITE_CALIBRATION
              sprintf(csvline,"CalibrationTab[%d]=%d;\n",i,Delay);
              write(hFileCsv,csvline,strlen(csvline));
@@ -1372,7 +1374,7 @@ int pitx_run(
 					
 					IQToFreqAmp(IQArray[2*i+1],IQArray[2*i],&df,&amp,SampleRate);
 					df+=CorrectionRpiFrequency;	
-
+                   
 
                     //df=1440+rand()%2000;
 					// Compression have to be done in modulation (SSB not here)
@@ -1424,6 +1426,7 @@ int pitx_run(
 				
 				if(NbRead!=DmaSampleBurstSize*2*sizeof(float)) 
 				{
+                    printf("rpitx: NbRead %d/%d\n",NbRead,DmaSampleBurstSize*2*sizeof(float));
 					if(loop_mode_flag==1)
 					{
 						printf("Looping FileIn\n");
@@ -1449,7 +1452,7 @@ int pitx_run(
 					//printf("i%d q%d\n",IQArray[2*i],IQArray[2*i+1]);
 					
 					IQToFreqAmp(IQFloatArray[2*i+1]*32767,IQFloatArray[2*i]*32767,&df,&amp,SampleRate);
-
+                     //printf("df=%f\n",df);
 					if(amp>Max) Max=amp;
 					if(amp<Min) Min=amp;
 					/*	
@@ -1470,7 +1473,7 @@ int pitx_run(
 					//
 					//amp=32767;
 					//if(df>SampleRate/2) df=SampleRate/2-df;
-					FrequencyAmplitudeToRegister2((GlobalTuningFrequency-OffsetModulation+df/HarmonicNumber)/HarmonicNumber,amp,last_sample++,0,SampleRate,NoUsePwmFrequency,CompteSample%2);
+					FrequencyAmplitudeToRegister2((GlobalTuningFrequency/*-OffsetModulation*/+df/*/HarmonicNumber*/)/HarmonicNumber,amp,last_sample++,0,SampleRate,NoUsePwmFrequency,CompteSample%2);
 						
 					free_slots--;
 					if (last_sample == NUM_SAMPLES)	last_sample = 0;
