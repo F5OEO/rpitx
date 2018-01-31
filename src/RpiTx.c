@@ -1427,20 +1427,23 @@ int pitx_run(
 				if(NbRead!=DmaSampleBurstSize*2*sizeof(float)) 
 				{
                     printf("rpitx: NbRead %d/%d\n",NbRead,DmaSampleBurstSize*2*sizeof(float));
-					if(loop_mode_flag==1)
-					{
-						printf("Looping FileIn\n");
-						reset();
-					}
-					else if (!useStdin) {
-						stop_dma();
-						return 0;
-					}
+                    if(NbRead<=0)
+                    {
+					    if(loop_mode_flag==1)
+					    {
+						    printf("Looping FileIn\n");
+						    reset();
+					    }
+					    else if (!useStdin) {
+						    stop_dma();
+						    return 0;
+					    }
+                    }
 				}
 				
 
 
-				for(i=0;i<DmaSampleBurstSize;i++)
+				for(i=0;i<NbRead/(2*sizeof(float));i++)
 				{
 					//static float samplerate=48000;
 					static int amp;
