@@ -51,4 +51,94 @@ class dmagpio:public gpio
 };
 
 
+// Add for PLL frequency CTRL wihout divider
+// https://github.com/raspberrypi/linux/blob/rpi-4.9.y/drivers/clk/bcm/clk-bcm2835.c
+// See interesting patch for jitter https://github.com/raspberrypi/linux/commit/76527b4e6a5dbe55e0b2d8ab533c2388b36c86be
+
+#define CLK_BASE	        (0x00101000)
+#define CLK_LEN			0x1300
+
+#define CORECLK_CNTL      (0x08/4)
+#define CORECLK_DIV       (0x0c/4)
+#define GPCLK_CNTL        (0x70/4)
+#define GPCLK_DIV         (0x74/4)
+#define EMMCCLK_CNTL     (0x1C0/4)
+#define EMMCCLK_DIV      (0x1C4/4)
+
+#define PLLA_CTRL (0x1100/4)
+#define PLLA_FRAC (0x1200/4)
+#define PLLA_DSI0 (0x1300/4)
+#define PLLA_CORE (0x1400/4)
+#define PLLA_PER  (0x1500/4)
+#define PLLA_CCP2 (0x1600/4)
+
+#define PLLB_CTRL  (0x11e0/4)
+#define PLLB_FRAC  (0x12e0/4)
+#define PLLB_ARM   (0x13e0/4)
+#define PLLB_SP0   (0x14e0/4)
+#define PLLB_SP1   (0x15e0/4)
+#define PLLB_SP2   (0x16e0/4)
+
+#define PLLC_CTRL  (0x1120/4)
+#define PLLC_FRAC  (0x1220/4)
+#define PLLC_CORE2 (0x1320/4)
+#define PLLC_CORE1 (0x1420/4)
+#define PLLC_PER   (0x1520/4)
+#define PLLC_CORE0 (0x1620/4)
+
+#define PLLD_CTRL (0x1140/4)
+#define PLLD_FRAC (0x1240/4)
+#define PLLD_DSI0 (0x1340/4)
+#define PLLD_CORE (0x1440/4)
+#define PLLD_PER  (0x1540/4)
+#define PLLD_DSI1 (0x1640/4)
+
+#define PLLH_CTRL (0x1160/4)
+#define PLLH_FRAC (0x1260/4)
+#define PLLH_AUX  (0x1360/4)
+#define PLLH_RCAL (0x1460/4)
+#define PLLH_PIX  (0x1560/4)
+#define PLLH_STS  (0x1660/4)
+
+#define XOSC_CTRL (0x1190/4)
+#define XOSC_FREQUENCY 19200000
+
+enum {clk_gnd,clk_osc,clk_debug0,clk_debug1,clk_plla,clk_pllc,clk_plld,clk_hdmi};
+
+class clkgpio:public gpio
+{
+    int pllnumber;
+	int Mash;
+	uint64_t Pllfrequency;
+	
+    public:
+    clkgpio();
+	int SetPllNumber(int PllNo,int MashType);
+	uint64_t GetPllFrequency(int PllNo);
+	void print_clock_tree(void);
+	int SetFrequency(uint64_t Frequency); 
+	
+        
+};
+
+
+//************************************ GENERAL GPIO ***************************************
+
+#define GENERAL_BASE		(0x00200000)
+#define GENERAL_LEN		0xB4
+
+#define GPFSEL0			(0x00/4)
+#define GPFSEL1    		(0x04/4)
+#define GPFSEL2   		(0x08/4)
+#define GPPUD           (0x94/4)
+#define GPPUDCLK0       (0x9C/4)
+
+class generalgpio:public gpio
+{
+    
+    public:
+    generalgpio();
+    void enableclk();    
+};
+
 #endif
