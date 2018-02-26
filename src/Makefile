@@ -1,4 +1,5 @@
-all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
+#all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
+all: ../rpitx v2rpitx 
 
 #CFLAGS	= -Wall -g -O2 -D DIGITHIN
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
@@ -7,6 +8,19 @@ LDFLAGS	= -lm -lrt -lpthread
 
 ../rpitx: RpiGpio.c RpiTx.c  mailbox.c RpiDma.c raspberry_pi_revision.c calibrationpi2.h calibrationpizero.h calibrationpi3.h
 		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c RpiGpio.c mailbox.c RpiDma.c raspberry_pi_revision.c $(LDFLAGS) 
+
+
+CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
+LDFLAGS	= -lm -lrt -lpthread 
+CCP = g++ 
+CC = gcc 
+
+v2rpitx: gpio.h gpio.cpp dma.h dma.cpp mailbox.c raspberry_pi_revision.c v2rpitx.cpp
+	$(CC) $(CFLAGS) -c -o mailbox.o mailbox.c
+	$(CC) $(CFLAGS) -c -o raspberry_pi_revision.o raspberry_pi_revision.c
+	$(CCP) $(CFLAGS) -o v2rpitx  dma.cpp gpio.cpp mailbox.o raspberry_pi_revision.o v2rpitx.cpp $(LDFLAGS) 
+
+
 		
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pissb	= -lm -lrt -lpthread -lsndfile

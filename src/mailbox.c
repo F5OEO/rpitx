@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -38,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mailbox.h"
 
-#define PAGE_SIZE (4*1024)
+
 
 void *mapmem(unsigned base, unsigned size)
 {

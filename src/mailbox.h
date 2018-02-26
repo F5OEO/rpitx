@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef DEF_MAILBOX
+
 #include <linux/ioctl.h>
 // Newer kernels (>= 4.1) use major 249, older ones major 100.
 #define MAJOR_NUM_A 249
@@ -33,6 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define LOCAL_DEVICE_FILE_NAME "/dev/rpidatv-mb"
 #define VCIO_DEVICE_FILE_NAME "/dev/vcio"
+
+#define PAGE_SIZE (4*1024)
+
 
 int mbox_open();
 void mbox_close(int file_desc);
@@ -48,3 +53,4 @@ void *unmapmem(void *addr, unsigned size);
 unsigned execute_code(int file_desc, unsigned code, unsigned r0, unsigned r1, unsigned r2, unsigned r3, unsigned r4, unsigned r5);
 unsigned execute_qpu(int file_desc, unsigned num_qpus, unsigned control, unsigned noflush, unsigned timeout);
 unsigned qpu_enable(int file_desc, unsigned enable);
+#endif
