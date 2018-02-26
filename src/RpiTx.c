@@ -57,11 +57,12 @@ Optimize CPU on PWMFrequency
 #include <sys/prctl.h>
 #include <getopt.h>
 #include <sys/timex.h>
+#include <sys/ioctl.h>
 
 #define AMP_BYPAD
 
 //Minimum Time in us to sleep
-#define KERNEL_GRANULARITY 20000 
+#define KERNEL_GRANULARITY 4000 
 
 #define SCHED_PRIORITY 30 //Linux scheduler priority. Higher = more realtime
 
@@ -1132,7 +1133,9 @@ int main(int argc, char* argv[])
 			FileInHandle = STDIN_FILENO;
 			useStdin = 1;
 		}
-		else FileInHandle = open(FileName, O_RDONLY);
+		else 
+            FileInHandle = open(FileName, O_RDONLY);
+        
 		if (FileInHandle < 0)
 		{
 			fatal("Failed to read Filein %s\n",FileName);
@@ -1193,6 +1196,7 @@ int pitx_run(
 	} 
 	if(Mode==MODE_IQ_FLOAT)
 	{
+        //NUM_SAMPLES=8*DmaSampleBurstSize;    
 		IQFloatArray=malloc(DmaSampleBurstSize*2*sizeof(float)); // TODO A FREE AT THE END OF SOFTWARE
 	}
 	if((Mode==MODE_RF)||(Mode==MODE_RFA))
@@ -1244,7 +1248,12 @@ int pitx_run(
 	unsigned char Init=1;
 
 // -----------------------------------------------------------------
-
+    struct stat bufstat;
+    {
+        int ret;
+        fstat(FileInHandle,&bufstat);
+	    if(S_ISFIFO(bufstat.st_mode)) printf("Using a Pipe\n"); 
+    }
 	for (;;) 
 	{
 		int TimeToSleep;
@@ -1279,9 +1288,9 @@ int pitx_run(
 			
 		clock_gettime(CLOCK_REALTIME, &gettime_now);
 		start_time = gettime_now.tv_nsec;		
-		if(TimeToSleep>=(2200+KERNEL_GRANULARITY)) // 2ms : Time to process File/Canal Coding
+		if(TimeToSleep>=(KERNEL_GRANULARITY)) // 2ms : Time to process File/Canal Coding
 		{
-			udelay(TimeToSleep-(2200+KERNEL_GRANULARITY));
+			udelay(TimeToSleep-(KERNEL_GRANULARITY));
 			TimeToSleep=0;
 		}
 		else
@@ -1422,7 +1431,36 @@ int pitx_run(
 				static int Min=32767;
 				static int CompteSample=0;
 				CompteSample++;
-				NbRead=readWrapper(IQFloatArray,DmaSampleBurstSize*2*sizeof(float));
+                
+                if(S_ISFIFO(bufstat.st_mode))
+	        	{
+                        int n;
+			            int res=ioctl(FileInHandle, FIONREAD, &n);
+                         
+                        if(res<0) {stop_dma();    return 0;}
+				        if(n<DmaSampleBurstSize*2*sizeof(float)) //not enough data
+                        {   
+                                if(n>0)
+                                {
+                                      NbRead=readWrapper(IQFloatArray,n);
+                                }
+                                else
+                                      NbRead=0;  
+                                memset(IQFloatArray+NbRead,0,DmaSampleBurstSize*2*sizeof(float)-NbRead); // Set all at zero 
+                                NbRead=DmaSampleBurstSize*2*sizeof(float);
+                                //printf("#");
+                        }
+                        else
+                        {
+                                //printf("rpitx get data%d\n",n);
+                                if(n>DmaSampleBurstSize*2*sizeof(float)) n=DmaSampleBurstSize*2*sizeof(float);
+                                
+                                 NbRead=readWrapper(IQFloatArray,n);
+                        }
+			        
+		        }
+                else
+				    NbRead=readWrapper(IQFloatArray,DmaSampleBurstSize*2*sizeof(float));
 				
 				if(NbRead!=DmaSampleBurstSize*2*sizeof(float)) 
 				{
