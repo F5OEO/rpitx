@@ -100,7 +100,7 @@ int clkgpio::SetFrequency(uint64_t Frequency)
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
-	//printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
+	printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
 
 	gpioreg[GPCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
 	//gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber |4  ; //4 is START CLK

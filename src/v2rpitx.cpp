@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include "dma.h"
 #include "gpio.h"
+#include "fmdmasync.h"
 
 int main(int argc, char* argv[])
 {
@@ -10,9 +11,23 @@ int main(int argc, char* argv[])
 	
 	generalgpio generalio;
 	generalio.enableclk();
-	for(int i=0;i<100;i++)
+
+	pwmgpio pwm;
+	pwm.SetPllNumber(clk_plld,1);
+	pwm.SetFrequency(1000000);
+	pwm.SetMode(0);
+	clk.SetFrequency(89000000);
+
+	fmdmasync fmtest(14,4000);
+	fmtest.start();
+	sleep(20);
+	fmtest.stop();
+	/*
 	{
-		usleep(40000);
-		clk.SetFrequency(89000000+i*40);
-	}
+		for(int i=0;i<10000;i++)
+		{
+			usleep(50);
+			clk.SetFrequency(89000000+(i%2)*200000);
+		}
+	}*/
 }
