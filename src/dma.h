@@ -31,6 +31,17 @@
 #define DMA_CONBLK_AD		(0x04/4)
 #define DMA_DEBUG		(0x20/4)
 
+//Page 61
+#define DREQ_PCM_TX 2
+#define DREQ_PCM_RX 3
+#define DREQ_SMI 4
+#define DREQ_PWM 5
+#define DREQ_SPI_TX 6
+#define DREQ_SPI_RX 7
+#define DREQ_SPI_SLAVE_TX 8
+#define DREQ_SPI_SLAVE_RX 9
+
+
 class dma
 {
     protected:
@@ -44,7 +55,7 @@ class dma
     typedef struct {
 	uint32_t info, src, dst, length,
 		 stride, next, pad[2];
-    } dma_cb_t;
+    } dma_cb_t; //8*4=32 bytes
 
     typedef struct {
 	uint8_t *virtaddr;
@@ -63,7 +74,7 @@ class dma
     public:
     dma_cb_t *cbarray;
 	uint32_t cbsize;
-    unsigned int *usermem;
+    uint32_t *usermem;
 	uint32_t usermemsize;
 
 
@@ -74,6 +85,7 @@ class dma
 	void GetRpiInfo();
     int start();
     int stop();
+	uint32_t getcbposition();
     
 };
 #endif

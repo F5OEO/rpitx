@@ -67,7 +67,8 @@ int clkgpio::SetPllNumber(int PllNo,int MashType)
 	if(PllNo<8)
 		pllnumber=PllNo;
 	else
-		pllnumber=clk_pllc;	
+		pllnumber=clk_pllc;
+	
 	if(MashType<4)
 		Mash=MashType;
 	else
@@ -82,6 +83,7 @@ uint64_t clkgpio::GetPllFrequency(int PllNo)
 	uint64_t Freq=0;
 	switch(PllNo)
 	{
+		case clk_osc:Freq=XOSC_FREQUENCY;break;
 		case clk_plla:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLA_CTRL]&0x3ff) +XOSC_FREQUENCY*(uint64_t)gpioreg[PLLA_FRAC]/(1<<20);break;
 		//case clk_pllb:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLB_CTRL]&0x3ff) +XOSC_FREQUENCY*(uint64_t)gpioreg[PLLB_FRAC]/(1<<20);break;
 		case clk_pllc:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLC_CTRL]&0x3ff) +XOSC_FREQUENCY*(uint64_t)gpioreg[PLLC_FRAC]/(1<<20);break;
@@ -244,7 +246,7 @@ int pwmgpio::SetPllNumber(int PllNo,int MashType)
 		Mash=MashType;
 	else
 		Mash=0;
-	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
+	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(0 << 4)  ; //4 is STOP CLK
 	Pllfrequency=GetPllFrequency(pllnumber);
 	return 0;
 }
@@ -263,7 +265,7 @@ int pwmgpio::SetFrequency(uint64_t Frequency)
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
 	clk.gpioreg[PWMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
-	
+	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is STAR CLK
 	return 0;
 
 }
@@ -277,9 +279,9 @@ int pwmgpio::SetMode(int Mode) //Mode should be only for SYNC or a Data serializ
 		gpioreg[PWM_FIFO]=0xAAAAAAAA;
 		gpioreg[PWM_DMAC] = PWMDMAC_ENAB | PWMDMAC_THRSHLD;
 		usleep(100);
-		gpioreg[PWM_CTL] = PWMCTL_CLRF;
+		//gpioreg[PWM_CTL] = PWMCTL_CLRF;
 		
-		//pwm_reg[PWM_CTL] =   PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_RPTL1; //PWM0 in Repeat mode
+		gpioreg[PWM_CTL] =   PWMCTL_USEF1 | PWMCTL_PWEN1; //PWM0 in Repeat mode
 	
 	
 	return 0;
