@@ -54,5 +54,6 @@ void fmdmasync::FillMemory(uint32_t FreqDivider,uint32_t FreqFractionnal)
 	{
 		usermem[samplecnt]=0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
 		FreqFractionnal=(FreqFractionnal+1)%4096;
+		if (FreqFractionnal==0) FreqDivider++; 
 	}
 }
