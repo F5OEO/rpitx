@@ -65,6 +65,7 @@ class dmagpio:public gpio
 #define EMMCCLK_CNTL     (0x1C0/4)
 #define EMMCCLK_DIV      (0x1C4/4)
 
+
 #define PLLA_CTRL (0x1100/4)
 #define PLLA_FRAC (0x1200/4)
 #define PLLA_DSI0 (0x1300/4)
@@ -113,6 +114,7 @@ class clkgpio:public gpio
 	
     public:
     clkgpio();
+	~clkgpio();
 	int SetPllNumber(int PllNo,int MashType);
 	uint64_t GetPllFrequency(int PllNo);
 	void print_clock_tree(void);
@@ -138,7 +140,57 @@ class generalgpio:public gpio
     
     public:
     generalgpio();
-    void enableclk();    
+	~generalgpio();
+    void enableclk();  
+	void disableclk();
 };
+
+//************************************ PWM GPIO ***************************************
+
+#define PWM_BASE		(0x0020C000)
+#define PWM_LEN			0x28
+
+#define PWM_CTL			(0x00/4)
+#define PWM_DMAC		(0x08/4)
+#define PWM_RNG1		(0x10/4)
+#define PWM_RNG2		(0x20/4)
+#define PWM_FIFO		(0x18/4)
+
+#define PWMCLK_CNTL		(0x100/4) // Clk register
+#define PWMCLK_DIV		(0x104/4) // Clk register
+
+
+#define PWMCTL_MSEN2 (1<<15)
+#define PWMCTL_USEF2 (1<<13)
+#define PWMCTL_RPTL2 (1<<10)
+#define PWMCTL_MODE2 (1<<9)
+#define PWMCTL_PWEN2 (1<<8)
+
+#define PWMCTL_MSEN1 (1<<7)
+#define PWMCTL_CLRF (1<<6)
+#define PWMCTL_USEF1 (1<<5)
+#define PWMCTL_POLA1 (1<<4)
+#define PWMCTL_RPTL1 (1<<2)
+#define PWMCTL_MODE1 (1<<1)
+#define PWMCTL_PWEN1 (1<<0)
+#define PWMDMAC_ENAB		(1<<31)
+#define PWMDMAC_THRSHLD		((15<<8)|(15<<0))
+
+class pwmgpio:public gpio
+{
+    protected:
+	clkgpio clk;
+	int pllnumber;
+	int Mash;
+	uint64_t Pllfrequency;
+    public:
+    pwmgpio();
+	~pwmgpio();
+	int SetPllNumber(int PllNo,int MashType);
+	uint64_t GetPllFrequency(int PllNo);
+	int SetFrequency(uint64_t Frequency);
+   int SetMode(int Mode);
+};
+
 
 #endif

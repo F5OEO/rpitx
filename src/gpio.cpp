@@ -5,6 +5,7 @@ extern "C"
 #include "gpio.h"
 #include "raspberry_pi_revision.h"
 #include "stdio.h"
+#include <unistd.h>
 
 gpio::gpio(uint32_t base, uint32_t len)
 {
@@ -56,6 +57,11 @@ clkgpio::clkgpio():gpio(GetPeripheralBase()+CLK_BASE,CLK_LEN)
 {
 }
 
+clkgpio::~clkgpio()
+{
+	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(0 << 4)  ; //4 is START CLK
+}
+
 int clkgpio::SetPllNumber(int PllNo,int MashType)
 {
 	if(PllNo<8)
@@ -94,7 +100,7 @@ int clkgpio::SetFrequency(uint64_t Frequency)
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 
-	printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
+	//printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
 
 	gpioreg[GPCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
 	//gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber |4  ; //4 is START CLK
@@ -195,8 +201,14 @@ void clkgpio::print_clock_tree(void)
 
 
 // ************************************** GENERAL GPIO *****************************************************
+
 generalgpio::generalgpio():gpio(GetPeripheralBase()+GENERAL_BASE,GENERAL_LEN)
 {
+}
+
+generalgpio::~generalgpio()
+{
+	disableclk();
 }
 
 void generalgpio::enableclk()
@@ -204,4 +216,72 @@ void generalgpio::enableclk()
 	gpioreg[GPFSEL0] = (gpioreg[GPFSEL0] & ~(7 << 12)) | (4 << 12);
 }
 
+void generalgpio::disableclk()
+{
+	gpioreg[GPFSEL0] = (gpioreg[GPFSEL0] & ~(7 << 12)) | (0 << 12);
+}
+
+// ********************************** PWM GPIO **********************************
+
+pwmgpio::pwmgpio():gpio(GetPeripheralBase()+PWM_BASE,PWM_LEN)
+{
+	gpioreg[PWM_CTL] = 0;
+}
+
+pwmgpio::~pwmgpio()
+{
+	gpioreg[PWM_CTL] = 0;
+}
+
+int pwmgpio::SetPllNumber(int PllNo,int MashType)
+{
+	if(PllNo<8)
+		pllnumber=PllNo;
+	else
+		pllnumber=clk_pllc;	
+	if(MashType<4)
+		Mash=MashType;
+	else
+		Mash=0;
+	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
+	Pllfrequency=GetPllFrequency(pllnumber);
+	return 0;
+}
+
+uint64_t pwmgpio::GetPllFrequency(int PllNo)
+{
+	return clk.GetPllFrequency(PllNo);
+
+}
+
+int pwmgpio::SetFrequency(uint64_t Frequency)
+{
+	
+	double Freqresult=(double)Pllfrequency/(double)Frequency;
+	uint32_t FreqDivider=(uint32_t)Freqresult;
+	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
+	clk.gpioreg[PWMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
+	
+	return 0;
+
+}
+
+int pwmgpio::SetMode(int Mode)
+{
+		gpioreg[PWM_RNG1] = 32;// 250 -> 8KHZ
+		usleep(100);
+		gpioreg[PWM_RNG2] = 32;// 32 Mandatory for Serial Mode without gap
+	
+		gpioreg[PWM_FIFO]=0xAAAAAAAA;
+		gpioreg[PWM_DMAC] = PWMDMAC_ENAB | PWMDMAC_THRSHLD;
+		usleep(100);
+		gpioreg[PWM_CTL] = PWMCTL_CLRF;
+		
+		//pwm_reg[PWM_CTL] =   PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_RPTL1; //PWM0 in Repeat mode
+	
+	
+	return 0;
+
+}
+		
 
