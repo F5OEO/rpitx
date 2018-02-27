@@ -4,13 +4,14 @@
 extern "C"
 {
 #include "mailbox.h"
+#include "raspberry_pi_revision.h"
 }
 #include <unistd.h>
 
 
 #define BUS_TO_PHYS(x) ((x)&~0xC0000000)
 
-dma::dma(int Channel,int CBSize,int UserMemSize,unsigned int mem_flag)
+dma::dma(int Channel,uint32_t CBSize,uint32_t UserMemSize)
 {
 	channel=Channel;
     mbox.handle = mbox_open();
@@ -19,7 +20,10 @@ dma::dma(int Channel,int CBSize,int UserMemSize,unsigned int mem_flag)
 		fprintf(stderr,"Failed to open mailbox\n");
 		
 	}
-	
+	cbsize=CBSize;
+	usermemsize=UserMemSize;
+
+	GetRpiInfo(); // Fill mem_flag and dram_phys_base
     unsigned int MemoryRequired=CBSize*sizeof(dma_cb_t)+UserMemSize*sizeof(unsigned int);
     int NumPages=(MemoryRequired/PAGE_SIZE)+1;
     fprintf(stderr,"%d Size NUM PAGES %d PAGE_SIZE %d\n",MemoryRequired,NumPages,PAGE_SIZE);
@@ -33,6 +37,31 @@ dma::dma(int Channel,int CBSize,int UserMemSize,unsigned int mem_flag)
 	virtbase = (uint8_t *)((uint32_t *)mbox.virt_addr);
     cbarray = (dma_cb_t *)virtbase; // We place DMA Control Blocks (CB) at beginning of virtual memory
     usermem= (unsigned int *)(virtbase+UserMemSize*sizeof(unsigned int)); // user memory is placed after
+}
+
+void dma::GetRpiInfo()
+{
+	RASPBERRY_PI_INFO_T info;
+	if (getRaspberryPiInformation(&info) > 0)
+	{
+		if(info.peripheralBase==RPI_BROADCOM_2835_PERIPHERAL_BASE)
+		{
+			
+			 dram_phys_base   =  0x40000000;
+			 mem_flag         =  MEM_FLAG_L1_NONALLOCATING|MEM_FLAG_HINT_PERMALOCK|MEM_FLAG_NO_INIT;//0x0c;
+		}
+
+		if((info.peripheralBase==RPI_BROADCOM_2836_PERIPHERAL_BASE)||(info.peripheralBase==RPI_BROADCOM_2837_PERIPHERAL_BASE))
+		{
+			
+			 dram_phys_base   =  0xc0000000;
+			 mem_flag         =  MEM_FLAG_L1_NONALLOCATING/*MEM_FLAG_DIRECT*/|MEM_FLAG_HINT_PERMALOCK|MEM_FLAG_NO_INIT;//0x04;
+		}
+	}
+	else
+	{
+		fprintf(stderr,"Unknown Raspberry architecture\n");
+	}
 }
 
 dma::~dma()
