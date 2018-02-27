@@ -156,8 +156,8 @@ class generalgpio:public gpio
 #define PWM_RNG2		(0x20/4)
 #define PWM_FIFO		(0x18/4)
 
-#define PWMCLK_CNTL		(0x100/4) // Clk register
-#define PWMCLK_DIV		(0x104/4) // Clk register
+#define PWMCLK_CNTL		(40) // Clk register
+#define PWMCLK_DIV		(41) // Clk register
 
 
 #define PWMCTL_MSEN2 (1<<15)
@@ -192,5 +192,37 @@ class pwmgpio:public gpio
    int SetMode(int Mode);
 };
 
+//******************************* PCM GPIO (I2S) ***********************************
+#define PCM_BASE		(0x00203000)
+#define PCM_LEN			0x24
+
+#define PCM_CS_A		(0x00/4)
+#define PCM_FIFO_A		(0x04/4)
+#define PCM_MODE_A		(0x08/4)
+#define PCM_RXC_A		(0x0c/4)
+#define PCM_TXC_A		(0x10/4)
+#define PCM_DREQ_A		(0x14/4)
+#define PCM_INTEN_A		(0x18/4)
+#define PCM_INT_STC_A		(0x1c/4)
+#define PCM_GRAY		(0x20/4)
+
+#define PCMCLK_CNTL		(38) // Clk register
+#define PCMCLK_DIV		(39) // Clk register
+
+class pcmgpio:public gpio
+{
+    protected:
+	clkgpio clk;
+	int pllnumber;
+	int Mash;
+	uint64_t Pllfrequency;
+    public:
+    pcmgpio();
+	~pcmgpio();
+	int SetPllNumber(int PllNo,int MashType);
+	uint64_t GetPllFrequency(int PllNo);
+	int SetFrequency(uint64_t Frequency);
+   int SetMode(int Mode);
+};
 
 #endif

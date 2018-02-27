@@ -99,7 +99,7 @@ int clkgpio::SetFrequency(uint64_t Frequency)
 	double Freqresult=(double)Pllfrequency/(double)Frequency;
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
-
+	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
 	//printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
 
 	gpioreg[GPCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
@@ -231,6 +231,7 @@ pwmgpio::pwmgpio():gpio(GetPeripheralBase()+PWM_BASE,PWM_LEN)
 pwmgpio::~pwmgpio()
 {
 	gpioreg[PWM_CTL] = 0;
+	gpioreg[PWM_DMAC] = 0;
 }
 
 int pwmgpio::SetPllNumber(int PllNo,int MashType)
@@ -260,13 +261,14 @@ int pwmgpio::SetFrequency(uint64_t Frequency)
 	double Freqresult=(double)Pllfrequency/(double)Frequency;
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
+	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
 	clk.gpioreg[PWMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
 	
 	return 0;
 
 }
 
-int pwmgpio::SetMode(int Mode)
+int pwmgpio::SetMode(int Mode) //Mode should be only for SYNC or a Data serializer : Todo
 {
 		gpioreg[PWM_RNG1] = 32;// 250 -> 8KHZ
 		usleep(100);
@@ -284,4 +286,68 @@ int pwmgpio::SetMode(int Mode)
 
 }
 		
+// ********************************** PCM GPIO (I2S) **********************************
 
+pcmgpio::pcmgpio():gpio(GetPeripheralBase()+PCM_BASE,PCM_LEN)
+{
+	gpioreg[PCM_CS_A] = 1;				// Disable Rx+Tx, Enable PCM block
+}
+
+pcmgpio::~pcmgpio()
+{
+	
+}
+
+int pcmgpio::SetPllNumber(int PllNo,int MashType)
+{
+	if(PllNo<8)
+		pllnumber=PllNo;
+	else
+		pllnumber=clk_pllc;	
+	if(MashType<4)
+		Mash=MashType;
+	else
+		Mash=0;
+	clk.gpioreg[PCMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
+	Pllfrequency=GetPllFrequency(pllnumber);
+	return 0;
+}
+
+uint64_t pcmgpio::GetPllFrequency(int PllNo)
+{
+	return clk.GetPllFrequency(PllNo);
+
+}
+
+int pcmgpio::SetFrequency(uint64_t Frequency)
+{
+	
+	double Freqresult=(double)Pllfrequency/(double)Frequency;
+	uint32_t FreqDivider=(uint32_t)Freqresult;
+	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
+	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
+	clk.gpioreg[PCMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
+	
+	return 0;
+
+}
+
+int pcmgpio::SetMode(int Mode) //Carefull we use a 10 fixe divisor for now : frequency is thus f/10 as a samplerate
+{
+	gpioreg[PCM_TXC_A] = 0<<31 | 1<<30 | 0<<20 | 0<<16; // 1 channel, 8 bits
+	usleep(100);
+	int NbStepPCM = 10;
+	//printf("Nb PCM STEP (<1000):%d\n",NbStepPCM);
+	gpioreg[PCM_MODE_A] = (NbStepPCM-1)<<10; // SHOULD NOT EXCEED 1000 !!! 
+	usleep(100);
+	gpioreg[PCM_CS_A] |= 1<<4 | 1<<3;		// Clear FIFOs
+	usleep(100);
+	gpioreg[PCM_DREQ_A] = 64<<24 | 64<<8 ;		//TX Fifo PCM=64 DMA Req when one slot is free?
+	usleep(100);
+	gpioreg[PCM_CS_A] |= 1<<9;			// Enable DMA
+	usleep(100);
+	gpioreg[PCM_CS_A] |= 1<<2; //START TX PCM
+	
+	return 0;
+
+}
