@@ -11,8 +11,8 @@ extern "C"
 
 #define BUS_TO_PHYS(x) ((x)&~0xC0000000)
 
-dma::dma(int Channel,uint32_t CBSize,uint32_t UserMemSize)
-{
+dma::dma(int Channel,uint32_t CBSize,uint32_t UserMemSize) // Fixme! Need to check to be 256 Aligned for UserMem
+{ 
 	channel=Channel;
     mbox.handle = mbox_open();
 	if (mbox.handle < 0)
@@ -29,17 +29,17 @@ dma::dma(int Channel,uint32_t CBSize,uint32_t UserMemSize)
     fprintf(stderr,"%d Size NUM PAGES %d PAGE_SIZE %d\n",MemoryRequired,NumPages,PAGE_SIZE);
 	mbox.mem_ref = mem_alloc(mbox.handle, NumPages* PAGE_SIZE, PAGE_SIZE, mem_flag);
 	/* TODO: How do we know that succeeded? */
-	fprintf(stderr,"mem_ref %x\n", mbox.mem_ref);
+	//fprintf(stderr,"mem_ref %x\n", mbox.mem_ref);
 	mbox.bus_addr = mem_lock(mbox.handle, mbox.mem_ref);
-	fprintf(stderr,"bus_addr = %x\n", mbox.bus_addr);
+	//fprintf(stderr,"bus_addr = %x\n", mbox.bus_addr);
 	mbox.virt_addr = (uint8_t *)mapmem(BUS_TO_PHYS(mbox.bus_addr), NumPages* PAGE_SIZE);
-	fprintf(stderr,"virt_addr %p\n", mbox.virt_addr);
+	//fprintf(stderr,"virt_addr %p\n", mbox.virt_addr);
 	virtbase = (uint8_t *)((uint32_t *)mbox.virt_addr);
-	fprintf(stderr,"virtbase %p\n", virtbase);
+	//fprintf(stderr,"virtbase %p\n", virtbase);
     cbarray = (dma_cb_t *)virtbase; // We place DMA Control Blocks (CB) at beginning of virtual memory
-	fprintf(stderr,"cbarray %p\n", cbarray);
+	//fprintf(stderr,"cbarray %p\n", cbarray);
     usermem= (unsigned int *)(virtbase+CBSize*sizeof(dma_cb_t)); // user memory is placed after
-	fprintf(stderr,"usermem %p\n", usermem);
+	//fprintf(stderr,"usermem %p\n", usermem);
 
 	dma_reg.gpioreg[DMA_CS+channel*0x40] = BCM2708_DMA_RESET;
 	usleep(100);
@@ -73,9 +73,9 @@ void dma::GetRpiInfo()
 
 dma::~dma()
 {
-		
+		/*
         unmapmem(mbox.virt_addr, NumPages * PAGE_SIZE);
-		
+		*/
 		mem_unlock(mbox.handle, mbox.mem_ref);
 		
 		mem_free(mbox.handle, mbox.mem_ref);

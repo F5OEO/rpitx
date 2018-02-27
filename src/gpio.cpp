@@ -232,6 +232,7 @@ pwmgpio::pwmgpio():gpio(GetPeripheralBase()+PWM_BASE,PWM_LEN)
 
 pwmgpio::~pwmgpio()
 {
+	
 	gpioreg[PWM_CTL] = 0;
 	gpioreg[PWM_DMAC] = 0;
 }
@@ -265,6 +266,7 @@ int pwmgpio::SetFrequency(uint64_t Frequency)
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
 	clk.gpioreg[PWMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
+	usleep(10);
 	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is STAR CLK
 	return 0;
 

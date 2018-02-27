@@ -14,19 +14,18 @@ int main(int argc, char* argv[])
 	generalio.enableclk();
 
 	pwmgpio pwm;
-	pwm.SetPllNumber(clk_plld,1);
-	pwm.SetFrequency(300000);
+	pwm.SetPllNumber(clk_osc,1);
+	pwm.SetFrequency(10000);
 	pwm.SetMode(0);
 	//clk.SetFrequency(89100000);
 	
-	fmdmasync fmtest(14,16);
+	fmdmasync fmtest(14,400);
 	fmtest.start();
 	for(int i=0;i<10000;i++)
 	{
-		usleep(100);
-		printf("cb -> %x\n",fmtest.getcbposition());
+		
 	}	
-	sleep(5);
+	sleep(10); 
 	fmtest.stop();
 	
 	/*
