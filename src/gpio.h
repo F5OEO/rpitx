@@ -119,6 +119,7 @@ class clkgpio:public gpio
 	uint64_t GetPllFrequency(int PllNo);
 	void print_clock_tree(void);
 	int SetFrequency(uint64_t Frequency); 
+	int SetClkDivFrac(uint32_t Div,uint32_t Frac);
 	
         
 };

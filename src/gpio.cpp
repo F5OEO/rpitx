@@ -73,7 +73,8 @@ int clkgpio::SetPllNumber(int PllNo,int MashType)
 		Mash=MashType;
 	else
 		Mash=0;
-	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
+	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(0 << 4)  ; //4 is START CLK
+	usleep(100);
 	Pllfrequency=GetPllFrequency(pllnumber);
 	return 0;
 }
@@ -95,6 +96,18 @@ uint64_t clkgpio::GetPllFrequency(int PllNo)
 	return Freq;
 }
 
+
+int clkgpio::SetClkDivFrac(uint32_t Div,uint32_t Frac)
+{
+	
+	gpioreg[GPCLK_DIV] = 0x5A000000 | ((Div)<<12) | Frac;
+	usleep(10);
+	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber |(1<<4)  ; //4 is START CLK
+		usleep(10);
+	return 0;
+
+}
+
 int clkgpio::SetFrequency(uint64_t Frequency)
 {
 	
@@ -103,9 +116,9 @@ int clkgpio::SetFrequency(uint64_t Frequency)
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
 	printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
-
-	gpioreg[GPCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
-	//gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber |4  ; //4 is START CLK
+	
+	SetClkDivFrac(FreqDivider,FreqFractionnal);
+	
 	return 0;
 
 }
@@ -162,6 +175,7 @@ void clkgpio::print_clock_tree(void)
    printf("TIMER CTL=%08x DIV=%8x\n",gpioreg[58],gpioreg[59]);
    printf("UART  CTL=%08x DIV=%8x  ",gpioreg[60],gpioreg[61]);
    printf("VEC   CTL=%08x DIV=%8x\n",gpioreg[62],gpioreg[63]);
+   	
 
    printf("PULSE CTL=%08x DIV=%8x  ",gpioreg[100],gpioreg[101]);
    printf("PLLT  CTL=%08x DIV=????????\n",gpioreg[76]);
@@ -170,10 +184,15 @@ void clkgpio::print_clock_tree(void)
    printf("DSI1P CTL=%08x DIV=%8x\n",gpioreg[88],gpioreg[89]);
    printf("AVE0  CTL=%08x DIV=%8x\n",gpioreg[90],gpioreg[91]);
 
-   printf("SDC   CTL=%08x DIV=%8x  ",gpioreg[106],gpioreg[107]);
-   printf("ARM   CTL=%08x DIV=%8x\n",gpioreg[108],gpioreg[109]);
-   printf("AVE0  CTL=%08x DIV=%8x  ",gpioreg[110],gpioreg[111]);
-   printf("EMMC  CTL=%08x DIV=%8x\n",gpioreg[112],gpioreg[113]);
+   printf("CMPLLA=%08x  ",gpioreg[0x104/4]);
+   printf("CMPLLC=%08x \n",gpioreg[0x108/4]);
+   printf("CMPLLD=%08x   ",gpioreg[0x10C/4]);
+   printf("CMPLLH=%08x \n",gpioreg[0x110/4]);
+	
+     printf("EMMC  CTL=%08x DIV=%8x\n",gpioreg[112],gpioreg[113]);
+	   printf("EMMC  CTL=%08x DIV=%8x\n",gpioreg[112],gpioreg[113]);
+   printf("EMMC  CTL=%08x DIV=%8x\n",gpioreg[112],gpioreg[113]);	
+	
 
    // Sometimes calculated frequencies are off by a factor of 2
    // ANA1 bit 14 may indicate that a /2 prescaler is active
@@ -248,6 +267,7 @@ int pwmgpio::SetPllNumber(int PllNo,int MashType)
 	else
 		Mash=0;
 	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(0 << 4)  ; //4 is STOP CLK
+	usleep(100);
 	Pllfrequency=GetPllFrequency(pllnumber);
 	return 0;
 }
@@ -266,8 +286,9 @@ int pwmgpio::SetFrequency(uint64_t Frequency)
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
 	clk.gpioreg[PWMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
-	usleep(10);
+	usleep(100);
 	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is STAR CLK
+		usleep(100);
 	return 0;
 
 }

@@ -22,7 +22,7 @@ void fmdmasync::SetDmaAlgo()
 
 			cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP ;
 			cbp->src = mem_virt_to_phys(&usermem[samplecnt]);
-			cbp->dst = 0x7E000000 | (GPCLK_DIV<<2) | CLK_BASE ; 
+			cbp->dst = 0x7E000000 + (GPCLK_DIV<<2) + CLK_BASE ; 
 			cbp->length = 4;
 			cbp->stride = 0;
 			cbp->next = mem_virt_to_phys(cbp + 1);
@@ -34,7 +34,7 @@ void fmdmasync::SetDmaAlgo()
 			
 			cbp->info =  /*BCM2708_DMA_SRC_IGNOR  | */BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP | BCM2708_DMA_D_DREQ  | BCM2708_DMA_PER_MAP(DREQ_PWM);
 			cbp->src = mem_virt_to_phys(cbarray); // Data is not important as we use it only to feed the PWM
-			cbp->dst = 0x7E000000 | (PWM_FIFO<<2) | PWM_BASE ;
+			cbp->dst = 0x7E000000 + (PWM_FIFO<<2) + PWM_BASE ;
 			cbp->length = 4;
 			cbp->stride = 0;
 			cbp->next = mem_virt_to_phys(cbp + 1);

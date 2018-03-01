@@ -15,10 +15,10 @@ LDFLAGS	= -lm -lrt -lpthread
 CCP = g++ 
 CC = gcc 
 
-v2rpitx: gpio.h gpio.cpp dma.h dma.cpp mailbox.c raspberry_pi_revision.c v2rpitx.cpp fmdmasync.h fmdmasync.cpp 
+v2rpitx: gpio.h gpio.cpp dma.h dma.cpp mailbox.c raspberry_pi_revision.c v2rpitx.cpp fmdmasync.h fmdmasync.cpp ngfmdmasync.h ngfmdmasync.cpp 
 	$(CC) $(CFLAGS) -c -o mailbox.o mailbox.c
 	$(CC) $(CFLAGS) -c -o raspberry_pi_revision.o raspberry_pi_revision.c
-	$(CCP) $(CFLAGS) -o v2rpitx  fmdmasync.cpp  dma.cpp gpio.cpp mailbox.o raspberry_pi_revision.o v2rpitx.cpp $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -o v2rpitx ngfmdmasync.cpp fmdmasync.cpp  dma.cpp gpio.cpp mailbox.o raspberry_pi_revision.o v2rpitx.cpp $(LDFLAGS) 
 
 
 		
