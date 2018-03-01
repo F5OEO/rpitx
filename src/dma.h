@@ -71,6 +71,8 @@ class dma
 
 	uint32_t mem_flag; //Cache or not depending on Rpi1 or 2/3
 	uint32_t dram_phys_base;
+
+		
     public:
     dma_cb_t *cbarray;
 	uint32_t cbsize;
@@ -86,6 +88,6 @@ class dma
     int start();
     int stop();
 	uint32_t getcbposition();
-    
+	    
 };
 #endif

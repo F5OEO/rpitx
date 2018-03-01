@@ -1,8 +1,11 @@
+// Inspired by https://github.com/SaucySoliton/PiFmRds/blob/master/src/pi_fm_rds.c
+
+
 #include "stdio.h"
 #include "ngfmdmasync.h"
 
 
-ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint32_t FifoSize):dma(Channel,FifoSize*2,FifoSize)
+ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint32_t FifoSize):dma(Channel,FifoSize*3,FifoSize*2)
 {
 	tunefreq=TuneFrequency;
 	clkgpio::SetPllNumber(clk_plla,0); // Use PPL_A , Do not USE MASH which generates spurious
@@ -23,10 +26,15 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 	pwmgpio::SetPllNumber(clk_osc,1);
 	pwmgpio::SetFrequency(SampleRate);
 	pwmgpio::SetMode(0);
-
+	fprintf(stderr,"PLLA Div %d Frac %d\n",IntMultiply,FracMultiply); 
    //clkgpio::print_clock_tree();
 	SetDmaAlgo();
-	FillMemory(FracMultiply);
+	FillMemory(IntMultiply,FracMultiply);
+
+	// Note : Spurious are at +/-(19.2MHZ/2^20)*Div*N : (N=1,2,3...) So we need to have a big div to spurious away BUT
+	// Spurious are ALSO at +/-(19.2MHZ/2^20)*(2^20-Div)*N
+	// Max spurious avoid is to be in the center ! Theory shoud be that spurious are set away at 19.2/2= 9.6Mhz ! But need to get account of div of PLLClock
+	
 }
 
 ngfmdmasync::~ngfmdmasync()
@@ -36,13 +44,24 @@ ngfmdmasync::~ngfmdmasync()
 void ngfmdmasync::SetDmaAlgo()
 {
 			dma_cb_t *cbp = cbarray;
-			for (uint32_t samplecnt = 0; samplecnt < cbsize/2; samplecnt++) { //cbsize/2 because we have 2 CB by sample
+			for (uint32_t samplecnt = 0; samplecnt < usermemsize/2; samplecnt++) 
+			{ 
 			
-		
 			// Write a frequency sample
 
 			cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP ;
-			cbp->src = mem_virt_to_phys(&usermem[samplecnt]);
+			cbp->src = mem_virt_to_phys(&usermem[samplecnt*2]);
+			cbp->dst = 0x7E000000 + (PLLA_CTRL<<2) + CLK_BASE ; 
+			cbp->length = 4;
+			cbp->stride = 0;
+			cbp->next = mem_virt_to_phys(cbp + 1);
+			//fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
+			cbp++;
+
+			// Write a frequency sample
+
+			cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP ;
+			cbp->src = mem_virt_to_phys(&usermem[samplecnt*2+1]);
 			cbp->dst = 0x7E000000 + (PLLA_FRAC<<2) + CLK_BASE ; 
 			cbp->length = 4;
 			cbp->stride = 0;
@@ -68,14 +87,24 @@ void ngfmdmasync::SetDmaAlgo()
 		//fprintf(stderr,"Last cbp :  src %x dest %x next %x\n",cbp->src,cbp->dst,cbp->next);
 }
 
-void ngfmdmasync::FillMemory(uint32_t FirstFrac)
+void ngfmdmasync::FillMemory(uint32_t MultInt,uint32_t FirstFrac)
 {
-	if(FirstFrac<usermemsize) 	FirstFrac=usermemsize;
-	for (uint32_t samplecnt = 0; samplecnt < usermemsize; samplecnt++)
+	
+	//if(FirstFrac<usermemsize) 	FirstFrac=usermemsize;
+	uint32_t tempmul=MultInt;
+	for (uint32_t samplecnt = 0; samplecnt < usermemsize/2; samplecnt++)
 	{
-		uint32_t Frac=(FirstFrac+samplecnt*((samplecnt%2==0)?1:-1))&0xFFFFF;
-		
-		usermem[samplecnt]=0x5A000000 | Frac;
+		//uint32_t Frac=(FirstFrac+samplecnt*((samplecnt%2==0)?1:-1))&0xFFFFF;
+		uint32_t Frac=(FirstFrac+samplecnt/10)%(1<<20); //10times less than symbolrate
+		//fprintf(stderr,"Frac %d\n",Frac);
+		if(Frac==0) 
+		{
+			fprintf(stderr,"Cross Int\n");
+			tempmul=MultInt+1;
+		}
+		usermem[samplecnt*2]=(0x5a<<24) | (0x21<<12) | tempmul;
+		usermem[samplecnt*2+1]=0x5A000000 | Frac;
+		//usermem[samplecnt]=0x5A000000 | FirstFrac;
 	}
 	
 }

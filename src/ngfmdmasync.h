@@ -13,7 +13,7 @@ class ngfmdmasync:public dma,clkgpio,pwmgpio
 	ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint32_t FifoSize);
 	~ngfmdmasync();
 	void SetDmaAlgo();
-	void FillMemory(uint32_t FirstFrac);
+	void FillMemory(uint32_t MultInt,uint32_t FirstFrac);
 }; 
 
 #endif

@@ -10,9 +10,9 @@ int main(int argc, char* argv[])
 	
 	generalgpio generalio;
 	generalio.enableclk();
-	ngfmdmasync ngfmtest(751000000,10000,14,1024);
+	ngfmdmasync ngfmtest(144200000*2,5000,14,512);
 	ngfmtest.start();
-	sleep(30);
+	sleep(10);
 	ngfmtest.stop();
 		
 
