@@ -33,7 +33,7 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 
 	
    
-	//SetDmaAlgo();
+	SetDmaAlgo();
 
 	//FillMemory(IntMultiply,FracMultiply);
 
@@ -61,7 +61,7 @@ void ngfmdmasync::SetDmaAlgo()
 			// Write INT Mult
 			/*
 			cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP ;
-			cbp->src = mem_virt_to_phys(&usermem[samplecnt*registerbysample]);
+			cbp->src = mem_virt_to_phys(&usermem[samplecnt*registerbysample+1]);
 			cbp->dst = 0x7E000000 + (PLLA_CTRL<<2) + CLK_BASE ; 
 			cbp->length = 4;
 			cbp->stride = 0;
@@ -78,7 +78,7 @@ void ngfmdmasync::SetDmaAlgo()
 			cbp->length = 4;
 			cbp->stride = 0;
 			cbp->next = mem_virt_to_phys(cbp + 1);
-			fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
+			//fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
 			cbp++;
 			
 					
@@ -90,7 +90,7 @@ void ngfmdmasync::SetDmaAlgo()
 			cbp->length = 4;
 			cbp->stride = 0;
 			cbp->next = mem_virt_to_phys(cbp + 1);
-			fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
+			//fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
 			cbp++;
 		}
 					
@@ -102,6 +102,7 @@ void ngfmdmasync::SetDmaAlgo()
 void ngfmdmasync::SetFrequencySample(uint32_t Index,int Frequency)
 {
 	sampletab[Index]=(0x5A<<24)|GetMasterFrac(Frequency);
+	//fprintf(stderr,"Frac=%d\n",GetMasterFrac(Frequency));
 	PushSample(Index);
 }
 

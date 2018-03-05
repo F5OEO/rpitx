@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
-all: ../rpitx v2rpitx 
+all: v2rpitx 
 
 #CFLAGS	= -Wall -g -O2 -D DIGITHIN
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
@@ -10,7 +10,7 @@ LDFLAGS	= -lm -lrt -lpthread
 		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c RpiGpio.c mailbox.c RpiDma.c raspberry_pi_revision.c $(LDFLAGS) 
 
 
-CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
+CFLAGS	= -Wall -g -O0 -Wno-unused-variable 
 LDFLAGS	= -lm -lrt -lpthread 
 CCP = g++ 
 CC = gcc 
@@ -60,7 +60,7 @@ LDFLAGS_Piopera	= -lm
 
 clean:
 	
-	rm -f  ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 RpiTx.o mailbox.o RpiGpio.o RpiDma.o
+	rm -f  ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 v2rpitx RpiTx.o mailbox.o RpiGpio.o RpiDma.o
 
 install: all
 	install -m 0755 ../pisstv /usr/bin

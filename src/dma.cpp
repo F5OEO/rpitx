@@ -122,10 +122,14 @@ int dma::stop()
     return 0;
 }
 
-uint32_t dma::getcbposition()
+int dma::getcbposition()
 {
-	 
-	return mem_phys_to_virt((uint32_t)(dma_reg.gpioreg[DMA_CONBLK_AD+channel*0x40]))-(uint32_t)virtbase;
+	volatile uint32_t dmacb=(uint32_t)(dma_reg.gpioreg[DMA_CONBLK_AD+channel*0x40]);
+	//fprintf(stderr,"cb=%x\n",dmacb);
+	if(dmacb>0)
+		return mem_phys_to_virt(dmacb)-(uint32_t)virtbase;
+	else
+		return -1;
 	// dma_reg.gpioreg[DMA_CONBLK_AD+channel*0x40]-mem_virt_to_phys((void *)cbarray );
 }
 
@@ -140,7 +144,7 @@ bufferdma::bufferdma(int Channel,uint32_t tbuffersize,uint32_t tcbbysample,uint3
 	buffersize=tbuffersize;
 	cbbysample=tcbbysample;
 	registerbysample=tregisterbysample;
-	fprintf(stderr,"BufferSize %d , cb %d user %d\n",tbuffersize,tbuffersize*cbbysample,tbuffersize*registerbysample);
+	fprintf(stderr,"BufferSize %d , cb %d user %d\n",buffersize,buffersize*cbbysample,buffersize*registerbysample);
 	
 	
 
@@ -157,24 +161,37 @@ void bufferdma::SetDmaAlgo()
 
 
 
-uint32_t bufferdma::GetBufferAvailable()
+int bufferdma::GetBufferAvailable()
 {	
 	int diffsample=0;
 	if(isrunning())
 	{
-		current_sample=getcbposition()/cbbysample;
-		int diffsample=current_sample-last_sample;
-		if(diffsample<0)
-			diffsample+=buffersize;
+		int CurrenCbPos=getcbposition();
+		if(CurrenCbPos!=-1)
+		{
+			current_sample=CurrenCbPos/(sizeof(dma_cb_t)*cbbysample);
+		}
+		else
+		{
+			fprintf(stderr,"DMA Stopped\n");
+			current_sample=0;
+		}
+		//fprintf(stderr,"CurrentCB=%d\n",current_sample);
+		diffsample=current_sample-last_sample;
+		if(diffsample<=0) diffsample+=buffersize;
+
+		fprintf(stderr,"cur %d last %d diff%d\n",current_sample,last_sample,diffsample);
 	}
 	else
 	{
-		last_sample=(buffersize-1)*cbbysample;
+		last_sample=buffersize-1;
 		diffsample=buffersize;
 		current_sample=0;
-		fprintf(stderr,"Warning DMA stopped\n");
+		fprintf(stderr,"Warning DMA stopped \n");
+		fprintf(stderr,"cur %d last %d diff%d\n",current_sample,last_sample,diffsample);
 	}
-	return (uint32_t)diffsample; 
+	
+	return diffsample; 
 	
 }
 
@@ -182,10 +199,11 @@ int bufferdma::GetUserMemIndex()
 {
 	
 	int IndexAvailable=-1;
+	//fprintf(stderr,"Avail=%d\n",GetBufferAvailable());
 	if(GetBufferAvailable()>0)
 	{
 		IndexAvailable=last_sample+1;
-		if(IndexAvailable==(int)buffersize) IndexAvailable=0;	
+		if(IndexAvailable>=(int)buffersize-1) IndexAvailable=0;	
 	}
 	return IndexAvailable;
 }
@@ -205,7 +223,7 @@ int bufferdma::PushSample(int Index)
 	*/
 	if(isrunning()==false)
 	{
-		//start();
+		start();
 	}
 	return 0;
 	

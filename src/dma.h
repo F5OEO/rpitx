@@ -87,7 +87,7 @@ class dma
 	void GetRpiInfo();
     int start();
     int stop();
-	uint32_t getcbposition();
+	int getcbposition();
 	bool isrunning();
 	    
 };
@@ -112,7 +112,7 @@ class bufferdma:public dma
 	public:
 	bufferdma(int Channel,uint32_t tbuffersize,uint32_t tcbbysample,uint32_t tregisterbysample);
 	void SetDmaAlgo();
-	uint32_t GetBufferAvailable();
+	int GetBufferAvailable();
 	int GetUserMemIndex();
 	int PushSample(int Index);
 		
