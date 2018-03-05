@@ -88,6 +88,33 @@ class dma
     int start();
     int stop();
 	uint32_t getcbposition();
+	bool isrunning();
 	    
+};
+
+#define PHYSICAL_BUS 0x7E000000
+
+class bufferdma:public dma
+{
+	protected:
+	
+
+	uint32_t current_sample;
+	uint32_t last_sample;
+	uint32_t sample_available;
+	
+	public:
+	uint32_t buffersize;
+	uint32_t cbbysample;
+	uint32_t registerbysample;
+	uint32_t *sampletab;
+	
+	public:
+	bufferdma(int Channel,uint32_t tbuffersize,uint32_t tcbbysample,uint32_t tregisterbysample);
+	void SetDmaAlgo();
+	uint32_t GetBufferAvailable();
+	int GetUserMemIndex();
+	int PushSample(int Index);
+		
 };
 #endif

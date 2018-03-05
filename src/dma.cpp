@@ -13,6 +13,8 @@ extern "C"
 
 dma::dma(int Channel,uint32_t CBSize,uint32_t UserMemSize) // Fixme! Need to check to be 256 Aligned for UserMem
 { 
+	fprintf(stderr,"Channel %d CBSize %d UsermemSize %d\n",Channel,CBSize,UserMemSize);
+	
 	channel=Channel;
     mbox.handle = mbox_open();
 	if (mbox.handle < 0)
@@ -127,3 +129,84 @@ uint32_t dma::getcbposition()
 	// dma_reg.gpioreg[DMA_CONBLK_AD+channel*0x40]-mem_virt_to_phys((void *)cbarray );
 }
 
+bool dma::isrunning()
+{
+	 return ((dma_reg.gpioreg[DMA_CS+channel*0x40]&DMA_CS_ACTIVE)>0);
+}
+
+//**************************************** BUFFER DMA ********************************************************
+bufferdma::bufferdma(int Channel,uint32_t tbuffersize,uint32_t tcbbysample,uint32_t tregisterbysample):dma(Channel,tbuffersize*tcbbysample,tbuffersize*tregisterbysample)
+{
+	buffersize=tbuffersize;
+	cbbysample=tcbbysample;
+	registerbysample=tregisterbysample;
+	fprintf(stderr,"BufferSize %d , cb %d user %d\n",tbuffersize,tbuffersize*cbbysample,tbuffersize*registerbysample);
+	
+	
+
+	current_sample=0;
+	last_sample=0;
+	sample_available=buffersize;
+
+	sampletab=usermem;
+}
+
+void bufferdma::SetDmaAlgo()
+{
+}
+
+
+
+uint32_t bufferdma::GetBufferAvailable()
+{	
+	int diffsample=0;
+	if(isrunning())
+	{
+		current_sample=getcbposition()/cbbysample;
+		int diffsample=current_sample-last_sample;
+		if(diffsample<0)
+			diffsample+=buffersize;
+	}
+	else
+	{
+		last_sample=(buffersize-1)*cbbysample;
+		diffsample=buffersize;
+		current_sample=0;
+		fprintf(stderr,"Warning DMA stopped\n");
+	}
+	return (uint32_t)diffsample; 
+	
+}
+
+int bufferdma::GetUserMemIndex()
+{
+	
+	int IndexAvailable=-1;
+	if(GetBufferAvailable()>0)
+	{
+		IndexAvailable=last_sample+1;
+		if(IndexAvailable==(int)buffersize) IndexAvailable=0;	
+	}
+	return IndexAvailable;
+}
+
+int bufferdma::PushSample(int Index)
+{
+	if(Index<0) return -1; // No buffer available
+
+	/*dma_cb_t *cbp;
+	cbp=&cbarray[last_sample*cbbysample+cbbysample-1];
+	cbp->next=mem_virt_to_phys(&cbarray[Index]);
+	*/
+	last_sample=Index;
+	/*
+	cbp=&cbarray[Index*cbbysample+cbbysample-1];
+	cbp->next=0;
+	*/
+	if(isrunning()==false)
+	{
+		//start();
+	}
+	return 0;
+	
+}

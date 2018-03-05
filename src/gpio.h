@@ -108,19 +108,28 @@ enum {clk_gnd,clk_osc,clk_debug0,clk_debug1,clk_plla,clk_pllc,clk_plld,clk_hdmi}
 
 class clkgpio:public gpio
 {
+	protected:
     int pllnumber;
 	int Mash;
 	uint64_t Pllfrequency;
-	
+	bool ModulateFromMasterPLL=false;
+
+	uint64_t CentralFrequency=0; 
+	int PllFixDivider=8; //Fix divider from the master clock in advanced mode
     public:
     clkgpio();
 	~clkgpio();
 	int SetPllNumber(int PllNo,int MashType);
 	uint64_t GetPllFrequency(int PllNo);
 	void print_clock_tree(void);
-	int SetFrequency(uint64_t Frequency); 
+	int SetFrequency(int Frequency); 
 	int SetClkDivFrac(uint32_t Div,uint32_t Frac);
-	
+	void SetPhase(bool inversed);
+	void SetAdvancedPllMode(bool Advanced);
+	int SetCenterFrequency(uint64_t Frequency);
+	int ComputeBestLO(uint64_t Frequency);
+	int SetMasterMultFrac(uint32_t Mult,uint32_t Frac);
+	uint32_t GetMasterFrac(int Frequency);
         
 };
 

@@ -5,7 +5,7 @@
 #include "dma.h"
 #include "gpio.h"
 
-class ngfmdmasync:public dma,clkgpio,pwmgpio
+class ngfmdmasync:public bufferdma,public clkgpio,public pwmgpio
 {
 	protected:
 	uint64_t tunefreq;
@@ -14,6 +14,8 @@ class ngfmdmasync:public dma,clkgpio,pwmgpio
 	~ngfmdmasync();
 	void SetDmaAlgo();
 	void FillMemory(uint32_t MultInt,uint32_t FirstFrac);
+	void SetPhase(bool inversed);
+	void SetFrequencySample(uint32_t Index,int Frequency);
 }; 
 
 #endif

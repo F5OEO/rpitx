@@ -73,7 +73,7 @@ int clkgpio::SetPllNumber(int PllNo,int MashType)
 		Mash=MashType;
 	else
 		Mash=0;
-	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(0 << 4)  ; //4 is START CLK
+	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
 	usleep(100);
 	Pllfrequency=GetPllFrequency(pllnumber);
 	return 0;
@@ -102,25 +102,106 @@ int clkgpio::SetClkDivFrac(uint32_t Div,uint32_t Frac)
 	
 	gpioreg[GPCLK_DIV] = 0x5A000000 | ((Div)<<12) | Frac;
 	usleep(10);
-	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber |(1<<4)  ; //4 is START CLK
-		usleep(10);
+	//gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber |(1<<4)  ; //4 is START CLK
+	//	usleep(10);
 	return 0;
 
 }
 
-int clkgpio::SetFrequency(uint64_t Frequency)
+int clkgpio::SetMasterMultFrac(uint32_t Mult,uint32_t Frac)
 {
 	
-	double Freqresult=(double)Pllfrequency/(double)Frequency;
-	uint32_t FreqDivider=(uint32_t)Freqresult;
-	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
-	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
-	printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
+	gpioreg[PLLA_CTRL] = (0x5a<<24) | (0x21<<12) | Mult;
+	//usleep(10);
+	gpioreg[PLLA_FRAC]= 0x5A000000 | Frac  ; //4 is START CLK
+	//	usleep(10);
+	return 0;
+
+}
+
+int clkgpio::SetFrequency(int Frequency)
+{
+	if(ModulateFromMasterPLL)
+	{
+		double FloatMult=((double)(CentralFrequency+Frequency)*PllFixDivider)/(double)(XOSC_FREQUENCY);
+		uint32_t freqctl = FloatMult*((double)(1<<20)) ; 
+		int IntMultiply= freqctl>>20; // Need to be calculated to have a center frequency
+		freqctl&=0xFFFFF; // Fractionnal is 20bits
+		uint32_t FracMultiply=freqctl&0xFFFFF; 
+		SetMasterMultFrac(IntMultiply,FracMultiply);
+	}
+	else
+	{
+		double Freqresult=(double)Pllfrequency/(double)(CentralFrequency+Frequency);
+		uint32_t FreqDivider=(uint32_t)Freqresult;
+		uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
+		if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
+		//printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
 	
-	SetClkDivFrac(FreqDivider,FreqFractionnal);
+		SetClkDivFrac(FreqDivider,FreqFractionnal);
+	}
 	
 	return 0;
 
+}
+
+uint32_t clkgpio::GetMasterFrac(int Frequency)
+{
+	if(ModulateFromMasterPLL)
+	{
+		double FloatMult=((double)(CentralFrequency+Frequency)*PllFixDivider)/(double)(XOSC_FREQUENCY);
+		uint32_t freqctl = FloatMult*((double)(1<<20)) ; 
+		int IntMultiply= freqctl>>20; // Need to be calculated to have a center frequency
+		freqctl&=0xFFFFF; // Fractionnal is 20bits
+		uint32_t FracMultiply=freqctl&0xFFFFF; 
+		return FracMultiply;
+	}
+	else
+		return 0; //Not in Master CLk mode
+	
+}
+
+int clkgpio::ComputeBestLO(uint64_t Frequency)
+{ 
+	for(int i=1;i<4096;i++)
+	{
+		
+	}
+	return 0;
+}
+
+int clkgpio::SetCenterFrequency(uint64_t Frequency)
+{
+	CentralFrequency=Frequency;
+	if(ModulateFromMasterPLL)
+	{
+		//Choose best PLLDiv and Div
+		ComputeBestLO(Frequency);
+		SetClkDivFrac(PllFixDivider,0); // NO MASH !!!!
+	}
+	else
+	{
+		GetPllFrequency(pllnumber);// Be sure to get the master PLL frequency
+	}
+	return 0;	
+}
+
+void clkgpio::SetPhase(bool inversed)
+{
+	uint32_t StateBefore=clkgpio::gpioreg[GPCLK_CNTL];
+	clkgpio::gpioreg[GPCLK_CNTL]= (0x5A<<24) | StateBefore | ((inversed?1:0)<<8) | 1<<5;
+	clkgpio::gpioreg[GPCLK_CNTL]= (0x5A<<24) | StateBefore | ((inversed?1:0)<<8) | 0<<5;
+}
+
+void clkgpio::SetAdvancedPllMode(bool Advanced)
+{
+	ModulateFromMasterPLL=Advanced;
+	if(ModulateFromMasterPLL)
+	{
+		SetPllNumber(clk_plla,0); // Use PPL_A , Do not USE MASH which generates spurious
+		gpioreg[0x104/4]=0x5A00020A; // Enable Plla_PER
+		gpioreg[PLLA_PER]=0x5A000002; // Div ? 
+	}
 }
 
 void clkgpio::print_clock_tree(void)
