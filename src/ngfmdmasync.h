@@ -13,7 +13,7 @@ class ngfmdmasync:public bufferdma,public clkgpio,public pwmgpio
 	ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint32_t FifoSize);
 	~ngfmdmasync();
 	void SetDmaAlgo();
-	void FillMemory(uint32_t MultInt,uint32_t FirstFrac);
+	
 	void SetPhase(bool inversed);
 	void SetFrequencySample(uint32_t Index,int Frequency);
 }; 

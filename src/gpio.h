@@ -21,6 +21,7 @@ class gpio
 #define BCM2708_DMA_DST_IGNOR           (1<<7)
 #define BCM2708_DMA_NO_WIDE_BURSTS	(1<<26)
 #define BCM2708_DMA_WAIT_RESP		(1<<3)
+#define BCM2708_DMA_SET_INT		(1<<0)
 
 #define BCM2708_DMA_D_DREQ		(1<<6)
 #define BCM2708_DMA_PER_MAP(x)		((x)<<16)
@@ -36,6 +37,7 @@ class gpio
 #define DMA_CS_RESET    (1<<31)
 #define DMA_CS_ABORT    (1<<30)
 #define DMA_CS_DISDEBUG (1<<28)
+#define DMA_CS_INT      (1<<2)
 #define DMA_CS_END      (1<<1)
 #define DMA_CS_ACTIVE   (1<<0)
 #define DMA_CS_PRIORITY(x) ((x)&0xf << 16)
@@ -192,6 +194,7 @@ class pwmgpio:public gpio
 	clkgpio clk;
 	int pllnumber;
 	int Mash;
+	int Prediv; //Range of PWM
 	uint64_t Pllfrequency;
     public:
     pwmgpio();
@@ -199,7 +202,7 @@ class pwmgpio:public gpio
 	int SetPllNumber(int PllNo,int MashType);
 	uint64_t GetPllFrequency(int PllNo);
 	int SetFrequency(uint64_t Frequency);
-   int SetMode(int Mode);
+    int SetPrediv(int predivisor);
 };
 
 //******************************* PCM GPIO (I2S) ***********************************

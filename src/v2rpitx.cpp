@@ -10,8 +10,8 @@ int main(int argc, char* argv[])
 	
 	generalgpio generalio;
 	generalio.enableclk();
-/*
-	clkgpio clk;
+
+	/*clkgpio clk;
 	clk.SetPllNumber(clk_plld,1);
 	clk.SetAdvancedPllMode(true);
 	clk.SetCenterFrequency(144100000);
@@ -20,28 +20,30 @@ int main(int argc, char* argv[])
 		clk.SetFrequency(i);
 		usleep(10);
 	}
-	sleep(5);
-*/
+	sleep(5);*/
 	
-	//dma mydma(14,32,16);
-    //bufferdma mydma(14,16,2,1);
 	
-	ngfmdmasync ngfmtest(144100000,5000,14,128);
 	
-	for(int i=0;i<256;i++)
+	
+	ngfmdmasync ngfmtest(144100000,200000,14,512);
+	
+	for(int i=0;i<1000000;)
 	{
+		//usleep(10);
 		int Index=ngfmtest.GetUserMemIndex();
 		//printf("GetIndex=%d\n",Index);
 		if(Index>=0)
 		{
-			ngfmtest.SetFrequencySample(Index,i*10);
+			//ngfmtest.SetFrequencySample(Index,((i%10000)>5000)?1000:0);
+			ngfmtest.SetFrequencySample(Index,i%100000);
+			i++;
 			
 		}
 		else
 			usleep(10);
 	}
 	fprintf(stderr,"End\n");
-	sleep(10);
+	
 	ngfmtest.stop();
 		
 	

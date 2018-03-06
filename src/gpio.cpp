@@ -64,6 +64,7 @@ clkgpio::~clkgpio()
 
 int clkgpio::SetPllNumber(int PllNo,int MashType)
 {
+	//print_clock_tree();
 	if(PllNo<8)
 		pllnumber=PllNo;
 	else
@@ -112,9 +113,9 @@ int clkgpio::SetMasterMultFrac(uint32_t Mult,uint32_t Frac)
 {
 	
 	gpioreg[PLLA_CTRL] = (0x5a<<24) | (0x21<<12) | Mult;
-	//usleep(10);
-	gpioreg[PLLA_FRAC]= 0x5A000000 | Frac  ; //4 is START CLK
-	//	usleep(10);
+	usleep(10);
+	gpioreg[PLLA_FRAC]= 0x5A000000 | Frac  ; 
+		usleep(10);
 	return 0;
 
 }
@@ -178,6 +179,7 @@ int clkgpio::SetCenterFrequency(uint64_t Frequency)
 		//Choose best PLLDiv and Div
 		ComputeBestLO(Frequency);
 		SetClkDivFrac(PllFixDivider,0); // NO MASH !!!!
+		SetFrequency(Frequency);
 	}
 	else
 	{
@@ -200,7 +202,9 @@ void clkgpio::SetAdvancedPllMode(bool Advanced)
 	{
 		SetPllNumber(clk_plla,0); // Use PPL_A , Do not USE MASH which generates spurious
 		gpioreg[0x104/4]=0x5A00020A; // Enable Plla_PER
+		usleep(100);
 		gpioreg[PLLA_PER]=0x5A000002; // Div ? 
+		usleep(100);
 	}
 }
 
@@ -361,32 +365,45 @@ uint64_t pwmgpio::GetPllFrequency(int PllNo)
 
 int pwmgpio::SetFrequency(uint64_t Frequency)
 {
-	
-	double Freqresult=(double)Pllfrequency/(double)Frequency;
+	Prediv=2; // Fixe for now , need investigation if not 32 !!!! FixMe !
+	double Freqresult=(double)Pllfrequency/(double)(Frequency*Prediv);
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
+	fprintf(stderr,"PWM clk=%d / %d\n",FreqDivider,FreqFractionnal);
 	clk.gpioreg[PWMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
+	
 	usleep(100);
 	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is STAR CLK
-		usleep(100);
+	usleep(100);
+	fprintf(stderr,"PWM Reg %x\n",clk.gpioreg[PWMCLK_CNTL]);
+	
+	SetPrediv(Prediv);	
 	return 0;
 
 }
 
-int pwmgpio::SetMode(int Mode) //Mode should be only for SYNC or a Data serializer : Todo
+int pwmgpio::SetPrediv(int predivisor) //Mode should be only for SYNC or a Data serializer : Todo
 {
-		gpioreg[PWM_RNG1] = 32;// 250 -> 8KHZ
+		Prediv=predivisor;
+		if(Prediv>32) 
+		{
+			fprintf(stderr,"PWM Prediv is max 32\n");
+			Prediv=2;
+		}
+		fprintf(stderr,"PWM Prediv %d\n",Prediv);
+		gpioreg[PWM_RNG1] = Prediv;// 250 -> 8KHZ
 		usleep(100);
-		gpioreg[PWM_RNG2] = 32;// 32 Mandatory for Serial Mode without gap
+		gpioreg[PWM_RNG2] = Prediv;// 32 Mandatory for Serial Mode without gap
 	
-		gpioreg[PWM_FIFO]=0xAAAAAAAA;
+		//gpioreg[PWM_FIFO]=0xAAAAAAAA;
+
 		gpioreg[PWM_DMAC] = PWMDMAC_ENAB | PWMDMAC_THRSHLD;
 		usleep(100);
-		//gpioreg[PWM_CTL] = PWMCTL_CLRF;
-		
-		gpioreg[PWM_CTL] =   PWMCTL_USEF1 | PWMCTL_PWEN1; //PWM0 in Repeat mode
-	
+		gpioreg[PWM_CTL] = PWMCTL_CLRF;
+		usleep(100);
+		gpioreg[PWM_CTL] =   PWMCTL_USEF1 | PWMCTL_PWEN1; 
+		usleep(100);
 	
 	return 0;
 

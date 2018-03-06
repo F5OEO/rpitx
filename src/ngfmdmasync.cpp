@@ -12,7 +12,7 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 	tunefreq=TuneFrequency;
 	clkgpio::SetAdvancedPllMode(true);
 	clkgpio::SetCenterFrequency(TuneFrequency); // Write Mult Int and Frac : FixMe carrier is already there
-	
+	clkgpio::SetFrequency(0);
 
 	/*
 	double FloatMult=((double)TuneFrequency)/(double)(XOSC_FREQUENCY);
@@ -28,9 +28,10 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 	*/
 
 	pwmgpio::SetPllNumber(clk_osc,1);
+	//pwmgpio::SetPllNumber(clk_plld,1);
+	
 	pwmgpio::SetFrequency(SampleRate);
-	pwmgpio::SetMode(0);
-
+	
 	
    
 	SetDmaAlgo();
@@ -84,7 +85,7 @@ void ngfmdmasync::SetDmaAlgo()
 					
 			// Delay
 			
-			cbp->info =  /*BCM2708_DMA_SRC_IGNOR  | */BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP | BCM2708_DMA_D_DREQ  | BCM2708_DMA_PER_MAP(DREQ_PWM);
+			cbp->info =  /*BCM2708_DMA_SRC_IGNOR  |*/ BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP |BCM2708_DMA_D_DREQ  | BCM2708_DMA_PER_MAP(DREQ_PWM);
 			cbp->src = mem_virt_to_phys(cbarray); // Data is not important as we use it only to feed the PWM
 			cbp->dst = 0x7E000000 + (PWM_FIFO<<2) + PWM_BASE ;
 			cbp->length = 4;
@@ -106,24 +107,4 @@ void ngfmdmasync::SetFrequencySample(uint32_t Index,int Frequency)
 	PushSample(Index);
 }
 
-void ngfmdmasync::FillMemory(uint32_t MultInt,uint32_t FirstFrac)
-{
-	
-	//if(FirstFrac<usermemsize) 	FirstFrac=usermemsize;
-	uint32_t tempmul=MultInt;
-	for (uint32_t samplecnt = 0; samplecnt < usermemsize/2; samplecnt++)
-	{
-		//uint32_t Frac=(FirstFrac+samplecnt*((samplecnt%2==0)?1:-1))&0xFFFFF;
-		uint32_t Frac=(FirstFrac+samplecnt/10)%(1<<20); //10times less than symbolrate
-		//fprintf(stderr,"Frac %d\n",Frac);
-		if(Frac==0) 
-		{
-			fprintf(stderr,"Cross Int\n");
-			tempmul=MultInt+1;
-		}
-		//usermem[samplecnt*2]=(0x5a<<24) | (0x21<<12) | tempmul;
-		//usermem[samplecnt*2+1]=0x5A000000 | Frac;
-		usermem[samplecnt*2]=0x5A000000 | FirstFrac;
-	}
-	
-}
+

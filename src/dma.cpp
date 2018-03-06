@@ -43,7 +43,7 @@ dma::dma(int Channel,uint32_t CBSize,uint32_t UserMemSize) // Fixme! Need to che
     usermem= (unsigned int *)(virtbase+CBSize*sizeof(dma_cb_t)); // user memory is placed after
 	//fprintf(stderr,"usermem %p\n", usermem);
 
-	dma_reg.gpioreg[DMA_CS+channel*0x40] = BCM2708_DMA_RESET;
+	dma_reg.gpioreg[DMA_CS+channel*0x40] = BCM2708_DMA_RESET|DMA_CS_INT; // Remove int flag
 	usleep(100);
 	dma_reg.gpioreg[DMA_CONBLK_AD+channel*0x40]=mem_virt_to_phys((void*)cbarray ); // reset to beginning 
 }
@@ -138,6 +138,12 @@ bool dma::isrunning()
 	 return ((dma_reg.gpioreg[DMA_CS+channel*0x40]&DMA_CS_ACTIVE)>0);
 }
 
+bool dma::isunderflow()
+{
+	//if((dma_reg.gpioreg[DMA_CS+channel*0x40]&DMA_CS_INT)>0)	fprintf(stderr,"Status:%x\n",dma_reg.gpioreg[DMA_CS+channel*0x40]);
+	 return ((dma_reg.gpioreg[DMA_CS+channel*0x40]&DMA_CS_INT)>0);
+}
+
 //**************************************** BUFFER DMA ********************************************************
 bufferdma::bufferdma(int Channel,uint32_t tbuffersize,uint32_t tcbbysample,uint32_t tregisterbysample):dma(Channel,tbuffersize*tcbbysample,tbuffersize*tregisterbysample)
 {
@@ -173,24 +179,29 @@ int bufferdma::GetBufferAvailable()
 		}
 		else
 		{
-			fprintf(stderr,"DMA Stopped\n");
+			fprintf(stderr,"DMA WEIRD STATE\n");
 			current_sample=0;
 		}
 		//fprintf(stderr,"CurrentCB=%d\n",current_sample);
 		diffsample=current_sample-last_sample;
-		if(diffsample<=0) diffsample+=buffersize;
+		if(diffsample<0) diffsample+=buffersize;
 
-		fprintf(stderr,"cur %d last %d diff%d\n",current_sample,last_sample,diffsample);
+		//fprintf(stderr,"cur %d last %d diff%d\n",current_sample,last_sample,diffsample);
 	}
 	else
 	{
-		last_sample=buffersize-1;
+		//last_sample=buffersize-1;
 		diffsample=buffersize;
 		current_sample=0;
-		fprintf(stderr,"Warning DMA stopped \n");
-		fprintf(stderr,"cur %d last %d diff%d\n",current_sample,last_sample,diffsample);
+		//fprintf(stderr,"Warning DMA stopped \n");
+		//fprintf(stderr,"S:cur %d last %d diff%d\n",current_sample,last_sample,diffsample);
 	}
 	
+	if(isunderflow())
+	{
+	fprintf(stderr,"cur %d last %d \n",current_sample,last_sample);	 	
+	 fprintf(stderr,"Underflow\n");
+	}
 	return diffsample; 
 	
 }
@@ -203,7 +214,7 @@ int bufferdma::GetUserMemIndex()
 	if(GetBufferAvailable()>0)
 	{
 		IndexAvailable=last_sample+1;
-		if(IndexAvailable>=(int)buffersize-1) IndexAvailable=0;	
+		if(IndexAvailable>=(int)buffersize) IndexAvailable=0;	
 	}
 	return IndexAvailable;
 }
@@ -214,16 +225,30 @@ int bufferdma::PushSample(int Index)
 
 	/*dma_cb_t *cbp;
 	cbp=&cbarray[last_sample*cbbysample+cbbysample-1];
-	cbp->next=mem_virt_to_phys(&cbarray[Index]);
-	*/
+	cbp->next=mem_virt_to_phys(&cbarray[Index]);*/
+	
+	dma_cb_t *cbp;
+	cbp=&cbarray[last_sample*cbbysample+cbbysample-1];
+	//fprintf(stderr,"Info=%x\n",cbp->info);
+	cbp->info=cbp->info&(~BCM2708_DMA_SET_INT);
+	//fprintf(stderr,"Info2=%x\n",cbp->info);
+	
+
 	last_sample=Index;
-	/*
+	
 	cbp=&cbarray[Index*cbbysample+cbbysample-1];
-	cbp->next=0;
-	*/
+	//fprintf(stderr,"Info=%x\n",cbp->info);
+	cbp->info=cbp->info|(BCM2708_DMA_SET_INT);
+	//fprintf(stderr,"Info2=%x\n",cbp->info);
+	/*if(isunderflow())
+	{
+	fprintf(stderr,"cur %d last %d \n",current_sample,last_sample);	 	
+	 fprintf(stderr,"Underflow\n");
+	}*/
 	if(isrunning()==false)
 	{
-		start();
+		if(last_sample>buffersize/4) start(); // 1/4 Fill buffer before starting DMA
+	
 	}
 	return 0;
 	

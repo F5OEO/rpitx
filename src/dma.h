@@ -89,6 +89,7 @@ class dma
     int stop();
 	int getcbposition();
 	bool isrunning();
+	bool isunderflow();
 	    
 };
 
