@@ -78,7 +78,7 @@ class dma
 	uint32_t cbsize;
     uint32_t *usermem;
 	uint32_t usermemsize;
-
+	bool Started=false;
 
     dma(int Channel,uint32_t CBSize,uint32_t UserMemSize);
     ~dma();

@@ -5,10 +5,11 @@
 #include "dma.h"
 #include "gpio.h"
 
-class ngfmdmasync:public bufferdma,public clkgpio,public pwmgpio
+class ngfmdmasync:public bufferdma,public clkgpio,public pwmgpio,public pcmgpio
 {
 	protected:
 	uint64_t tunefreq;
+	bool syncwithpwm;
 	public:
 	ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint32_t FifoSize);
 	~ngfmdmasync();

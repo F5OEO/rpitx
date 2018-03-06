@@ -228,14 +228,17 @@ class pcmgpio:public gpio
 	clkgpio clk;
 	int pllnumber;
 	int Mash;
+	int Prediv; //Range of PCM
 	uint64_t Pllfrequency;
+	int SetPrediv(int predivisor);
+	
     public:
     pcmgpio();
 	~pcmgpio();
 	int SetPllNumber(int PllNo,int MashType);
 	uint64_t GetPllFrequency(int PllNo);
 	int SetFrequency(uint64_t Frequency);
-   int SetMode(int Mode);
+
 };
 
 #endif

@@ -89,7 +89,7 @@ uint64_t clkgpio::GetPllFrequency(int PllNo)
 		case clk_plla:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLA_CTRL]&0x3ff) +XOSC_FREQUENCY*(uint64_t)gpioreg[PLLA_FRAC]/(1<<20);break;
 		//case clk_pllb:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLB_CTRL]&0x3ff) +XOSC_FREQUENCY*(uint64_t)gpioreg[PLLB_FRAC]/(1<<20);break;
 		case clk_pllc:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLC_CTRL]&0x3ff) +XOSC_FREQUENCY*(uint64_t)gpioreg[PLLC_FRAC]/(1<<20);break;
-		case clk_plld:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLD_CTRL]&0x3ff) +(XOSC_FREQUENCY*(uint64_t)gpioreg[PLLD_FRAC])/(1<<20);break;
+		case clk_plld:Freq=(XOSC_FREQUENCY*((uint64_t)gpioreg[PLLD_CTRL]&0x3ff) +(XOSC_FREQUENCY*(uint64_t)gpioreg[PLLD_FRAC])/(1<<20))/(gpioreg[PLLD_PER]>>1);break;
 		case clk_hdmi:Freq=XOSC_FREQUENCY*((uint64_t)gpioreg[PLLH_CTRL]&0x3ff) +XOSC_FREQUENCY*(uint64_t)gpioreg[PLLH_FRAC]/(1<<20);break;
 	}
 	fprintf(stderr,"Freq = %lld\n",Freq);
@@ -365,7 +365,7 @@ uint64_t pwmgpio::GetPllFrequency(int PllNo)
 
 int pwmgpio::SetFrequency(uint64_t Frequency)
 {
-	Prediv=2; // Fixe for now , need investigation if not 32 !!!! FixMe !
+	Prediv=32; // Fixe for now , need investigation if not 32 !!!! FixMe !
 	double Freqresult=(double)Pllfrequency/(double)(Frequency*Prediv);
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
@@ -376,7 +376,7 @@ int pwmgpio::SetFrequency(uint64_t Frequency)
 	usleep(100);
 	clk.gpioreg[PWMCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is STAR CLK
 	usleep(100);
-	fprintf(stderr,"PWM Reg %x\n",clk.gpioreg[PWMCLK_CNTL]);
+	
 	
 	SetPrediv(Prediv);	
 	return 0;
@@ -402,7 +402,8 @@ int pwmgpio::SetPrediv(int predivisor) //Mode should be only for SYNC or a Data 
 		usleep(100);
 		gpioreg[PWM_CTL] = PWMCTL_CLRF;
 		usleep(100);
-		gpioreg[PWM_CTL] =   PWMCTL_USEF1 | PWMCTL_PWEN1; 
+		//gpioreg[PWM_CTL] =   PWMCTL_USEF1 | PWMCTL_PWEN1; 
+		gpioreg[PWM_CTL] = PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_MSEN1;
 		usleep(100);
 	
 	return 0;
@@ -444,24 +445,31 @@ uint64_t pcmgpio::GetPllFrequency(int PllNo)
 
 int pcmgpio::SetFrequency(uint64_t Frequency)
 {
-	
-	double Freqresult=(double)Pllfrequency/(double)Frequency;
+	Prediv=10;
+	double Freqresult=(double)Pllfrequency/(double)(Frequency*Prediv);
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
-	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
+	fprintf(stderr,"PCM clk=%d / %d\n",FreqDivider,FreqFractionnal);
+	if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"PCM Frequency out of range\n");
 	clk.gpioreg[PCMCLK_DIV] = 0x5A000000 | ((FreqDivider)<<12) | FreqFractionnal;
-	
+	SetPrediv(Prediv);
 	return 0;
 
 }
 
-int pcmgpio::SetMode(int Mode) //Carefull we use a 10 fixe divisor for now : frequency is thus f/10 as a samplerate
+int pcmgpio::SetPrediv(int predivisor) //Carefull we use a 10 fixe divisor for now : frequency is thus f/10 as a samplerate
 {
+	if(predivisor>1000)
+	{
+		fprintf(stderr,"PCM prediv should be <1000");
+		predivisor=1000;
+	}
+	
 	gpioreg[PCM_TXC_A] = 0<<31 | 1<<30 | 0<<20 | 0<<16; // 1 channel, 8 bits
 	usleep(100);
-	int NbStepPCM = 10;
+	
 	//printf("Nb PCM STEP (<1000):%d\n",NbStepPCM);
-	gpioreg[PCM_MODE_A] = (NbStepPCM-1)<<10; // SHOULD NOT EXCEED 1000 !!! 
+	gpioreg[PCM_MODE_A] = (predivisor-1)<<10; // SHOULD NOT EXCEED 1000 !!! 
 	usleep(100);
 	gpioreg[PCM_CS_A] |= 1<<4 | 1<<3;		// Clear FIFOs
 	usleep(100);

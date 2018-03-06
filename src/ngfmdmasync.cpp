@@ -13,7 +13,7 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 	clkgpio::SetAdvancedPllMode(true);
 	clkgpio::SetCenterFrequency(TuneFrequency); // Write Mult Int and Frac : FixMe carrier is already there
 	clkgpio::SetFrequency(0);
-
+	syncwithpwm=false;
 	/*
 	double FloatMult=((double)TuneFrequency)/(double)(XOSC_FREQUENCY);
 	uint32_t freqctl = FloatMult*((double)(1<<20)) ; 
@@ -27,10 +27,17 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 	SetClkDivFrac(4,0); // CLK is not divided for now !	
 	*/
 
-	pwmgpio::SetPllNumber(clk_osc,1);
-	//pwmgpio::SetPllNumber(clk_plld,1);
-	
-	pwmgpio::SetFrequency(SampleRate);
+	//pwmgpio::SetPllNumber(clk_osc,1);
+	if(syncwithpwm)
+	{
+		pwmgpio::SetPllNumber(clk_plld,1);
+		pwmgpio::SetFrequency(SampleRate);
+	}
+	else
+	{
+		pcmgpio::SetPllNumber(clk_plld,1);
+		pcmgpio::SetFrequency(SampleRate);
+	}
 	
 	
    
@@ -82,17 +89,23 @@ void ngfmdmasync::SetDmaAlgo()
 			//fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
 			cbp++;
 			
-					
+				
 			// Delay
-			
-			cbp->info =  /*BCM2708_DMA_SRC_IGNOR  |*/ BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP |BCM2708_DMA_D_DREQ  | BCM2708_DMA_PER_MAP(DREQ_PWM);
+			if(syncwithpwm)
+				cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP |BCM2708_DMA_D_DREQ  | BCM2708_DMA_PER_MAP(DREQ_PWM);
+			else
+				cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP |BCM2708_DMA_D_DREQ  | BCM2708_DMA_PER_MAP(DREQ_PCM_TX);
 			cbp->src = mem_virt_to_phys(cbarray); // Data is not important as we use it only to feed the PWM
-			cbp->dst = 0x7E000000 + (PWM_FIFO<<2) + PWM_BASE ;
+			if(syncwithpwm)		
+				cbp->dst = 0x7E000000 + (PWM_FIFO<<2) + PWM_BASE ;
+			else
+				cbp->dst = 0x7E000000 + (PCM_FIFO_A<<2) + PCM_BASE ;
 			cbp->length = 4;
 			cbp->stride = 0;
 			cbp->next = mem_virt_to_phys(cbp + 1);
 			//fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
 			cbp++;
+			
 		}
 					
 		cbp--;
@@ -102,6 +115,7 @@ void ngfmdmasync::SetDmaAlgo()
 
 void ngfmdmasync::SetFrequencySample(uint32_t Index,int Frequency)
 {
+	Index=Index%buffersize;	
 	sampletab[Index]=(0x5A<<24)|GetMasterFrac(Frequency);
 	//fprintf(stderr,"Frac=%d\n",GetMasterFrac(Frequency));
 	PushSample(Index);

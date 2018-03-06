@@ -104,8 +104,9 @@ int dma::start()
 	dma_reg.gpioreg[DMA_CS+channel*0x40] = BCM2708_DMA_RESET;
 	usleep(100);
 	dma_reg.gpioreg[DMA_CONBLK_AD+channel*0x40]=mem_virt_to_phys((void*)cbarray ); // reset to beginning 
+	dma_reg.gpioreg[DMA_DEBUG+channel*0x40] = 7; // clear debug error flags
 	usleep(100);
-	dma_reg.gpioreg[DMA_CS+channel*0x40] = DMA_CS_PRIORITY(7) | DMA_CS_PANIC_PRIORITY(7) | DMA_CS_DISDEBUG |DMA_CS_ACTIVE;
+	dma_reg.gpioreg[DMA_CS+channel*0x40] = DMA_CS_PRIORITY(15) | DMA_CS_PANIC_PRIORITY(15) | DMA_CS_DISDEBUG |DMA_CS_ACTIVE;
 	return 0;
 }
 
@@ -170,7 +171,7 @@ void bufferdma::SetDmaAlgo()
 int bufferdma::GetBufferAvailable()
 {	
 	int diffsample=0;
-	if(isrunning())
+	if(Started)
 	{
 		int CurrenCbPos=getcbposition();
 		if(CurrenCbPos!=-1)
@@ -197,11 +198,13 @@ int bufferdma::GetBufferAvailable()
 		//fprintf(stderr,"S:cur %d last %d diff%d\n",current_sample,last_sample,diffsample);
 	}
 	
+	/*
 	if(isunderflow())
 	{
 	fprintf(stderr,"cur %d last %d \n",current_sample,last_sample);	 	
 	 fprintf(stderr,"Underflow\n");
-	}
+	}*/
+	
 	return diffsample; 
 	
 }
@@ -211,7 +214,7 @@ int bufferdma::GetUserMemIndex()
 	
 	int IndexAvailable=-1;
 	//fprintf(stderr,"Avail=%d\n",GetBufferAvailable());
-	if(GetBufferAvailable()>0)
+	if(GetBufferAvailable())
 	{
 		IndexAvailable=last_sample+1;
 		if(IndexAvailable>=(int)buffersize) IndexAvailable=0;	
@@ -223,31 +226,26 @@ int bufferdma::PushSample(int Index)
 {
 	if(Index<0) return -1; // No buffer available
 
-	/*dma_cb_t *cbp;
-	cbp=&cbarray[last_sample*cbbysample+cbbysample-1];
-	cbp->next=mem_virt_to_phys(&cbarray[Index]);*/
-	
+	/*
 	dma_cb_t *cbp;
 	cbp=&cbarray[last_sample*cbbysample+cbbysample-1];
-	//fprintf(stderr,"Info=%x\n",cbp->info);
 	cbp->info=cbp->info&(~BCM2708_DMA_SET_INT);
-	//fprintf(stderr,"Info2=%x\n",cbp->info);
+	*/	
 	
 
 	last_sample=Index;
-	
+	/*	
 	cbp=&cbarray[Index*cbbysample+cbbysample-1];
-	//fprintf(stderr,"Info=%x\n",cbp->info);
 	cbp->info=cbp->info|(BCM2708_DMA_SET_INT);
-	//fprintf(stderr,"Info2=%x\n",cbp->info);
-	/*if(isunderflow())
+	*/
+	if(Started==false)
 	{
-	fprintf(stderr,"cur %d last %d \n",current_sample,last_sample);	 	
-	 fprintf(stderr,"Underflow\n");
-	}*/
-	if(isrunning()==false)
-	{
-		if(last_sample>buffersize/4) start(); // 1/4 Fill buffer before starting DMA
+		if(last_sample>buffersize/4)
+		{
+			 start(); // 1/4 Fill buffer before starting DMA
+			Started=true;
+		}
+		
 	
 	}
 	return 0;

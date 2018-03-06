@@ -24,23 +24,29 @@ int main(int argc, char* argv[])
 	
 	
 	
-	
-	ngfmdmasync ngfmtest(144100000,200000,14,512);
-	
-	for(int i=0;i<1000000;)
+	int SR=200000;
+	int FifoSize=4096;
+	ngfmdmasync ngfmtest(89100000,SR,14,FifoSize);
+	//ngfmtest.print_clock_tree();
+	for(int i=0;i<SR*10;)
 	{
 		//usleep(10);
-		int Index=ngfmtest.GetUserMemIndex();
-		//printf("GetIndex=%d\n",Index);
-		if(Index>=0)
-		{
-			//ngfmtest.SetFrequencySample(Index,((i%10000)>5000)?1000:0);
-			ngfmtest.SetFrequencySample(Index,i%100000);
-			i++;
+		usleep(FifoSize*1000000.0*3.0/(4.0*SR));
+		int Available=ngfmtest.GetBufferAvailable();
+		if(Available>FifoSize/2)
+		{	
+			int Index=ngfmtest.GetUserMemIndex();
+			//printf("GetIndex=%d\n",Index);
+			for(int j=0;j<Available;j++)
+			{
+				//ngfmtest.SetFrequencySample(Index,((i%10000)>5000)?1000:0);
+				ngfmtest.SetFrequencySample(Index+j,(i%SR));
+				i++;
 			
+			}
 		}
-		else
-			usleep(10);
+		
+		
 	}
 	fprintf(stderr,"End\n");
 	
