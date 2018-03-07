@@ -113,9 +113,9 @@ int clkgpio::SetMasterMultFrac(uint32_t Mult,uint32_t Frac)
 {
 	
 	gpioreg[PLLA_CTRL] = (0x5a<<24) | (0x21<<12) | Mult;
-	usleep(10);
+	
 	gpioreg[PLLA_FRAC]= 0x5A000000 | Frac  ; 
-		usleep(10);
+	
 	return 0;
 
 }
@@ -482,3 +482,19 @@ int pcmgpio::SetPrediv(int predivisor) //Carefull we use a 10 fixe divisor for n
 	return 0;
 
 }
+
+
+// ********************************** PADGPIO (Amplitude) **********************************
+
+padgpio::padgpio():gpio(GetPeripheralBase()+PADS_GPIO,PADS_GPIO_LEN)
+{
+	
+}
+
+padgpio::~padgpio()
+{
+	
+}
+
+
+

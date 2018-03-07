@@ -117,7 +117,7 @@ class clkgpio:public gpio
 	bool ModulateFromMasterPLL=false;
 
 	uint64_t CentralFrequency=0; 
-	int PllFixDivider=8; //Fix divider from the master clock in advanced mode
+	int PllFixDivider=1; //Fix divider from the master clock in advanced mode
     public:
     clkgpio();
 	~clkgpio();
@@ -239,6 +239,22 @@ class pcmgpio:public gpio
 	uint64_t GetPllFrequency(int PllNo);
 	int SetFrequency(uint64_t Frequency);
 
+};
+
+//******************************* PAD GPIO (Amplitude) ***********************************
+#define PADS_GPIO (0x00100000)
+#define PADS_GPIO_LEN (0x40/4)
+
+#define PADS_GPIO_0 (0x2C/4)
+#define PADS_GPIO_1 (0x30/4)
+#define PADS_GPIO_2 (0x34/4)
+
+class padgpio:public gpio
+{
+    
+    public:
+    padgpio();
+	~padgpio();
 };
 
 #endif

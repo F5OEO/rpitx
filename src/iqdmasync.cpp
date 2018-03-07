@@ -2,12 +2,15 @@
 
 
 #include "stdio.h"
-#include "ngfmdmasync.h"
+#include "iqdmasync.h"
 
 
-ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint32_t FifoSize):bufferdma(Channel,FifoSize,2,1)
+iqdmasync::iqdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint32_t FifoSize):bufferdma(Channel,FifoSize,4,3)
 {
-
+// Usermem :
+// FRAC frequency
+// PAD Amplitude
+// FSEL for amplitude 0
 	
 	tunefreq=TuneFrequency;
 	clkgpio::SetAdvancedPllMode(true);
@@ -26,8 +29,11 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 		pcmgpio::SetFrequency(SampleRate);
 	}
 	
-	
+	mydsp.samplerate=SampleRate;
    
+	padgpio pad;
+	Originfsel=pad.gpioreg[PADS_GPIO_0];
+
 	SetDmaAlgo();
 
 	
@@ -37,34 +43,42 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 	
 }
 
-ngfmdmasync::~ngfmdmasync()
+iqdmasync::~iqdmasync()
 {
 }
 
-void ngfmdmasync::SetPhase(bool inversed)
+void iqdmasync::SetPhase(bool inversed)
 {
 	clkgpio::SetPhase(inversed);
 }
 
-void ngfmdmasync::SetDmaAlgo()
+void iqdmasync::SetDmaAlgo()
 {
-			dma_cb_t *cbp = cbarray;
-			for (uint32_t samplecnt = 0; samplecnt < buffersize; samplecnt++) 
-			{ 
+	dma_cb_t *cbp = cbarray;
+	for (uint32_t samplecnt = 0; samplecnt < buffersize; samplecnt++) 
+		{ 
 			
-			// Write INT Mult
-			/*
-			cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP ;
+			//@0				
+			//Set Amplitude by writing to PADS	
+			cbp->info = 0;//BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP  ;
 			cbp->src = mem_virt_to_phys(&usermem[samplecnt*registerbysample+1]);
-			cbp->dst = 0x7E000000 + (PLLA_CTRL<<2) + CLK_BASE ; 
+			cbp->dst = 0x7E000000+(PADS_GPIO_0<<2)+PADS_GPIO;
 			cbp->length = 4;
 			cbp->stride = 0;
-			cbp->next = mem_virt_to_phys(cbp + 1);
-			//fprintf(stderr,"cbp : sample %x src %x dest %x next %x\n",samplecnt,cbp->src,cbp->dst,cbp->next);
+			cbp->next = mem_virt_to_phys(cbp + 1);		
 			cbp++;
-			*/
 
-			// Write a frequency sample
+			//@1				
+			//Set Amplitude  to FSEL for amplitude=0
+			cbp->info = 0;//BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP  ;
+			cbp->src = mem_virt_to_phys(&usermem[samplecnt*registerbysample+2]); 
+			cbp->dst = 0x7E000000 + (GPFSEL0<<2)+GENERAL_BASE; 				
+			cbp->length = 4;
+			cbp->stride = 0;
+			cbp->next = mem_virt_to_phys(cbp + 1); 
+			cbp++;
+
+			//@2 Write a frequency sample
 
 			cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP ;
 			cbp->src = mem_virt_to_phys(&usermem[samplecnt*registerbysample]);
@@ -76,7 +90,7 @@ void ngfmdmasync::SetDmaAlgo()
 			cbp++;
 			
 				
-			// Delay
+			//@3 Delay
 			if(syncwithpwm)
 				cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP |BCM2708_DMA_D_DREQ  | BCM2708_DMA_PER_MAP(DREQ_PWM);
 			else
@@ -99,11 +113,32 @@ void ngfmdmasync::SetDmaAlgo()
 		//fprintf(stderr,"Last cbp :  src %x dest %x next %x\n",cbp->src,cbp->dst,cbp->next);
 }
 
-void ngfmdmasync::SetFrequencySample(uint32_t Index,int Frequency)
+
+void iqdmasync::SetIQSample(uint32_t Index,liquid_float_complex sample)
 {
 	Index=Index%buffersize;	
-	sampletab[Index]=(0x5A<<24)|GetMasterFrac(Frequency);
-	//fprintf(stderr,"Frac=%d\n",GetMasterFrac(Frequency));
+	mydsp.pushsample(sample);
+	/*if(mydsp.frequency>2250) mydsp.frequency=2250;
+	if(mydsp.frequency<1000) mydsp.frequency=1000;*/
+	sampletab[Index*registerbysample]=(0x5A<<24)|GetMasterFrac(mydsp.frequency); //Frequency
+	int IntAmplitude=(int)(mydsp.amplitude*1e4*8.0)-1;
+
+	int IntAmplitudePAD=0;
+	if(IntAmplitude>7) IntAmplitudePAD=7;
+	if(IntAmplitude<0) IntAmplitudePAD=0;
+	sampletab[Index*registerbysample+1]=(0x5A<<24) + (IntAmplitudePAD&0x7) + (1<<4) + (0<<3); // Amplitude PAD
+
+	//sampletab[Index*registerbysample+2]=(Originfsel & ~(7 << 12)) | (4 << 12); //Alternate is CLK
+	if(IntAmplitude==-1)
+		{
+			sampletab[Index*registerbysample+2]=(Originfsel & ~(7 << 12)) | (0 << 12); //Pin is in -> Amplitude 0
+		}
+		else
+		{
+			sampletab[Index*registerbysample+2]=(Originfsel & ~(7 << 12)) | (4 << 12); //Alternate is CLK
+		}
+	
+		//fprintf(stderr,"amp%f %d\n",mydsp.amplitude,IntAmplitudePAD);
 	PushSample(Index);
 }
 

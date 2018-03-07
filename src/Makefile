@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
-all: v2rpitx 
+all:  v2rpitx ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
 
 #CFLAGS	= -Wall -g -O2 -D DIGITHIN
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
@@ -10,15 +10,15 @@ LDFLAGS	= -lm -lrt -lpthread
 		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c RpiGpio.c mailbox.c RpiDma.c raspberry_pi_revision.c $(LDFLAGS) 
 
 
-CFLAGS	= -Wall -g -O0 -Wno-unused-variable 
-LDFLAGS	= -lm -lrt -lpthread 
+CFLAGS	= -Wall -g -O3 -Wno-unused-variable 
+LDFLAGS	= -lm -lrt -lpthread -lliquid
 CCP = g++ 
 CC = gcc 
 
-v2rpitx: gpio.h gpio.cpp dma.h dma.cpp mailbox.c raspberry_pi_revision.c v2rpitx.cpp fmdmasync.h fmdmasync.cpp ngfmdmasync.h ngfmdmasync.cpp 
+v2rpitx: librpitx.h gpio.h gpio.cpp dma.h dma.cpp mailbox.c raspberry_pi_revision.c v2rpitx.cpp fmdmasync.h fmdmasync.cpp ngfmdmasync.h ngfmdmasync.cpp dsp.h dsp.cpp iqdmasync.h iqdmasync.cpp
 	$(CC) $(CFLAGS) -c -o mailbox.o mailbox.c
 	$(CC) $(CFLAGS) -c -o raspberry_pi_revision.o raspberry_pi_revision.c
-	$(CCP) $(CFLAGS) -o v2rpitx ngfmdmasync.cpp fmdmasync.cpp  dma.cpp gpio.cpp mailbox.o raspberry_pi_revision.o v2rpitx.cpp $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -o v2rpitx dsp.cpp iqdmasync.cpp ngfmdmasync.cpp fmdmasync.cpp  dma.cpp gpio.cpp mailbox.o raspberry_pi_revision.o v2rpitx.cpp $(LDFLAGS) 
 
 
 		
