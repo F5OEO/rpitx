@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
-all:  v2rpitx ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
+all:  librpitx v2rpitx ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../piopera
 
 #CFLAGS	= -Wall -g -O2 -D DIGITHIN
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
@@ -15,10 +15,15 @@ LDFLAGS	= -lm -lrt -lpthread -lliquid
 CCP = g++ 
 CC = gcc 
 
-v2rpitx: librpitx.h gpio.h gpio.cpp dma.h dma.cpp mailbox.c raspberry_pi_revision.c v2rpitx.cpp fmdmasync.h fmdmasync.cpp ngfmdmasync.h ngfmdmasync.cpp dsp.h dsp.cpp iqdmasync.h iqdmasync.cpp
+librpitx: librpitx.h gpio.h gpio.cpp dma.h dma.cpp mailbox.c raspberry_pi_revision.c fmdmasync.h fmdmasync.cpp ngfmdmasync.h ngfmdmasync.cpp dsp.h dsp.cpp iqdmasync.h iqdmasync.cpp serialdmasync.h serialdmasync.cpp phasedmasync.h phasedmasync.cpp
 	$(CC) $(CFLAGS) -c -o mailbox.o mailbox.c
 	$(CC) $(CFLAGS) -c -o raspberry_pi_revision.o raspberry_pi_revision.c
-	$(CCP) $(CFLAGS) -o v2rpitx dsp.cpp iqdmasync.cpp ngfmdmasync.cpp fmdmasync.cpp  dma.cpp gpio.cpp mailbox.o raspberry_pi_revision.o v2rpitx.cpp $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -c dsp.cpp iqdmasync.cpp ngfmdmasync.cpp fmdmasync.cpp  dma.cpp gpio.cpp mailbox.o raspberry_pi_revision.o v2rpitx.cpp serialdmasync.cpp phasedmasync.cpp
+	$(AR) rc librpitx.a dsp.o iqdmasync.o ngfmdmasync.o fmdmasync.o  dma.o gpio.o mailbox.o raspberry_pi_revision.o  serialdmasync.o phasedmasync.o
+
+v2rpitx: librpitx.h librpitx.a
+	
+	$(CCP) $(CFLAGS) -o v2rpitx v2rpitx.cpp librpitx.a $(LDFLAGS) 
 
 
 		
@@ -30,8 +35,8 @@ LDFLAGS_Pissb	= -lm -lrt -lpthread -lsndfile
 
 CFLAGS_Pisstv	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pisstv	= -lm -lrt -lpthread 
-../pisstv : ../sstv/pisstv.c 
-	$(CC) $(CFLAGS_Pisstv) -o ../pisstv ../sstv/pisstv.c  $(LDFLAGS_Pisstv) 
+../pisstv : ../sstv/v2pisstv.cpp 
+	$(CCP) $(CFLAGS_Pisstv) -o ../pisstv ../sstv/v2pisstv.cpp ../src/librpitx.a  $(LDFLAGS_Pisstv) 
 
 CFLAGS_Pifsq	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifsq	= -lm -lrt -lpthread 

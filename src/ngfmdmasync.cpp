@@ -11,8 +11,9 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 	
 	tunefreq=TuneFrequency;
 	clkgpio::SetAdvancedPllMode(true);
-	clkgpio::SetCenterFrequency(TuneFrequency); // Write Mult Int and Frac : FixMe carrier is already there
+	clkgpio::SetCenterFrequency(TuneFrequency,SampleRate); // Write Mult Int and Frac : FixMe carrier is already there
 	clkgpio::SetFrequency(0);
+	clkgpio::enableclk(4); // GPIO 4 CLK by default
 	syncwithpwm=false;
 	
 	if(syncwithpwm)
@@ -39,6 +40,7 @@ ngfmdmasync::ngfmdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,
 
 ngfmdmasync::~ngfmdmasync()
 {
+	clkgpio::disableclk(4);
 }
 
 void ngfmdmasync::SetPhase(bool inversed)

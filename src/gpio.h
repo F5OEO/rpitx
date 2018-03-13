@@ -2,13 +2,16 @@
 #define DEF_GPIO
 #include "stdint.h"
 
+
+
+
 class gpio
 {
     
     public:
     volatile uint32_t *gpioreg;
     gpio(uint32_t base, uint32_t len);
-    int setmode(uint32_t gpio, uint32_t mode);
+    
     uint32_t GetPeripheralBase();
 };
 
@@ -52,6 +55,28 @@ class dmagpio:public gpio
         
 };
 
+//************************************ GENERAL GPIO ***************************************
+
+#define GENERAL_BASE		(0x00200000)
+#define GENERAL_LEN		0xB4
+
+#define GPFSEL0			(0x00/4)
+#define GPFSEL1    		(0x04/4)
+#define GPFSEL2   		(0x08/4)
+#define GPPUD           (0x94/4)
+#define GPPUDCLK0       (0x9C/4)
+
+enum {fsel_input,fsel_output,fsel_alt5,fsel_alt4,fsel_alt0,fsel_alt1,fsel_alt2,fsel_alt3};
+
+class generalgpio:public gpio
+{
+    
+    public:
+    generalgpio();
+	int setmode(uint32_t gpio, uint32_t mode);
+	~generalgpio();
+    
+};
 
 // Add for PLL frequency CTRL wihout divider
 // https://github.com/raspberrypi/linux/blob/rpi-4.9.y/drivers/clk/bcm/clk-bcm2835.c
@@ -67,6 +92,12 @@ class dmagpio:public gpio
 #define EMMCCLK_CNTL     (0x1C0/4)
 #define EMMCCLK_DIV      (0x1C4/4)
 
+#define CM_LOCK (0x114/4)
+# define CM_LOCK_FLOCKH			(1<<12)
+# define CM_LOCK_FLOCKD			(1<<11)
+# define CM_LOCK_FLOCKC			(1<<10)
+# define CM_LOCK_FLOCKB			(1<<9)
+# define CM_LOCK_FLOCKA			(1<<8)
 
 #define PLLA_CTRL (0x1100/4)
 #define PLLA_FRAC (0x1200/4)
@@ -115,10 +146,11 @@ class clkgpio:public gpio
 	int Mash;
 	uint64_t Pllfrequency;
 	bool ModulateFromMasterPLL=false;
-
-	uint64_t CentralFrequency=0; 
-	int PllFixDivider=1; //Fix divider from the master clock in advanced mode
+	uint64_t CentralFrequency=0;
+	generalgpio gengpio;  
     public:
+	int PllFixDivider=8; //Fix divider from the master clock in advanced mode
+
     clkgpio();
 	~clkgpio();
 	int SetPllNumber(int PllNo,int MashType);
@@ -128,34 +160,17 @@ class clkgpio:public gpio
 	int SetClkDivFrac(uint32_t Div,uint32_t Frac);
 	void SetPhase(bool inversed);
 	void SetAdvancedPllMode(bool Advanced);
-	int SetCenterFrequency(uint64_t Frequency);
-	int ComputeBestLO(uint64_t Frequency);
+	int SetCenterFrequency(uint64_t Frequency,int Bandwidth);
+	int ComputeBestLO(uint64_t Frequency,int Bandwidth);
 	int SetMasterMultFrac(uint32_t Mult,uint32_t Frac);
 	uint32_t GetMasterFrac(int Frequency);
+	void enableclk(int gpio);  
+	void disableclk(int gpio);
         
 };
 
 
-//************************************ GENERAL GPIO ***************************************
 
-#define GENERAL_BASE		(0x00200000)
-#define GENERAL_LEN		0xB4
-
-#define GPFSEL0			(0x00/4)
-#define GPFSEL1    		(0x04/4)
-#define GPFSEL2   		(0x08/4)
-#define GPPUD           (0x94/4)
-#define GPPUDCLK0       (0x9C/4)
-
-class generalgpio:public gpio
-{
-    
-    public:
-    generalgpio();
-	~generalgpio();
-    void enableclk();  
-	void disableclk();
-};
 
 //************************************ PWM GPIO ***************************************
 
@@ -187,6 +202,7 @@ class generalgpio:public gpio
 #define PWMCTL_PWEN1 (1<<0)
 #define PWMDMAC_ENAB		(1<<31)
 #define PWMDMAC_THRSHLD		((15<<8)|(15<<0))
+enum pwmmode{pwm1pin,pwm2pin,pwm1pinrepeat};
 
 class pwmgpio:public gpio
 {
@@ -196,6 +212,9 @@ class pwmgpio:public gpio
 	int Mash;
 	int Prediv; //Range of PWM
 	uint64_t Pllfrequency;
+	bool ModulateFromMasterPLL=false;
+	int ModePwm=pwm1pin;
+	generalgpio gengpio;  	
     public:
     pwmgpio();
 	~pwmgpio();
@@ -203,6 +222,9 @@ class pwmgpio:public gpio
 	uint64_t GetPllFrequency(int PllNo);
 	int SetFrequency(uint64_t Frequency);
     int SetPrediv(int predivisor);
+	void SetMode(int Mode);
+	void enablepwm(int gpio,int PwmNumber);  
+	void disablepwm(int gpio);
 };
 
 //******************************* PCM GPIO (I2S) ***********************************
@@ -229,6 +251,7 @@ class pcmgpio:public gpio
 	int pllnumber;
 	int Mash;
 	int Prediv; //Range of PCM
+	
 	uint64_t Pllfrequency;
 	int SetPrediv(int predivisor);
 	
@@ -238,6 +261,7 @@ class pcmgpio:public gpio
 	int SetPllNumber(int PllNo,int MashType);
 	uint64_t GetPllFrequency(int PllNo);
 	int SetFrequency(uint64_t Frequency);
+	int ComputePrediv(uint64_t Frequency);
 
 };
 

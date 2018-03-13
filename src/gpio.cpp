@@ -14,17 +14,6 @@ gpio::gpio(uint32_t base, uint32_t len)
 
 }
 
-int gpio::setmode(uint32_t gpio, uint32_t mode)
-{
-   int reg, shift;
-
-   reg   =  gpio/10;
-   shift = (gpio%10) * 3;
-
-   gpioreg[reg] = (gpioreg[reg] & ~(7<<shift)) | (mode<<shift);
-
-   return 0;
-}
 
 uint32_t gpio::GetPeripheralBase()
 {
@@ -55,11 +44,14 @@ dmagpio::dmagpio():gpio(GetPeripheralBase()+DMA_BASE,DMA_LEN)
 // ***************** CLK Registers *****************************************
 clkgpio::clkgpio():gpio(GetPeripheralBase()+CLK_BASE,CLK_LEN)
 {
+	
 }
 
 clkgpio::~clkgpio()
 {
 	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(0 << 4)  ; //4 is START CLK
+	
+	usleep(100);
 }
 
 int clkgpio::SetPllNumber(int PllNo,int MashType)
@@ -74,7 +66,7 @@ int clkgpio::SetPllNumber(int PllNo,int MashType)
 		Mash=MashType;
 	else
 		Mash=0;
-	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
+	gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber/*|(1 << 5)*/  ; //5 is Reset CLK
 	usleep(100);
 	Pllfrequency=GetPllFrequency(pllnumber);
 	return 0;
@@ -102,7 +94,8 @@ int clkgpio::SetClkDivFrac(uint32_t Div,uint32_t Frac)
 {
 	
 	gpioreg[GPCLK_DIV] = 0x5A000000 | ((Div)<<12) | Frac;
-	usleep(10);
+	usleep(100);
+	fprintf(stderr,"Clk Number %d div %d frac %d\n",pllnumber,Div,Frac);
 	//gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber |(1<<4)  ; //4 is START CLK
 	//	usleep(10);
 	return 0;
@@ -112,8 +105,9 @@ int clkgpio::SetClkDivFrac(uint32_t Div,uint32_t Frac)
 int clkgpio::SetMasterMultFrac(uint32_t Mult,uint32_t Frac)
 {
 	
+	fprintf(stderr,"Master Mult %d Frac %d\n",Mult,Frac);
 	gpioreg[PLLA_CTRL] = (0x5a<<24) | (0x21<<12) | Mult;
-	
+	usleep(100);
 	gpioreg[PLLA_FRAC]= 0x5A000000 | Frac  ; 
 	
 	return 0;
@@ -129,7 +123,9 @@ int clkgpio::SetFrequency(int Frequency)
 		int IntMultiply= freqctl>>20; // Need to be calculated to have a center frequency
 		freqctl&=0xFFFFF; // Fractionnal is 20bits
 		uint32_t FracMultiply=freqctl&0xFFFFF; 
+		//gpioreg[PLLA_FRAC]= 0x5A000000 | FracMultiply  ; // Only Frac is Sent
 		SetMasterMultFrac(IntMultiply,FracMultiply);
+				
 	}
 	else
 	{
@@ -137,7 +133,7 @@ int clkgpio::SetFrequency(int Frequency)
 		uint32_t FreqDivider=(uint32_t)Freqresult;
 		uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));
 		if((FreqDivider>4096)||(FreqDivider<2)) fprintf(stderr,"Frequency out of range\n");
-		//printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
+		printf("DIV/FRAC %u/%u \n",FreqDivider,FreqFractionnal);
 	
 		SetClkDivFrac(FreqDivider,FreqFractionnal);
 	}
@@ -162,28 +158,97 @@ uint32_t clkgpio::GetMasterFrac(int Frequency)
 	
 }
 
-int clkgpio::ComputeBestLO(uint64_t Frequency)
+int clkgpio::ComputeBestLO(uint64_t Frequency,int Bandwidth)
 { 
-	for(int i=1;i<4096;i++)
-	{
-		
-	}
-	return 0;
+	// Algorithm adapted from https://github.com/SaucySoliton/PiFmRds/blob/master/src/pi_fm_rds.c
+	// Choose an integer divider for GPCLK0
+    // 
+    // There may be improvements possible to this algorithm. 
+    double xtal_freq_recip=1.0/19.2e6; // todo PPM correction 
+    int best_divider=0;
+
+    
+      int solution_count=0;
+      //printf("carrier:%3.2f ",carrier_freq/1e6);
+      int divider,min_int_multiplier,max_int_multiplier, fom, int_multiplier, best_fom=0;
+      double frac_multiplier;
+      best_divider=0;
+      for( divider=1;divider<4096;divider++)
+      {
+        if( Frequency*divider <  600e6 ) continue; // widest accepted frequency range
+        if( Frequency*divider > 1500e6 ) break;
+
+        max_int_multiplier=((int)((double)(Frequency+Bandwidth)*divider*xtal_freq_recip));
+        min_int_multiplier=((int)((double)(Frequency-Bandwidth)*divider*xtal_freq_recip));
+        if( min_int_multiplier!=max_int_multiplier ) continue; // don't cross integer boundary
+
+        solution_count++;  // if we make it here the solution is acceptable, 
+        fom=0;             // but we want a good solution
+
+        if( Frequency*divider >  900e6 ) fom++; // prefer freqs closer to 1000
+        if( Frequency*divider < 1100e6 ) fom++;
+        if( Frequency*divider >  800e6 ) fom++; // accepted frequency range
+        if( Frequency*divider < 1200e6 ) fom++;
+        
+
+        frac_multiplier=((double)(Frequency)*divider*xtal_freq_recip);
+        int_multiplier = (int) frac_multiplier;
+        frac_multiplier = frac_multiplier - int_multiplier;
+        if( (frac_multiplier>0.2) && (frac_multiplier<0.8) ) fom+=2; // prefer mulipliers away from integer boundaries 
+
+
+        //if( divider%2 == 1 ) fom+=2; // prefer odd dividers
+        // Even and odd dividers could have different harmonic content,
+        // but the latest measurements have shown no significant difference.
+
+
+        //printf(" multiplier:%f divider:%d VCO: %4.1fMHz\n",carrier_freq*divider*xtal_freq_recip,divider,(double)carrier_freq*divider/1e6);
+        if( fom > best_fom )
+        {
+            best_fom=fom;
+            best_divider=divider;
+        }
+      }
+		if(solution_count>0)
+		{
+			  PllFixDivider=best_divider;
+      		  fprintf(stderr," multiplier:%f divider:%d VCO: %4.1fMHz\n",Frequency*best_divider*xtal_freq_recip,best_divider,(double)Frequency*best_divider/1e6);
+			  return 0;
+		}
+		else
+		{
+			fprintf(stderr,"Central frequency not available !!!!!!\n");
+			return -1;		
+    	}
 }
 
-int clkgpio::SetCenterFrequency(uint64_t Frequency)
+int clkgpio::SetCenterFrequency(uint64_t Frequency,int Bandwidth)
 {
 	CentralFrequency=Frequency;
 	if(ModulateFromMasterPLL)
 	{
 		//Choose best PLLDiv and Div
-		ComputeBestLO(Frequency);
+		ComputeBestLO(Frequency,Bandwidth); //FixeDivider update
+	
+		SetFrequency(0);
+		usleep(1000);
+		if((gpioreg[CM_LOCK]&CM_LOCK_FLOCKA)>0) 
+			fprintf(stderr,"Master PLLA Locked\n");
+		else
+			fprintf(stderr,"Warning ! Master PLLA NOT Locked !!!!\n");
 		SetClkDivFrac(PllFixDivider,0); // NO MASH !!!!
-		SetFrequency(Frequency);
+		usleep(100);
+		
+		usleep(100);
+		gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
+		usleep(100);
+		gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
+		usleep(100);
 	}
 	else
 	{
 		GetPllFrequency(pllnumber);// Be sure to get the master PLL frequency
+		gpioreg[GPCLK_CNTL]= 0x5A000000 | (Mash << 9) | pllnumber|(1 << 4)  ; //4 is START CLK
 	}
 	return 0;	
 }
@@ -305,6 +370,24 @@ void clkgpio::print_clock_tree(void)
 
 }
 
+void clkgpio::enableclk(int gpio)
+{
+	switch(gpio)
+	{
+		case 4:	gengpio.setmode(gpio,fsel_alt0);break;
+	    case 20:gengpio.setmode(gpio,fsel_alt5);break;	
+		case 32:gengpio.setmode(gpio,fsel_alt0);break;
+		case 34:gengpio.setmode(gpio,fsel_alt0);break;
+		default: fprintf(stderr,"gpio %d has no clk - available(4,20,32,34)\n",gpio);break; 
+	}
+	usleep(100);
+}
+
+void clkgpio::disableclk(int gpio)
+{
+	gengpio.setmode(gpio,fsel_input);
+	
+}
 
 // ************************************** GENERAL GPIO *****************************************************
 
@@ -314,23 +397,27 @@ generalgpio::generalgpio():gpio(GetPeripheralBase()+GENERAL_BASE,GENERAL_LEN)
 
 generalgpio::~generalgpio()
 {
-	disableclk();
+	
 }
 
-void generalgpio::enableclk()
+int generalgpio::setmode(uint32_t gpio, uint32_t mode)
 {
-	gpioreg[GPFSEL0] = (gpioreg[GPFSEL0] & ~(7 << 12)) | (4 << 12);
+   int reg, shift;
+
+   reg   =  gpio/10;
+   shift = (gpio%10) * 3;
+
+   gpioreg[reg] = (gpioreg[reg] & ~(7<<shift)) | (mode<<shift);
+
+   return 0;
 }
 
-void generalgpio::disableclk()
-{
-	gpioreg[GPFSEL0] = (gpioreg[GPFSEL0] & ~(7 << 12)) | (0 << 12);
-}
 
 // ********************************** PWM GPIO **********************************
 
 pwmgpio::pwmgpio():gpio(GetPeripheralBase()+PWM_BASE,PWM_LEN)
 {
+	
 	gpioreg[PWM_CTL] = 0;
 }
 
@@ -339,6 +426,39 @@ pwmgpio::~pwmgpio()
 	
 	gpioreg[PWM_CTL] = 0;
 	gpioreg[PWM_DMAC] = 0;
+}
+
+void pwmgpio::enablepwm(int gpio,int PwmNumber)
+{
+	if(PwmNumber==0)
+	{
+		switch(gpio)
+		{
+			case 12:gengpio.setmode(gpio,fsel_alt0);break;
+			case 18:gengpio.setmode(gpio,fsel_alt5);break;	
+			case 40:gengpio.setmode(gpio,fsel_alt0);break;
+			
+			default: fprintf(stderr,"gpio %d has no pwm - available(12,18,40)\n",gpio);break; 
+		}
+	}
+	if(PwmNumber==1)
+	{
+		switch(gpio)
+		{
+			case 13:gengpio.setmode(gpio,fsel_alt0);break;
+			case 19:gengpio.setmode(gpio,fsel_alt5);break;	
+			case 41:gengpio.setmode(gpio,fsel_alt0);break;
+			case 45:gengpio.setmode(gpio,fsel_alt0);break;
+			default: fprintf(stderr,"gpio %d has no pwm - available(13,19,41,45)\n",gpio);break; 
+		}
+	}
+	usleep(100);
+}
+
+void pwmgpio::disablepwm(int gpio)
+{
+	gengpio.setmode(gpio,fsel_input);
+	
 }
 
 int pwmgpio::SetPllNumber(int PllNo,int MashType)
@@ -378,9 +498,15 @@ int pwmgpio::SetFrequency(uint64_t Frequency)
 	usleep(100);
 	
 	
-	SetPrediv(Prediv);	
+	SetPrediv(Prediv);	//SetMode should be called before
 	return 0;
 
+}
+
+void pwmgpio::SetMode(int Mode)
+{
+	if((Mode>=pwm1pin)&&(Mode<=pwm1pinrepeat))
+		ModePwm=Mode;
 }
 
 int pwmgpio::SetPrediv(int predivisor) //Mode should be only for SYNC or a Data serializer : Todo
@@ -402,8 +528,14 @@ int pwmgpio::SetPrediv(int predivisor) //Mode should be only for SYNC or a Data 
 		usleep(100);
 		gpioreg[PWM_CTL] = PWMCTL_CLRF;
 		usleep(100);
-		//gpioreg[PWM_CTL] =   PWMCTL_USEF1 | PWMCTL_PWEN1; 
-		gpioreg[PWM_CTL] = PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_MSEN1;
+		
+		//gpioreg[PWM_CTL] = PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_MSEN1;
+		switch(ModePwm)
+		{
+			case pwm1pin:gpioreg[PWM_CTL] = PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_MSEN1;break; // All serial go to 1 pin
+			case pwm2pin:gpioreg[PWM_CTL] = PWMCTL_USEF2|PWMCTL_PWEN2|PWMCTL_MODE2|PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1;break;// Alternate bit to pin 1 and 2
+			case pwm1pinrepeat:gpioreg[PWM_CTL] = PWMCTL_USEF1| PWMCTL_MODE1| PWMCTL_PWEN1|PWMCTL_RPTL1;break; // All serial go to 1 pin, repeat if empty : RF mode with PWM
+		}
 		usleep(100);
 	
 	return 0;
@@ -443,9 +575,24 @@ uint64_t pcmgpio::GetPllFrequency(int PllNo)
 
 }
 
+int pcmgpio::ComputePrediv(uint64_t Frequency)
+{
+	int prediv=5;
+	for(prediv=10;prediv<1000;prediv++)
+	{
+		double Freqresult=(double)Pllfrequency/(double)(Frequency*prediv);
+		if((Freqresult<4096.0)&&(Freqresult>2.0))
+		{
+			fprintf(stderr,"PCM prediv = %d\n",prediv);
+			break;
+		}
+	}	
+	return prediv;	
+}
+
 int pcmgpio::SetFrequency(uint64_t Frequency)
 {
-	Prediv=10;
+	Prediv=ComputePrediv(Frequency);
 	double Freqresult=(double)Pllfrequency/(double)(Frequency*Prediv);
 	uint32_t FreqDivider=(uint32_t)Freqresult;
 	uint32_t FreqFractionnal=(uint32_t) (4096*(Freqresult-(double)FreqDivider));

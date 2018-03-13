@@ -2,36 +2,40 @@
 #include "librpitx.h"
 #include <unistd.h>
 #include "stdio.h"
+#include <cstring>
+#include <signal.h>
 
-void SimpleTest()
+bool running=true;
+void SimpleTest(uint64_t Freq)
 {
-	generalgpio generalio;
-	generalio.enableclk();
-
+	
 
 	clkgpio clk;
-	clk.SetPllNumber(clk_plld,1);
+	clk.print_clock_tree();
+	//clk.SetPllNumber(clk_plla,0);
 	clk.SetAdvancedPllMode(true);
-	clk.SetCenterFrequency(144100000);
-	for(int i=0;i<1000000;i+=1)
+	clk.SetCenterFrequency(Freq,100000);
+	clk.SetFrequency(000);
+	clk.enableclk(4);
+	sleep(60);
+	/*for(int i=0;i<100000;i+=1)
 	{
 		clk.SetFrequency(i);
-		//usleep(1);
-	}
-	
+		usleep(1000);
+	}*/
+	clk.disableclk(4);
 	
 }
 
-void SimpleTestDMA()
+void SimpleTestDMA(uint64_t Freq)
 {
-	generalgpio generalio;
-	generalio.enableclk();
+	
 
 	int SR=200000;
 	int FifoSize=4096;
-	ngfmdmasync ngfmtest(1244200000,SR,14,FifoSize);
-	
-	for(int i=0;i<SR;)
+	//ngfmdmasync ngfmtest(1244200000,SR,14,FifoSize);
+	ngfmdmasync ngfmtest(Freq,SR,14,FifoSize);
+	for(int i=0;running;)
 	{
 		//usleep(10);
 		usleep(FifoSize*1000000.0*3.0/(4.0*SR));
@@ -42,7 +46,7 @@ void SimpleTestDMA()
 			//printf("GetIndex=%d\n",Index);
 			for(int j=0;j<Available;j++)
 			{
-				ngfmtest.SetFrequencySample(Index,((i%10000)>5000)?1000:0);
+				//ngfmtest.SetFrequencySample(Index,((i%10000)>5000)?1000:0);
 				ngfmtest.SetFrequencySample(Index+j,(i%SR));
 				i++;
 			
@@ -59,8 +63,7 @@ void SimpleTestDMA()
 using std::complex;
 void SimpleTestLiquid()
 {
-	generalgpio generalio;
-	generalio.enableclk();
+	
 
 	int SR=200000;
 	int FifoSize=4096;
@@ -71,7 +74,7 @@ void SimpleTestLiquid()
 	nco_crcf_set_frequency(q, -0.2f);
 	
 	//ngfmtest.print_clock_tree();
-	for(int i=0;i<SR;)
+	for(int i=0;(i<SR)&&running;)
 	{
 		//usleep(10);
 		usleep(FifoSize*1000000.0*3.0/(4.0*SR));
@@ -106,22 +109,23 @@ void SimpleTestLiquid()
 	ngfmtest.stop();
 }
 
-void SimpleTestFileIQ()
+void SimpleTestFileIQ(uint64_t Freq)
 {
 	FILE *iqfile=NULL;
-	iqfile=fopen("ssb.iq","rb");
+	iqfile=fopen("../ssbtest.iq","rb");
 	if (iqfile==NULL) printf("input file issue\n");
 
-	generalgpio generalio;
-	generalio.enableclk();
 
+	bool stereo=true;
 	int SR=48000;
 	int FifoSize=512;
-	iqdmasync iqtest(1242300000,SR,14,FifoSize);
-	
+	//iqdmasync iqtest(1245000000,SR,14,FifoSize);
+	//iqdmasync iqtest(50100000,SR,14,FifoSize);
+	iqdmasync iqtest(Freq,SR,14,FifoSize);
+	//iqdmasync iqtest(14100000,SR,14,FifoSize);
 	short IQBuffer[128*2];
-	printf("Sizeof = %d\n",sizeof(liquid_float_complex));
-	while(1)
+	
+	while(running)
 	{
 		//usleep(FifoSize*1000000.0*1.0/(8.0*SR));
 		usleep(100);
@@ -152,10 +156,113 @@ void SimpleTestFileIQ()
 	iqtest.stop();
 }
 
+
+void SimpleTestbpsk(uint64_t Freq)
+{
+	
+	
+	clkgpio clk;
+	clk.print_clock_tree();
+	int SR=1000;
+	int FifoSize=1024;
+	int NumberofPhase=2;
+	phasedmasync biphase(Freq,SR,NumberofPhase,14,FifoSize);
+	int lastphase=0;
+	while(running)
+	{
+		//usleep(FifoSize*1000000.0*1.0/(8.0*SR));
+		usleep(10);
+		int Available=biphase.GetBufferAvailable();
+		if(Available>256)
+		{	
+			int Index=biphase.GetUserMemIndex();
+			
+				/*
+				for(int i=0;i<Available;i++)
+				{
+					int phase=(rand()%NumberofPhase);
+					biphase.SetPhase(Index+i,phase);
+				}*/
+				/* 					
+				for(int i=0;i<Available/2;i++)
+				{
+					int phase=2*(rand()%NumberofPhase/2);
+					biphase.SetPhase(Index+i*2,(phase+lastphase)/2);
+					biphase.SetPhase(Index+i*2+1,phase);
+					lastphase=phase;
+				}*/
+				for(int i=0;i<Available;i++)
+				{
+					lastphase=(lastphase+1)%NumberofPhase;
+					biphase.SetPhase(Index+i,lastphase);
+				}
+			
+		}
+	}
+	biphase.stop();
+}
+
+
+void SimpleTestSerial()
+{
+	
+	bool stereo=true;
+	int SR=10000;
+	int FifoSize=1024;
+	bool dualoutput=true;
+	serialdmasync testserial(SR,14,FifoSize,dualoutput);
+	
+	while(running)
+	{
+		
+		usleep(10);
+		int Available=testserial.GetBufferAvailable();
+		if(Available>256)
+		{	
+			int Index=testserial.GetUserMemIndex();
+			
+				
+				for(int i=0;i<Available;i++)
+				{
+					
+					
+					testserial.SetSample(Index+i,i);
+					
+				}
+			
+		}
+	}
+	testserial.stop();
+}
+
+static void
+terminate(int num)
+{
+    running=false;
+	fprintf(stderr,"Caught signal - Terminating\n");
+   
+}
+
+
 int main(int argc, char* argv[])
 {
-	SimpleTestFileIQ();
 	
+	uint64_t Freq=144200000;
+	if(argc>1)
+		 Freq=atol(argv[1]);
+
+	 for (int i = 0; i < 64; i++) {
+        struct sigaction sa;
+
+        std::memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = terminate;
+        sigaction(i, &sa, NULL);
+    }
+
+	//SimpleTest(Freq);
+	//SimpleTestbpsk(Freq);
+	//SimpleTestFileIQ(Freq);
+	SimpleTestDMA(Freq);
 	
 }	
 

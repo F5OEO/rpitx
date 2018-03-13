@@ -14,8 +14,9 @@ iqdmasync::iqdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint
 	
 	tunefreq=TuneFrequency;
 	clkgpio::SetAdvancedPllMode(true);
-	clkgpio::SetCenterFrequency(TuneFrequency); // Write Mult Int and Frac : FixMe carrier is already there
+	clkgpio::SetCenterFrequency(TuneFrequency,SampleRate); // Write Mult Int and Frac : FixMe carrier is already there
 	clkgpio::SetFrequency(0);
+	clkgpio::enableclk(4);
 	syncwithpwm=false;
 	
 	if(syncwithpwm)
@@ -45,6 +46,9 @@ iqdmasync::iqdmasync(uint64_t TuneFrequency,uint32_t SampleRate,int Channel,uint
 
 iqdmasync::~iqdmasync()
 {
+	padgpio pad;
+	pad.gpioreg[PADS_GPIO_0]=Originfsel;
+	clkgpio::disableclk(4);	
 }
 
 void iqdmasync::SetPhase(bool inversed)
