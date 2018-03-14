@@ -176,7 +176,7 @@ int clkgpio::ComputeBestLO(uint64_t Frequency,int Bandwidth)
       for( divider=1;divider<4096;divider++)
       {
         if( Frequency*divider <  600e6 ) continue; // widest accepted frequency range
-        if( Frequency*divider > 1500e6 ) break;
+        if( Frequency*divider > 1800e6 ) break;
 
         max_int_multiplier=((int)((double)(Frequency+Bandwidth)*divider*xtal_freq_recip));
         min_int_multiplier=((int)((double)(Frequency-Bandwidth)*divider*xtal_freq_recip));
@@ -194,7 +194,8 @@ int clkgpio::ComputeBestLO(uint64_t Frequency,int Bandwidth)
         frac_multiplier=((double)(Frequency)*divider*xtal_freq_recip);
         int_multiplier = (int) frac_multiplier;
         frac_multiplier = frac_multiplier - int_multiplier;
-        if( (frac_multiplier>0.2) && (frac_multiplier<0.8) ) fom+=2; // prefer mulipliers away from integer boundaries 
+		if((int_multiplier%2)==0) fom++;
+        if( (frac_multiplier>0.4) && (frac_multiplier<0.6) ) fom+=2; // prefer mulipliers away from integer boundaries 
 
 
         //if( divider%2 == 1 ) fom+=2; // prefer odd dividers
@@ -268,6 +269,22 @@ void clkgpio::SetAdvancedPllMode(bool Advanced)
 		SetPllNumber(clk_plla,0); // Use PPL_A , Do not USE MASH which generates spurious
 		gpioreg[0x104/4]=0x5A00020A; // Enable Plla_PER
 		usleep(100);
+		
+		uint32_t ana[4];
+		for(int i=3;i>=0;i--)
+		{
+			ana[i]=gpioreg[(0x1010/4)+i];
+		}
+		
+		//ana[1]&=~(1<<14); // No use prediv means Frequency
+		ana[1]|=(1<<14); // use prediv means Frequency*2
+		for(int i=3;i>=0;i--)
+		{
+			gpioreg[(0x1010/4)+i]=(0x5A<<24)|ana[i];
+		}
+	
+		
+		usleep(100);
 		gpioreg[PLLA_PER]=0x5A000002; // Div ? 
 		usleep(100);
 	}
@@ -289,6 +306,11 @@ void clkgpio::print_clock_tree(void)
    printf("PLLC_DIG2R=%08x\n",gpioreg[(0x1828/4)]);
    printf("PLLC_DIG3R=%08x\n",gpioreg[(0x182c/4)]);
 
+   printf("PLLA_ANA0=%08x\n",gpioreg[(0x1010/4)]);	
+   printf("PLLA_ANA1=%08x prediv=%d\n",gpioreg[(0x1014/4)],(gpioreg[(0x1014/4)]>>14)&1);	
+   printf("PLLA_ANA2=%08x\n",gpioreg[(0x1018/4)]);	
+   printf("PLLA_ANA3=%08x\n",gpioreg[(0x101c/4)]);		
+		
    printf("GNRIC CTL=%08x DIV=%8x  ",gpioreg[ 0],gpioreg[ 1]);
    printf("VPU   CTL=%08x DIV=%8x\n",gpioreg[ 2],gpioreg[ 3]);
    printf("SYS   CTL=%08x DIV=%8x  ",gpioreg[ 4],gpioreg[ 5]);
@@ -304,7 +326,7 @@ void clkgpio::print_clock_tree(void)
    printf("DSI0E CTL=%08x DIV=%8x\n",gpioreg[22],gpioreg[23]);
    printf("DSI0P CTL=%08x DIV=%8x  ",gpioreg[24],gpioreg[25]);
    printf("DPI   CTL=%08x DIV=%8x\n",gpioreg[26],gpioreg[27]);
-   printf("GP0   CTL=%08x DIV=%8x  ",gpioreg[28],gpioreg[29]);
+   printf("GP0   CTL=%08x DIV=%8x  ",gpioreg[0x70/4],gpioreg[0x74/4]);
    printf("GP1   CTL=%08x DIV=%8x\n",gpioreg[30],gpioreg[31]);
 
    printf("GP2   CTL=%08x DIV=%8x  ",gpioreg[32],gpioreg[33]);

@@ -3,7 +3,7 @@
 #include "fmdmasync.h"
 #include "ngfmdmasync.h"
 #include "iqdmasync.h"
-#include "bpsk.h"
 #include "serialdmasync.h"
 #include "phasedmasync.h"
+#include "amdmasync.h"
 #include "dsp.h"
