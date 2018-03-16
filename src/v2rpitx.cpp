@@ -21,7 +21,7 @@ void SimpleTest(uint64_t Freq)
 
 	clkgpio clk;
 	clk.print_clock_tree();
-	//clk.SetPllNumber(clk_plla,0);
+	//clk.SetPllNumber(clk_plld,2);
 	clk.SetAdvancedPllMode(true);
 	clk.SetCenterFrequency(Freq,100000);
 	int Deviation=0;
@@ -338,6 +338,34 @@ void SimpleTestOOK(uint64_t Freq)
 	amtest.stop();
 }
 
+void SimpleTestBurstFsk(uint64_t Freq)
+{
+	
+	//int SR=40625;
+	int SR=10000;
+	int Deviation=26370;
+	int FiFoSize=4000;
+	fskburst fsktest(Freq,SR,Deviation,14,FiFoSize);
+	
+	unsigned char TabSymbol[FiFoSize];
+	int BurstSize=100;
+	
+	while(running)
+	{
+		int i;
+		for(i=0;i<FiFoSize;i++)
+		{
+			TabSymbol[i]=(i/10)%2;
+		}	
+		fsktest.SetSymbols(TabSymbol,FiFoSize);
+		sleep(1);
+		fsktest.SetSymbols(TabSymbol,FiFoSize/2);
+		sleep(1);
+	
+		
+	}
+	fsktest.stop();
+}
 static void
 terminate(int num)
 {
@@ -362,12 +390,13 @@ int main(int argc, char* argv[])
         sigaction(i, &sa, NULL);
     }
 
-	SimpleTest(Freq);
+	//SimpleTest(Freq);
 	//SimpleTestbpsk(Freq);
 	//SimpleTestFileIQ(Freq);
 	//SimpleTestDMA(Freq);
 	//SimpleTestAm(Freq);
 	//SimpleTestOOK(Freq);
+	SimpleTestBurstFsk(Freq);
 	
 }	
 

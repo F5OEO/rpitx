@@ -6,4 +6,5 @@
 #include "serialdmasync.h"
 #include "phasedmasync.h"
 #include "amdmasync.h"
+#include "fskburst.h"
 #include "dsp.h"
