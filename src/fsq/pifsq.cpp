@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include "../librpitx/src/librpitx.h"
 
 #define TONE_SPACING            8789           // ~8.7890625 Hz
 #define BAUD_2                  7812          // CTC value for 2 baud
@@ -62,7 +63,9 @@ char callsign[10] = "F5OEO";
 char tx_buffer[40];
 uint8_t callsign_crc;
 int FileText;
-int FileFreqTiming;
+ngfmdmasync *fsqmod=NULL;
+int FifoSize=1000; 
+float Frequency=0;
 // Global variables used in ISRs
 volatile bool proceed = false;
 
@@ -204,22 +207,7 @@ void encode_tone(uint8_t tone);
 // appropriate glyph and sets output from the Si5351A to key the
 // FSQ signal.
 
-void WriteTone(double Frequency,uint32_t Timing)
-{
-	typedef struct {
-		double Frequency;
-		uint32_t WaitForThisSample;
-	} samplerf_t;
-	samplerf_t RfSample;
-	
-	RfSample.Frequency=Frequency;
-	RfSample.WaitForThisSample=Timing*1000L; //en 100 de nanosecond
-	//printf("Freq =%f Timing=%d\n",RfSample.Frequency,RfSample.WaitForThisSample);
-	if (write(FileFreqTiming, &RfSample,sizeof(samplerf_t)) != sizeof(samplerf_t)) {
-		fprintf(stderr, "Unable to write sample\n");
-	}
 
-}
 
 void encode_char(int ch)
 {
@@ -268,7 +256,29 @@ void encode_tone(uint8_t tone)
 {
 	cur_tone = ((cur_tone + tone + 1) % 33);
 	//printf("Current tone =%d\n",cur_tone);
-	WriteTone(1000 + (cur_tone * TONE_SPACING*0.001),500000L);
+	//WriteTone(1000 + (cur_tone * TONE_SPACING*0.001),500000L);
+	
+	int count=0;   
+	while(count<1000)
+	{
+			int Available=fsqmod->GetBufferAvailable();
+			if(Available>FifoSize/2)
+			{	
+					int Index=fsqmod->GetUserMemIndex();			
+					for(int j=0;j<Available;j++)
+					{
+							fsqmod->SetFrequencySample(Index+j,1000 + (cur_tone * TONE_SPACING*0.001));
+							count++;
+							
+					}
+									
+			}
+			else
+				usleep(100);	
+		
+	
+	}
+			
 	//TO DO FREQUENCY PI si5351.set_freq((freq * 100) + (cur_tone * TONE_SPACING), 0, SI5351_CLK0);
 }
  
@@ -348,12 +358,12 @@ int main(int argc, char **argv)
 		sText=(char *)argv[1];
 		//FileText = open(argv[1], O_RDONLY);
 
-		char *sFileFreqTiming=(char *)argv[2];
-		FileFreqTiming = open(argv[2], O_WRONLY|O_CREAT, 0644);
+		
+		Frequency = atof(argv[2]);
 	}
 	else
 	{
-		printf("usage : pifsq StringToTransmit file.ft\n");
+		printf("usage : pifsq StringToTransmit Frequency(in Hz)\n");
 		exit(0);
 	}
   
@@ -363,17 +373,19 @@ int main(int argc, char **argv)
 	// Generate the CRC for the callsign
 	callsign_crc = crc8(callsign);
 
+	
 	// We are building a directed message here, but you can do whatever.
 	// So apparently, FSQ very specifically needs "  \b  " in
 	// directed mode to indicate EOT. A single backspace won't do it.
 	sprintf(tx_buffer, "%s:%02x%s%s", callsign, callsign_crc,sText,"  \b  ");
+	
+	int SR=2000;
+	fsqmod = new ngfmdmasync(Frequency,SR,14,FifoSize);
+
 	encode(tx_buffer);
-	int i;
-	for(i=0;i<10;i++)
-	{
-		WriteTone(0,500000L);
-	}
-  
-	close(FileFreqTiming);
+		
+  	fsqmod->stop();
+	delete(fsqmod);
+	
 }
  

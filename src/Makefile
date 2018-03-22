@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
-all: ../pisstv ../piopera
+all: ../pisstv ../piopera ../pifsq
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS	= librpitx/src/librpitx.a -lm -lrt -lpthread 
@@ -24,10 +24,9 @@ LDFLAGS_Pisstv	= librpitx/src/librpitx.a -lm -lrt -lpthread
 ../piopera : opera/opera.cpp 
 	$(CC) $(CFLAGS) -o ../piopera opera/opera.cpp  $(LDFLAGS)
 
-CFLAGS_Pifsq	= -Wall -g -O2 -Wno-unused-variable
-LDFLAGS_Pifsq	= librpitx/src/librpitx.a -lm -lrt -lpthread 
-../pifsq : ../fsq/pifsq.c 
-	$(CC) $(CFLAGS_Pisfq) -o ../pifsq ../fsq/pifsq.c  $(LDFLAGS_Pisfq) 
+
+../pifsq : fsq/pifsq.cpp 
+	$(CC) $(CFLAGS) -o ../pifsq fsq/pifsq.cpp  $(LDFLAGS) 
 
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
