@@ -159,22 +159,22 @@ void ProcessMartin1()
 
 int main(int argc, char **argv)
 {
-	uint64_t frequency=144200;
+	float frequency=144.5e6;
 	if (argc > 2) 
 	{
 		char *sFilePicture=(char *)argv[1];
 		FilePicture = open(argv[1], O_RDONLY);
 		
-		 frequency=atol(argv[2]);
+		 frequency=atof(argv[2]);
 		
 	}
 	else
 	{
-		printf("usage : pisstv picture.rgb frequency(khz)\n");
+		printf("usage : pisstv picture.rgb frequency(Hz)\n");
 		exit(0);
 	}
 	
-	fmmod=new ngfmdmasync(frequency*1000,100000,14,FifoSize);	
+	fmmod=new ngfmdmasync(frequency,100000,14,FifoSize);	
 	ProcessMartin1();
     close(FilePicture);
 	delete fmmod;
