@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../pissb
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../pissb ../tune
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS	= librpitx/src/librpitx.a -lm -lrt -lpthread 
@@ -31,6 +31,8 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
 ../sendiq : sendiq.cpp 
 	$(CC) $(CFLAGS) -o ../sendiq sendiq.cpp  $(LDFLAGS) 
 
+../tune : tune.cpp 
+	$(CC) $(CFLAGS) -o ../tune tune.cpp  $(LDFLAGS) 
 
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
