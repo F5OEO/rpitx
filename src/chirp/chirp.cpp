@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
         sigaction(i, &sa, NULL);
     }
 	
-	int SR=200000;
+	int SR=100000;
 	 
 	int FifoSize=4096;
 	ngfmdmasync ngfmtest(Frequency,SR,14,FifoSize);
