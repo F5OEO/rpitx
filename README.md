@@ -1,11 +1,13 @@
-**rpitx** is a radio transmitter for Raspberry Pi (B, B+, PI2, PI3 and PI zero) that transmits RF directly to GPIO. It can handle frequencies from 5 KHz up to 500 MHz.
+**rpitx** is a radio transmitter for Raspberry Pi (B, B+, PI2, PI3B,PI3B+,PIZero,PiZerow) that transmits RF directly to GPIO. It can handle frequencies from 5 KHz up to 1500 MHz.
 
 Before you transmit, know your laws. **rpitx** has not been tested for compliance with regulations governing transmission of radio signals. You are responsible for using your **rpitx** legally.
+
+Rpitx is now based on a general Radio Frequency library : https://github.com/F5OEO/librpitx
 
 _Created by Evariste Courjaud F5OEO. Code is GPL_
 
 # Installation
-Assuming a standard install of Raspbian:
+Assuming a Raspbian Lite installation (stretch) : https://www.raspberrypi.org/downloads/raspbian/
 
 ```sh
 git clone https://github.com/F5OEO/rpitx
@@ -15,7 +17,7 @@ cd rpitx
 ./install.sh
 ```
 # Hardware
-Plug a wire on GPIO 18, means Pin 12 of the GPIO header ([header P1](http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29)). This acts as the antenna. The optimal length of the wire depends the frequency you want to transmit on, but it works with a few centimeters for local testing.
+Plug a wire on GPIO 4, means Pin 7 of the GPIO header ([header P1](http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29)). This acts as the antenna. The optimal length of the wire depends the frequency you want to transmit on, but it works with a few centimeters for local testing.
 
 # Short manual
 ## General
@@ -57,17 +59,10 @@ sudo ./rpitx -m IQ -i ssbIQ.wav -f 50000 -l
 ```
 A sample script `testssb.sh` is included.
 
-### Frequency Modulation (FM)
-**pifm** converts an audio file (Wav, 48KHz, 1 channel, pcm_s16le codec) to Narrow band FM (12.5khz excursion) and outputs it to a .ft file.
-Assuming your audio file is in your current working directory
-```sh
-./pifm audio48mono.wav fm.ft
-```
-You could then transmit it on 100MHZ (please set a correct frequency to be legal)
-```sh
-sudo ./rpitx -m RF -i fm.ft -f 100000 -l
-```
-A sample script : `testfm.sh` is included.
+### Broadcat Frequency Modulation (FM)
+**pifm** converts an audio file (Wav) to broadcast FM using Christophe Jacquet (F8FTK) PiFmRds project fork : https://github.com/F5OEO/PiFmRds
+
+See Readme from this project for instructions.
 
 ### Slow Scan Television (SSTV)
 **pisstv** converts an RGB picture to a [SSTV](https://www.sigidwiki.com/wiki/SSTV) .ft file.
@@ -77,15 +72,11 @@ If you have a JPEG picture 320x256 you can convert it to an RGB picture with:
 ```sh
 imagemagick convert -depth 8 picture.jpg picture.rgb
 ```
-You can then transform it to a .ft file with:
+You can then transmit on 144.5Mhz (please set a correct frequency to be legal) :
 ```sh
-./pisstv picture.rgb picture.ft
+./pisstv picture.rgb 144.5e6
 ```
-And then transmit it to 100MHZ (please set a correct frequency to be legal)
-```sh
-sudo ./rpitx -m RF -i picture.ft -f 100000
-```
-A sample script `snapsstv.sh` grabs a picture from a PiCamera and then transmits it on 50.105 MHz.
+A sample script `snapsstv.sh` grabs a picture from a PiCamera and then transmits it on 144.5 MHz.
 
 ### Fast Simple QSO (FSQ)
 **pifsq** allows to send a text with the new [FSQ](https://www.sigidwiki.com/wiki/FSQ) modulation
@@ -93,6 +84,12 @@ A sample script `snapsstv.sh` grabs a picture from a PiCamera and then transmits
 It is still under development.
 
 A sample script `testfsq.sh` allows to send a text with FSQ
+
+### Weak Signal Propagation Reporter (WSPR)
+**wsprrpi** allows to send wspr beacon https://en.wikipedia.org/wiki/WSPR_(amateur_radio_software)
+It uses a fork from James (https://github.com/JamesP6000/WsprryPi) project and adpated to librpitx for frequency ehancement and cleaner spectrum (to be confirmed)
+
+See https://github.com/F5OEO/WsprryPi for instructions
 
 ### Variable Frequency Offset (VFO)
 A **VFO** mode is provided to allows precise frequency resolution.
@@ -109,3 +106,4 @@ Inspired by
 * http://www.icrobotics.co.uk/wiki/index.php/Turning_the_Raspberry_Pi_Into_an_FM_Transmitter
 * https://github.com/richardghirst/PiBits/pull/18
 * http://www.bellard.org/dvbt/
+ 
