@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
 				CIQBuffer[i]=std::complex<float>(IQBuffer[i*2]/32768.0,IQBuffer[i*2+1]/32768.0); 
 				
 			}
-			iqtest.SetIQSamples(CIQBuffer,nbread/2);
+			iqtest.SetIQSamples(CIQBuffer,nbread/2,1);
 		}
 		else 
 		{
