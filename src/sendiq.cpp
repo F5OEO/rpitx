@@ -18,12 +18,13 @@ void print_usage(void)
 
 fprintf(stderr,\
 "\nsendiq -%s\n\
-Usage:\nsendiq [-i File Input][-s Samplerate][-l] [-f Frequency] [-h] \n\
+Usage:\nsendiq [-i File Input][-s Samplerate][-l] [-f Frequency] [-h Harmonic number] \n\
 -i            path to File Input \n\
 -s            SampleRate 10000-250000 \n\
 -f float      central frequency Hz(50 kHz to 1500 MHz),\n\
 -l            loop mode for file input\n\
--h            help (this help).\n\
+-h            Use harmonic number n\n\
+-?            help (this help).\n\
 \n",\
 PROGRAM_VERSION);
 
@@ -40,14 +41,15 @@ terminate(int num)
 int main(int argc, char* argv[])
 {
 	int a;
-	int anyargs = 0;
+	int anyargs = 1;
 	float SetFrequency=434e6;
 	float SampleRate=48000;
 	bool loop_mode_flag=false;
 	char* FileName=NULL;
+	int Harmonic=1;
 	while(1)
 	{
-		a = getopt(argc, argv, "i:f:s:hl");
+		a = getopt(argc, argv, "i:f:s:h:l");
 	
 		if(a == -1) 
 		{
@@ -68,8 +70,7 @@ int main(int argc, char* argv[])
 			SampleRate = atoi(optarg);
 			break;
 		case 'h': // help
-			print_usage();
-			exit(1);
+			Harmonic=atoi(optarg);
 			break;
 		case 'l': // loop mode
 			loop_mode_flag = true;
@@ -108,7 +109,11 @@ int main(int argc, char* argv[])
 
 	FILE *iqfile=NULL;
 	iqfile=fopen(FileName	,"rb");
-	if (iqfile==NULL) printf("input file issue\n");
+	if (iqfile==NULL) 
+	{	
+		printf("input file issue\n");
+		exit(0);
+	}
 
 	#define IQBURST 1280
 	
@@ -128,7 +133,7 @@ int main(int argc, char* argv[])
 				CIQBuffer[i]=std::complex<float>(IQBuffer[i*2]/32768.0,IQBuffer[i*2+1]/32768.0); 
 				
 			}
-			iqtest.SetIQSamples(CIQBuffer,nbread/2,1);
+			iqtest.SetIQSamples(CIQBuffer,nbread/2,Harmonic);
 		}
 		else 
 		{
@@ -136,7 +141,7 @@ int main(int argc, char* argv[])
 			if(loop_mode_flag)
 				fseek ( iqfile , 0 , SEEK_SET );
 			else
-				running=0;
+				running=false;
 		
 		}
 	}
