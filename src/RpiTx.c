@@ -892,11 +892,11 @@ int main(int argc, char* argv[])
 			break;
 		case 'w': // No use pwmfrequency 
 			NoUsePwmFrequency = 1
-			printf("Don't use PWM frequency");
+			printf("Don't use PWM frequency\n");
 			break;
 		case 'r': // Randomize PWM frequency 
 			Randomize=1;
-			printf("Randomize PWM frequency");
+			printf("Randomize PWM frequency\n");
 			break;
 		case 'a': // DMA Channel 1-14
 			 if((atoi(optarg)>0)&&(atoi(optarg)<15))
