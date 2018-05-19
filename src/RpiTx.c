@@ -756,17 +756,22 @@ void print_usage(void)
 
 fprintf(stderr,\
 "\nrpitx -%s\n\
-Usage:\nrpitx [-i File Input][-m ModeInput] [-f frequency output] [-s Samplerate] [-l] [-p ppm] [-h] \n\
+Usage:\nrpitx [-m ModeInput] [-i File Input] [-l] [-f frequency output] [-s SampleRate] [-p ppm] [-d DMABurstSize] [-a DMA_CHANNEL] [-c] [-w] [-r] [-h] \n\
 -m            {IQ(FileInput is a Stereo Wav contains I on left Channel, Q on right channel)}\n\
               {IQFLOAT(FileInput is a Raw float interlaced I,Q)}\n\
               {RF(FileInput is a (double)Frequency,Time in nanoseconds}\n\
        	      {RFA(FileInput is a (double)Frequency,(int)Time in nanoseconds,(float)Amplitude}\n\
 	      {VFO (constant frequency)}\n\
 -i            path to File Input \n\
--f float      frequency to output on GPIO_18 pin 12 in khz : (130 kHz to 750 MHz),\n\
 -l            loop mode for file input\n\
+-f float      frequency to output on GPIO_18 pin 12 in khz : (130 kHz to 750 MHz),\n\
+-s int        sample rate only needed with IQ file input\n\
 -p float      frequency correction in parts per million (ppm), positive or negative, for calibration, default 0.\n\
 -d int 	      DMABurstSize (default 1000) but for very short message, could be decrease\n\
+-a int        set DMA channel [1-14]\n\
+-c            use clock pin, not PWM pin\n\
+-w            don't use PWM frequency\n\
+-r            randomize PWM frequency\n\
 -h            help (this help).\n\
 \n",\
 PROGRAM_VERSION);
@@ -882,16 +887,16 @@ int main(int argc, char* argv[])
 			NUM_SAMPLES=4*DmaSampleBurstSize;
 			break;
 		case 'c': // Use clock instead of PWM pin
-			UsePCMClk = atoi(optarg);
-			if(UsePCMClk==1) printf("Use GPCLK Pin instead of PWM\n");
+			UsePCMClk = 1;
+			printf("Use GPCLK Pin instead of PWM\n");
 			break;
 		case 'w': // No use pwmfrequency 
-			NoUsePwmFrequency = atoi(optarg);
-			
+			NoUsePwmFrequency = 1
+			printf("Don't use PWM frequency");
 			break;
 		case 'r': // Randomize PWM frequency 
 			Randomize=1;
-			
+			printf("Randomize PWM frequency");
 			break;
 		case 'a': // DMA Channel 1-14
 			 if((atoi(optarg)>0)&&(atoi(optarg)<15))
