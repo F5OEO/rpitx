@@ -844,7 +844,7 @@ int main(int argc, char* argv[])
 	int SetDma=0;
 	while(1)
 	{
-		a = getopt(argc, argv, "i:f:m:s:p:hld:w:c:ra:");
+		a = getopt(argc, argv, "i:f:m:s:p:hld:wcra:");
 	
 		if(a == -1) 
 		{
