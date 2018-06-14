@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../pissb ../tune
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../pissb ../tune ../freedv
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS	= librpitx/src/librpitx.a -lm -lrt -lpthread 
@@ -9,10 +9,10 @@ CC= g++
 		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c $(LDFLAGS) 
 		
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable
-LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
+LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 
-../pissb: ssbgen/test_ssb.c ssbgen/ssb_gen.c
-		$(CC) $(CFLAGS_Pissb) -o ../pissb ssbgen/ssb_gen.c ssbgen/test_ssb.c $(LDFLAGS_Pissb) 
+../pissb: ssbgen/test_ssb.c ssbgen/ssb_gen.c ssbgen/liquid_ssb.c
+		gcc $(CFLAGS_Pissb) -o ../pissb ssbgen/liquid_ssb.c $(LDFLAGS_Pissb) 
 
 ../pisstv : sstv/pisstv.cpp 
 	$(CC) $(CFLAGS) -o ../pisstv sstv/pisstv.cpp  $(LDFLAGS) 
@@ -33,6 +33,9 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
 
 ../tune : tune.cpp 
 	$(CC) $(CFLAGS) -o ../tune tune.cpp  $(LDFLAGS) 
+
+../freedv : freedv/freedv.cpp 
+	$(CC) $(CFLAGS) -o ../freedv freedv/freedv.cpp  $(LDFLAGS) 	
 
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile

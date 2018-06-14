@@ -120,6 +120,7 @@ int main(int argc, char* argv[])
 	int SR=48000;
 	int FifoSize=512;
 	iqdmasync iqtest(SetFrequency,SampleRate,14,FifoSize);
+	iqtest.SetPLLMasterLoop(3,4,0);
 	short IQBuffer[IQBURST*2];
 	std::complex<float> CIQBuffer[IQBURST];	
 	while(running)

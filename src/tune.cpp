@@ -93,7 +93,10 @@ int main(int argc, char* argv[])
         sigaction(i, &sa, NULL);
     }
 
-	
+		generalgpio gengpio;
+		gengpio.setpulloff(4);
+		padgpio pad;
+		pad.setlevel(7);
 		clkgpio *clk=new clkgpio;
 		clk->SetAdvancedPllMode(true);
 		clk->SetCenterFrequency(SetFrequency,10);

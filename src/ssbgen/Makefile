@@ -3,7 +3,7 @@ CC=gcc -pipe
 CFLAGS=-Wall -g
 OBJS=ssb_gen.o test_ssb.o
 HEADERS=ssb_gen.h
-LIBS=-lsndfile
+LIBS=-lsndfile 
 
 
 %.o:%.c $(HEADERS) Makefile
@@ -11,3 +11,5 @@ LIBS=-lsndfile
 	
 testssb:$(OBJS) $(HEADERS) test_ssb.o
 	$(CC) -o testssb $(OBJS)  $(LIBS)	
+
+

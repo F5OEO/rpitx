@@ -95,8 +95,9 @@ int main(int argc, char* argv[])
 				if(count>NbStepWithSR) count=0;
 			
 			}
+			
 		}
-		
+		fprintf(stderr,"Freq=%f\n",Frequency+StepWithSR*count);
 		
 	}
 	fprintf(stderr,"End\n");
