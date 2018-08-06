@@ -34,10 +34,12 @@ static void
 terminate(int num)
 {
     running=false;
-	fprintf(stderr,"Caught signal - Terminating\n");
+	fprintf(stderr,"Caught signal - Terminating %x\n",num);
    
 }
-  
+
+#define MAX_SAMPLERATE 200000
+
 int main(int argc, char* argv[])
 {
 	int a;
@@ -49,6 +51,7 @@ int main(int argc, char* argv[])
 	int Harmonic=1;
 	enum {typeiq_i16,typeiq_u8};
 	int InputType=typeiq_i16;
+	int Decimation=1;
 	while(1)
 	{
 		a = getopt(argc, argv, "i:f:s:h:lt:");
@@ -70,6 +73,28 @@ int main(int argc, char* argv[])
 			break;
 		case 's': // SampleRate (Only needeed in IQ mode)
 			SampleRate = atoi(optarg);
+			if(SampleRate>MAX_SAMPLERATE) 
+			{
+				
+				for(int i=2;i<12;i++) //Max 10 times samplerate
+				{
+					if(SampleRate/i<MAX_SAMPLERATE) 
+					{
+						SampleRate=SampleRate/i;
+						Decimation=i;
+						break;
+					}	
+				}
+				if(Decimation==1)
+				{	
+					 fprintf(stderr,"SampleRate too high : >%d sample/s",10*MAX_SAMPLERATE);
+					 exit(1);
+				}	 
+				else
+				{	
+					fprintf(stderr,"Warning samplerate too high, decimation by %d will be performed",Decimation);	 
+				}		
+			};	
 			break;
 		case 'h': // help
 			Harmonic=atoi(optarg);
@@ -102,7 +127,7 @@ int main(int argc, char* argv[])
 		}/* end switch a */
 	}/* end while getopt() */
 
-	
+	if(FileName==NULL) {fprintf(stderr,"Need an input\n");exit(1);}
 	
 	 for (int i = 0; i < 64; i++) {
         struct sigaction sa;
@@ -113,14 +138,17 @@ int main(int argc, char* argv[])
     }
 
 	FILE *iqfile=NULL;
-	iqfile=fopen(FileName	,"rb");
+	if(strcmp(FileName,"-")==0)
+		iqfile=fopen("/dev/stdin","rb");
+	else	
+		iqfile=fopen(FileName	,"rb");
 	if (iqfile==NULL) 
 	{	
 		printf("input file issue\n");
 		exit(0);
 	}
 
-	#define IQBURST 1000
+	#define IQBURST 4000
 	
 	int SR=48000;
 	int FifoSize=IQBURST*4;
@@ -133,20 +161,22 @@ int main(int argc, char* argv[])
 	while(running)
 	{
 		
-		
+			int CplxSampleNumber=0;
 			switch(InputType)
 			{
 				case typeiq_i16:
 				{
 					static short IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(short),IQBURST*2,iqfile);
-					if(nbread==IQBURST*2)
+					if(nbread==0) continue;
+					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
 						{
-					
-							CIQBuffer[i]=std::complex<float>(IQBuffer[i*2]*10/32768.0,IQBuffer[i*2+1]*10/32768.0); 
-				
+							if(i%Decimation==0)
+							{		
+								CIQBuffer[CplxSampleNumber++]=std::complex<float>(IQBuffer[i*2]*10/32768.0,IQBuffer[i*2+1]*10/32768.0); 
+							}
 						}
 					}
 					else 
@@ -157,18 +187,23 @@ int main(int argc, char* argv[])
 						else
 							running=false;
 					}
+					
 				}
 				break;
 				case typeiq_u8:
 				{
 					static unsigned char IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(unsigned char),IQBURST*2,iqfile);
-					if(nbread==IQBURST*2)
+					if(nbread==0) continue;
+					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
 						{
-					
-							CIQBuffer[i]=std::complex<float>((IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0); 
+							if(i%Decimation==0)
+							{	
+								CIQBuffer[CplxSampleNumber++]=std::complex<float>((IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
+										
+							}		 
 							//printf("%f %f\n",(IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
 						}
 					}
@@ -184,7 +219,7 @@ int main(int argc, char* argv[])
 				break;	
 			
 		}
-		iqtest.SetIQSamples(CIQBuffer,IQBURST,Harmonic);
+		iqtest.SetIQSamples(CIQBuffer,CplxSampleNumber,Harmonic);
 	}
 
 	iqtest.stop();
