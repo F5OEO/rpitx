@@ -339,7 +339,7 @@ uint8_t crc8(char * text)
 {
 	uint8_t crc='\0';
 	uint8_t ch;
-	int i;
+	size_t i;
 	for(i = 0; i < strlen(text); i++)
 	{
 		ch = text[i];

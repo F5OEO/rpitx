@@ -37,7 +37,7 @@ terminate(int num)
 	fprintf(stderr,"Caught signal - Terminating\n");
    
 }
-
+  
 int main(int argc, char* argv[])
 {
 	int a;
@@ -47,9 +47,11 @@ int main(int argc, char* argv[])
 	bool loop_mode_flag=false;
 	char* FileName=NULL;
 	int Harmonic=1;
+	enum {typeiq_i16,typeiq_u8};
+	int InputType=typeiq_i16;
 	while(1)
 	{
-		a = getopt(argc, argv, "i:f:s:h:l");
+		a = getopt(argc, argv, "i:f:s:h:lt:");
 	
 		if(a == -1) 
 		{
@@ -74,6 +76,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'l': // loop mode
 			loop_mode_flag = true;
+			break;
+		case 't': // inout type
+			if(strcmp(optarg,"u8")==0) InputType=typeiq_u8;
 			break;
 		case -1:
         	break;
@@ -115,36 +120,71 @@ int main(int argc, char* argv[])
 		exit(0);
 	}
 
-	#define IQBURST 1280
+	#define IQBURST 1000
 	
 	int SR=48000;
-	int FifoSize=512;
+	int FifoSize=IQBURST*4;
 	iqdmasync iqtest(SetFrequency,SampleRate,14,FifoSize);
 	iqtest.SetPLLMasterLoop(3,4,0);
-	short IQBuffer[IQBURST*2];
+	iqtest.print_clock_tree();
+	//iqtest.SetPLLMasterLoop(5,6,0);
+	
 	std::complex<float> CIQBuffer[IQBURST];	
 	while(running)
 	{
-		int nbread=fread(IQBuffer,sizeof(short),IQBURST*2,iqfile);
-		if(nbread>0)
-		{
-			for(int i=0;i<nbread/2;i++)
-			{
-					
-				CIQBuffer[i]=std::complex<float>(IQBuffer[i*2]/32768.0,IQBuffer[i*2+1]/32768.0); 
-				
-			}
-			iqtest.SetIQSamples(CIQBuffer,nbread/2,Harmonic);
-		}
-		else 
-		{
-			printf("End of file\n");
-			if(loop_mode_flag)
-				fseek ( iqfile , 0 , SEEK_SET );
-			else
-				running=false;
 		
+		
+			switch(InputType)
+			{
+				case typeiq_i16:
+				{
+					static short IQBuffer[IQBURST*2];
+					int nbread=fread(IQBuffer,sizeof(short),IQBURST*2,iqfile);
+					if(nbread==IQBURST*2)
+					{
+						for(int i=0;i<nbread/2;i++)
+						{
+					
+							CIQBuffer[i]=std::complex<float>(IQBuffer[i*2]*10/32768.0,IQBuffer[i*2+1]*10/32768.0); 
+				
+						}
+					}
+					else 
+					{
+						printf("End of file\n");
+						if(loop_mode_flag)
+						fseek ( iqfile , 0 , SEEK_SET );
+						else
+							running=false;
+					}
+				}
+				break;
+				case typeiq_u8:
+				{
+					static unsigned char IQBuffer[IQBURST*2];
+					int nbread=fread(IQBuffer,sizeof(unsigned char),IQBURST*2,iqfile);
+					if(nbread==IQBURST*2)
+					{
+						for(int i=0;i<nbread/2;i++)
+						{
+					
+							CIQBuffer[i]=std::complex<float>((IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0); 
+							//printf("%f %f\n",(IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
+						}
+					}
+					else 
+					{
+						printf("End of file\n");
+						if(loop_mode_flag)
+						fseek ( iqfile , 0 , SEEK_SET );
+						else
+							running=false;
+					}
+				}
+				break;	
+			
 		}
+		iqtest.SetIQSamples(CIQBuffer,IQBURST,Harmonic);
 	}
 
 	iqtest.stop();
