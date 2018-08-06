@@ -34,7 +34,8 @@ void playtone(float Frequency)
 int main(int argc, char **argv)
 {
 	float frequency=144.5e6;
-	if (argc > 2) 
+	int SampleRate=400;
+	if (argc >2 ) 
 	{
 		char *sFileVCO=(char *)argv[1];
 		FileVCO = open(sFileVCO, O_RDONLY);
@@ -42,13 +43,18 @@ int main(int argc, char **argv)
 		 frequency=atof(argv[2]);
 		
 	}
-	else
+	if (argc >3 ) 
 	{
-		printf("usage : freedv vco.rf frequency(Hz)\n");
+		 SampleRate=(int)atof(argv[3]);
+		
+	}
+	if(argc<=2)
+	{
+		printf("usage : freedv vco.rf frequency(Hz) samplerate(Hz)\n");
 		exit(0);
 	}
 	
-	fmmod=new ngfmdmasync(frequency,100*400,14,FifoSize); //400 bits*100 for 800XA	
+	fmmod=new ngfmdmasync(frequency,100*SampleRate,14,FifoSize); //400 bits*100 for 800XA	
 	int ByteRead=1;
 	short VCOFreq;
 	while(ByteRead>0)
