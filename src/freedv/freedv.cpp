@@ -17,6 +17,7 @@
 #include "../librpitx/src/librpitx.h"
 
 int FileVCO;
+bool running=true;
 
 ngfmdmasync *fmmod;
 static double GlobalTuningFrequency=00000.0;
@@ -28,6 +29,14 @@ void playtone(float Frequency)
 		for(int i=0;i<100;i++) VCOFreq[i]=Frequency;
 		fmmod->SetFrequencySamples(VCOFreq,100);
 		
+}
+
+static void
+terminate(int num)
+{
+    running=false;
+	fprintf(stderr,"Caught signal - Terminating\n");
+   
 }
 
 
@@ -53,24 +62,38 @@ int main(int argc, char **argv)
 		printf("usage : freedv vco.rf frequency(Hz) samplerate(Hz)\n");
 		exit(0);
 	}
-	
+
+	for (int i = 0; i < 64; i++) {
+        struct sigaction sa;
+
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = terminate;
+        sigaction(i, &sa, NULL);
+    }
+
 	fmmod=new ngfmdmasync(frequency,100*SampleRate,14,FifoSize); //400 bits*100 for 800XA	
-	int ByteRead=1;
+	padgpio pad;
+	pad.setlevel(7);// Set max power
+	fmmod->enableclk(20);//CLK1 duplicate on GPIO20 for more power ?
+	
 	short VCOFreq;
-	while(ByteRead>0)
+	while(running)
 	{
-		ByteRead=read(FileVCO,&VCOFreq,sizeof(short));
+		int ByteRead=read(FileVCO,&VCOFreq,sizeof(short));
 		if(ByteRead==sizeof(short))
 		{
 			
 			playtone(VCOFreq);
 		}
+		else
+			running=false;
 		/*else
 		{
 			lseek(FileVCO,0,SEEK_SET);
 			ByteRead=1;	
 		}*/	
 	}
+	fmmod->disableclk(20);
 	printf("End of Tx\n");
     close(FileVCO);
 	delete fmmod;
