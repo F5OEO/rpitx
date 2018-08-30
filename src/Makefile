@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../pissb ../tune ../freedv
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS	= librpitx/src/librpitx.a -lm -lrt -lpthread 
