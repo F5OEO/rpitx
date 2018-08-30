@@ -102,6 +102,8 @@ int main(int argc, char* argv[])
 		clk->SetCenterFrequency(SetFrequency,10);
 		clk->SetFrequency(000);
 		clk->enableclk(4);
+		//clk->enableclk(6);//CLK2 : experimental
+		clk->enableclk(20);//CLK1 duplicate on GPIO20 for more power ?
 		if(!NotKill)
 		{
 			while(running)
@@ -109,6 +111,7 @@ int main(int argc, char* argv[])
 				sleep(1);
 			}
 			clk->disableclk(4);
+			clk->disableclk(20);
 			delete(clk);
 		}
 		else
