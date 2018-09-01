@@ -24,6 +24,7 @@ Usage:\nsendiq [-i File Input][-s Samplerate][-l] [-f Frequency] [-h Harmonic nu
 -f float      central frequency Hz(50 kHz to 1500 MHz),\n\
 -l            loop mode for file input\n\
 -h            Use harmonic number n\n\
+-t            IQ type (i16 default) {i16,u8,float}\n\
 -?            help (this help).\n\
 \n",\
 PROGRAM_VERSION);
@@ -49,7 +50,7 @@ int main(int argc, char* argv[])
 	bool loop_mode_flag=false;
 	char* FileName=NULL;
 	int Harmonic=1;
-	enum {typeiq_i16,typeiq_u8};
+	enum {typeiq_i16,typeiq_u8,typeiq_float};
 	int InputType=typeiq_i16;
 	int Decimation=1;
 	while(1)
@@ -103,7 +104,9 @@ int main(int argc, char* argv[])
 			loop_mode_flag = true;
 			break;
 		case 't': // inout type
+			if(strcmp(optarg,"i16")==0) InputType=typeiq_i16;
 			if(strcmp(optarg,"u8")==0) InputType=typeiq_u8;
+			if(strcmp(optarg,"float")==0) InputType=typeiq_float;
 			break;
 		case -1:
         	break;
@@ -202,6 +205,33 @@ int main(int argc, char* argv[])
 							if(i%Decimation==0)
 							{	
 								CIQBuffer[CplxSampleNumber++]=std::complex<float>((IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
+										
+							}		 
+							//printf("%f %f\n",(IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
+						}
+					}
+					else 
+					{
+						printf("End of file\n");
+						if(loop_mode_flag)
+						fseek ( iqfile , 0 , SEEK_SET );
+						else
+							running=false;
+					}
+				}
+				break;
+				case typeiq_float:
+				{
+					static float IQBuffer[IQBURST*2];
+					int nbread=fread(IQBuffer,sizeof(float),IQBURST*2,iqfile);
+					if(nbread==0) continue;
+					if(nbread>0)
+					{
+						for(int i=0;i<nbread/2;i++)
+						{
+							if(i%Decimation==0)
+							{	
+								CIQBuffer[CplxSampleNumber++]=std::complex<float>(IQBuffer[i*2],IQBuffer[i*2+1]);
 										
 							}		 
 							//printf("%f %f\n",(IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
