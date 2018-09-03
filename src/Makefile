@@ -38,10 +38,11 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 ../freedv : freedv/freedv.cpp 
 	$(CCP) $(CFLAGS) -o ../freedv freedv/freedv.cpp  $(LDFLAGS) 	
 
-../dvbrf : dvb/dvbrf.cpp dvb/dvbsenco8.s dvb/fec100.c librpitx/src/librpitx.a
+../dvbrf : dvb/dvbrf.cpp dvb/dvbsenco8.s dvb/fec100.c dvb/dvbs2arm_1v30.s librpitx/src/librpitx.a
 	$(CC) $(CFLAGS) -c -o dvb/dvbsenco8.o dvb/dvbsenco8.s
+	$(CC) $(CFLAGS) -c -o dvb/dvbs2arm_1v30.o dvb/dvbs2arm_1v30.s
 	$(CC) $(CFLAGS) -c -o dvb/fec100.o dvb/fec100.c
-	$(CCP) $(CFLAGS) -o ../dvbrf dvb/dvbrf.cpp dvb/dvbsenco8.o dvb/fec100.o  $(LDFLAGS) 	
+	$(CCP) $(CFLAGS) -o ../dvbrf dvb/dvbrf.cpp dvb/dvbsenco8.o dvb/fec100.o dvb/dvbs2arm_1v30.o $(LDFLAGS) 	
 
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
