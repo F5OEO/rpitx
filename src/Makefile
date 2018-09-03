@@ -1,41 +1,47 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS	= librpitx/src/librpitx.a -lm -lrt -lpthread 
-CC= g++
+CCP= g++
+CC= gcc
 
 ../rpitx: RpiTx.cpp librpitx/src/librpitx.h
-		$(CC) $(CFLAGS) -o ../rpitx  RpiTx.c $(LDFLAGS) 
+		$(CCP) $(CFLAGS) -o ../rpitx  RpiTx.c $(LDFLAGS) 
 		
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 
 ../pissb: ssbgen/test_ssb.c ssbgen/ssb_gen.c ssbgen/liquid_ssb.c
-		gcc $(CFLAGS_Pissb) -o ../pissb ssbgen/liquid_ssb.c $(LDFLAGS_Pissb) 
+		$(CC) $(CFLAGS_Pissb) -o ../pissb ssbgen/liquid_ssb.c $(LDFLAGS_Pissb) 
 
 ../pisstv : sstv/pisstv.cpp 
-	$(CC) $(CFLAGS) -o ../pisstv sstv/pisstv.cpp  $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -o ../pisstv sstv/pisstv.cpp  $(LDFLAGS) 
 
 
 ../piopera : opera/opera.cpp 
-	$(CC) $(CFLAGS) -o ../piopera opera/opera.cpp  $(LDFLAGS)
+	$(CCP) $(CFLAGS) -o ../piopera opera/opera.cpp  $(LDFLAGS)
 
 
 ../pifsq : fsq/pifsq.cpp 
-	$(CC) $(CFLAGS) -o ../pifsq fsq/pifsq.cpp  $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -o ../pifsq fsq/pifsq.cpp  $(LDFLAGS) 
 
 ../pichirp : chirp/chirp.cpp 
-	$(CC) $(CFLAGS) -o ../pichirp chirp/chirp.cpp  $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -o ../pichirp chirp/chirp.cpp  $(LDFLAGS) 
 
 ../sendiq : sendiq.cpp librpitx/src/librpitx.a
-	$(CC) $(CFLAGS) -o ../sendiq sendiq.cpp  $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -o ../sendiq sendiq.cpp  $(LDFLAGS) 
 
 ../tune : tune.cpp 
-	$(CC) $(CFLAGS) -o ../tune tune.cpp  $(LDFLAGS) 
+	$(CCP) $(CFLAGS) -o ../tune tune.cpp  $(LDFLAGS) 
 
 ../freedv : freedv/freedv.cpp 
-	$(CC) $(CFLAGS) -o ../freedv freedv/freedv.cpp  $(LDFLAGS) 	
+	$(CCP) $(CFLAGS) -o ../freedv freedv/freedv.cpp  $(LDFLAGS) 	
+
+../dvbrf : dvb/dvbrf.cpp dvb/dvbsenco8.s dvb/fec100.c librpitx/src/librpitx.a
+	$(CC) $(CFLAGS) -c -o dvb/dvbsenco8.o dvb/dvbsenco8.s
+	$(CC) $(CFLAGS) -c -o dvb/fec100.o dvb/fec100.c
+	$(CCP) $(CFLAGS) -o ../dvbrf dvb/dvbrf.cpp dvb/dvbsenco8.o dvb/fec100.o  $(LDFLAGS) 	
 
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
@@ -53,7 +59,7 @@ LDFLAGS_Pidcf77	= librpitx/src/librpitx.a -lm -lrt -lpthread
 	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS_Piam) 
 clean:
 	
-	rm -f  ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv RpiTx.o mailbox.o RpiGpio.o RpiDma.o
+	rm -f  ../dvbrf ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv RpiTx.o mailbox.o RpiGpio.o RpiDma.o
 
 install: all
 	install -m 0755 ../pisstv /usr/bin
