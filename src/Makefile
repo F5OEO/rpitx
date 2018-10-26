@@ -64,10 +64,11 @@ clean:
 
 install: all
 	install -m 0755 ../pisstv /usr/bin
-	install -m 0755 ../pifm /usr/bin
-	install -m 0755 ../piam /usr/bin
-	install -m 0755 ../pissb /usr/bin
+	install -m 0755 ../piopera /usr/bin
 	install -m 0755 ../pifsq /usr/bin
-	install -m 0755 ../rpitx /usr/bin
-	install -m 0755 ../pidcf77 /usr/bin
+	install -m 0755 ../pichirp /usr/bin
+	install -m 0755 ../sendiq /usr/bin
+	install -m 0755 ../tune /usr/bin
+	install -m 0755 ../freedv /usr/bin
+	install -m 0755 ../dvbrf /usr/bin
 	
