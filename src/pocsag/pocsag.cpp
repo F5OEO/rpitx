@@ -32,6 +32,8 @@ Fork and modification for rpitx (c)(F5OEO 2018)
 #include <time.h>
 #include <unistd.h>
 #include "../librpitx/src/librpitx.h"
+
+#define PROGRAM_VERSION "0.1"
 //Check out main() at the bottom of the file
 //You can modify MIN_DELAY and MAX_DELAY to fit your needs.
 
@@ -360,12 +362,53 @@ void SendFsk(uint64_t Freq,uint32_t *Message,int Size)
 	fsktest.stop();
 }
 
-int main() {
+void print_usage(void)
+{
+
+fprintf(stderr,\
+"\npocsag -%s\n\
+Usage:\npocsag  [-f Frequency] \n\
+-f float      central frequency Hz(50 kHz to 1500 MHz),\n\
+-?            help (this help).\n\
+\n",\
+PROGRAM_VERSION);
+
+} /* end function print_usage */
+
+int main(int argc, char* argv[]) {
     //Read in lines from STDIN.
     //Lines are in the format of address:message
     //The program will encode transmissions for each message, writing them
     //to STDOUT. It will also encode a rand amount of silence between them,
     //from 1-10 seconds in length, to act as a simulated "delay".
+    int a;
+    int anyargs = 1;
+    uint64_t SetFrequency=439875000L;
+    while(1)
+	{
+		a = getopt(argc, argv, "f:");
+	
+		if(a == -1) 
+		{
+			if(anyargs) break;
+			else a='h'; //print usage and exit
+		}
+		anyargs = 1;	
+
+		switch(a)
+		{
+		
+		case 'f': // Frequency
+			SetFrequency = atof(optarg);
+			break;
+				
+		default:
+			print_usage();
+			exit(1);
+			break;
+		}/* end switch a */
+	}/* end while getopt() */
+
     char line[65536];
     srand(time(NULL));
     for (;;) {
@@ -397,7 +440,7 @@ int main() {
 
         encodeTransmission(address, message, transmission);
         
-        SendFsk(439875000L,transmission,messageLength);
+        SendFsk(SetFrequency,transmission,messageLength);
 
        
         //Generate rand amount of silence. Silence is a sample with
