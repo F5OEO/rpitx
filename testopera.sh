@@ -1,3 +1,3 @@
-sudo ./piopera F5OEO 0.5 144.18e6
+sudo ./piopera YOURCALL 0.5 434e6
 
 

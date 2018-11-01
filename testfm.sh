@@ -1,3 +1,5 @@
-./pifm sampleaudio.wav fm.ft
-sudo ./rpitx -m RF -i fm.ft -f 89000 -l -a 14 -c 1
+#This is only a Narraw Band FM modulator, for FM broadcast modulation , use PiFMRDS
+# Need to use a direct FM modulation with librpitx and not using IQ : TODO
+echo "If you need to test broadcast FM , use PiFMRDS"
+(while true; do cat sampleaudio.wav; done) | csdr convert_i16_f | csdr gain_ff 2500 | sudo ./sendiq -i /dev/stdin -s 24000 -f 434e6 -t float 1
 

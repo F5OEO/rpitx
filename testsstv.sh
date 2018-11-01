@@ -1,1 +1,2 @@
-sudo ./pisstv testcard.rgb 144.5e6
+convert -depth 8 BBC.jpg picture.rgb
+sudo ./pisstv picture.rgb 434e6

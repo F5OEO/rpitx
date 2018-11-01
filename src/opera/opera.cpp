@@ -88,7 +88,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 #endif
 	int i = 0;
-    char s1 = 0x00, s2[7] = "";
+    //char s1 = 0x00;
+	char s2[7] = "";
 
 	
 	switch (argc)
@@ -103,7 +104,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	   }
 	   case 4:  // 3 arguments
 	   {		 
-		 s1 = (char)argv[1][0]; 
+		 //s1 = (char)argv[1][0]; 
 		         
 			// range check
 			if (!((argv[1][0] >= '0' && argv[1][0] <= '9') || (argv[1][0] >= 'A' && argv[1][0] <= 'Z') ||
@@ -211,7 +212,7 @@ void generate_call(char *call, char *call_coded)
 	code_sum = code_sum * 27 + chr_norm_opera(call[4]);
 	code_sum = code_sum * 27 + chr_norm_opera(call[5]);
    
-	if (DEBUG) printf("code_sum=%Lu\n", code_sum);
+	if (DEBUG) printf("code_sum=%lu\n", code_sum);
 
 	// merge coded callsign ino a string
 	call_coded[28] = 0x00;
@@ -485,7 +486,7 @@ with the Opera frequency recommendation: */
 void print_str(const char * caption, char * code)
 //********************************************************************
 {   // This is a service function for debugging
-	int i = 0;
+	size_t i = 0;
 
 	printf("%s\n", caption);
 	for (i = 0; i < strlen(code); i++)

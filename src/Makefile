@@ -1,4 +1,3 @@
-#all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
 all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
@@ -66,7 +65,8 @@ LDFLAGS_Pidcf77	= librpitx/src/librpitx.a -lm -lrt -lpthread
 	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS_Piam) 
 clean:
 	
-	rm -f  ../dvbrf ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv RpiTx.o mailbox.o RpiGpio.o RpiDma.o
+	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag
+
 
 install: all
 	install -m 0755 ../pisstv /usr/bin
