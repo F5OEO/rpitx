@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS	= librpitx/src/librpitx.a -lm -lrt -lpthread 
@@ -49,6 +49,16 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 ../spectrumpaint: spectrumpaint/spectrum.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../spectrumpaint spectrumpaint/spectrum.cpp $(LDFLAGS) 	
 
+../pifmrds: pifmrds/rds.c pifmrds/waveforms.c pifmrds/pi_fm_rds.cpp pifmrds/fm_mpx.c pifmrds/control_pipe.c librpitx/src/librpitx.a
+	
+	$(CC) $(CFLAGS) -c -o pifmrds/rds.o pifmrds/rds.c
+	$(CC) $(CFLAGS) -c -o pifmrds/control_pipe.o pifmrds/control_pipe.c
+	$(CC) $(CFLAGS) -c -o pifmrds/waveforms.o pifmrds/waveforms.c
+	$(CC) $(CFLAGS) -c -o pifmrds/rds_wav.o pifmrds/rds_wav.c
+	$(CC) $(CFLAGS) -c -o pifmrds/fm_mpx.o pifmrds/fm_mpx.c
+	$(CC) -o pifmrds/rds_wav pifmrds/rds_wav.o pifmrds/rds.o pifmrds/waveforms.o pifmrds/fm_mpx.o -lm -lsndfile
+	$(CCP) $(CFLAGS) -Wno-write-strings -o ../pifmrds pifmrds/rds.o pifmrds/waveforms.o pifmrds/pi_fm_rds.cpp pifmrds/fm_mpx.o pifmrds/control_pipe.o librpitx/src/librpitx.a -lm -lsndfile -lrt -lpthread 
+
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
 ../pifm : ../fm/pifm.c 
@@ -65,7 +75,7 @@ LDFLAGS_Pidcf77	= librpitx/src/librpitx.a -lm -lrt -lpthread
 	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS_Piam) 
 clean:
 	
-	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag
+	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds
 
 
 install: all
