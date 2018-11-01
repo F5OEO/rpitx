@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
+
 #include "../librpitx/src/librpitx.h"
 
 int FilePicture;
@@ -22,6 +23,7 @@ int FileFreqTiming;
 ngfmdmasync *fmmod;
 static double GlobalTuningFrequency=00000.0;
 int FifoSize=10000; //10ms
+bool running=true;
 
 void playtone(double Frequency,uint32_t Timing)//Timing in 0.1us
 {
@@ -122,7 +124,7 @@ void ProcessMartin1()
 				
 	addvisheader();
 	addvistrailer();
-	while(EndOfPicture==0)
+	while((EndOfPicture==0)&&(running==true))
 	{
 		NbRead=read(FilePicture,Line,320*3);
 		if(NbRead!=320*3) EndOfPicture=1;
@@ -157,6 +159,14 @@ void ProcessMartin1()
 }
 
 
+static void
+terminate(int num)
+{
+    running=false;
+	fprintf(stderr,"Caught signal - Terminating %x\n",num);
+   
+}
+
 int main(int argc, char **argv)
 {
 	float frequency=144.5e6;
@@ -174,6 +184,14 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 	
+	for (int i = 0; i < 64; i++) {
+        struct sigaction sa;
+
+        std::memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = terminate;
+        sigaction(i, &sa, NULL);
+    }
+
 	fmmod=new ngfmdmasync(frequency,100000,14,FifoSize);	
 	ProcessMartin1();
     close(FilePicture);

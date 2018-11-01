@@ -28,16 +28,17 @@
 //#include <locale.h>
 //#include <tchar.h>
 #include "stdio.h"
-#include "string.h"
+#include "cstring"
 #include <stdlib.h>
 #include <sys/types.h>
        #include <sys/stat.h>
        #include <fcntl.h>
 #include "stdint.h"
 #include "math.h"
+#include <signal.h>
  #include <unistd.h>
 #include "../librpitx/src/librpitx.h"
-
+bool running=true;
 //#define  __VCpp__  TRUE
 
 // Grobal Variables
@@ -137,6 +138,14 @@ int _tmain(int argc, _TCHAR* argv[])
   return 0;
 } // end of _tmain
 
+static void
+terminate(int num)
+{
+    running=false;
+	fprintf(stderr,"Caught signal - Terminating %x\n",num);
+   
+}
+
 //*******************
 void genn_opera(float mode)
 //*******************
@@ -165,7 +174,15 @@ void genn_opera(float mode)
 	  print_short_int("symbol_interleaving =", symbol_interleaving, 119);
    
    ManchesterEncode(symbol_interleaving, symbol);
-   //print_short_int("symbol =", symbol, 239);
+   
+   for (int i = 0; i < 64; i++) {
+        struct sigaction sa;
+
+        std::memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = terminate;
+        sigaction(i, &sa, NULL);
+    }
+
    encodepitx(symbol,239,mode);
 
 } // genn_opera
@@ -451,7 +468,7 @@ with the Opera frequency recommendation: */
 	int FifoSize=512;
 	amdmasync amtest(Frequency,SR,14,FifoSize); 
 	int count=0;   
-	for (int i = 0; i < length-1; )
+	for (int i = 0; (i < length-1)&&(running==true); )
 	{
 			int Available=amtest.GetBufferAvailable();
 			if(Available>FifoSize/2)

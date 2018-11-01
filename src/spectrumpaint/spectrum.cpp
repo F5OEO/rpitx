@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -22,7 +22,7 @@ int FileFreqTiming;
 iqdmasync *fmmod;
 static double GlobalTuningFrequency=00000.0;
 int FifoSize=35000; 
-
+bool running=true;
 
 void ProcessPicture(float Excursion)
 {
@@ -36,7 +36,7 @@ void ProcessPicture(float Excursion)
 				
 	//while(1)
 	{
-		while(EndOfPicture==0)
+		while((EndOfPicture==0)&&(running==true))
 		{
 			NbRead=read(FilePicture,Line,320);
 			if(NbRead!=320) EndOfPicture=1;
@@ -55,6 +55,14 @@ void ProcessPicture(float Excursion)
 		}
 		
 	}	
+}
+
+static void
+terminate(int num)
+{
+    running=false;
+	fprintf(stderr,"Caught signal - Terminating %x\n",num);
+   
 }
 
 
@@ -78,7 +86,15 @@ int main(int argc, char **argv)
 		printf("usage : spectrum picture.rgb frequency(Hz) Excursion(Hz)\n");
 		exit(0);
 	}
-	
+
+	for (int i = 0; i < 64; i++) {
+        struct sigaction sa;
+
+        std::memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = terminate;
+        sigaction(i, &sa, NULL);
+    }
+
 	fmmod=new iqdmasync(frequency,10000,14,FifoSize,MODE_FREQ_A);	
 	ProcessPicture(Excursion);
     close(FilePicture);
