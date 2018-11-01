@@ -331,7 +331,7 @@ void SendFsk(uint64_t Freq,uint32_t *Message,int Size)
 	//int SR=40625;
 	int SR=1200;
 	float Deviation=4500;
-	int FiFoSize=4000;
+	int FiFoSize=12000;
     fprintf(stderr,"Fifo Size =%d, Size = %d",FiFoSize,Size);
 	fskburst fsktest(Freq,SR,Deviation,14,FiFoSize);
 	unsigned char *TabSymbol=(unsigned char *)malloc(Size*32);

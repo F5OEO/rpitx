@@ -1,5 +1,5 @@
 #all: ../rpitx ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS	= librpitx/src/librpitx.a -lm -lrt -lpthread 
@@ -46,6 +46,9 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 
 ../pocsag: pocsag/pocsag.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../pocsag pocsag/pocsag.cpp $(LDFLAGS) 	
+
+../spectrumpaint: spectrumpaint/spectrum.cpp librpitx/src/librpitx.a
+	$(CCP) $(CFLAGS) -o ../spectrumpaint spectrumpaint/spectrum.cpp $(LDFLAGS) 	
 
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile

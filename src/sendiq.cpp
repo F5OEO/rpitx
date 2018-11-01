@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 	
 	int SR=48000;
 	int FifoSize=IQBURST*4;
-	iqdmasync iqtest(SetFrequency,SampleRate,14,FifoSize);
+	iqdmasync iqtest(SetFrequency,SampleRate,14,FifoSize,MODE_IQ);
 	iqtest.SetPLLMasterLoop(3,4,0);
 	iqtest.print_clock_tree();
 	//iqtest.SetPLLMasterLoop(5,6,0);
