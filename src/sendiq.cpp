@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
 	int FifoSize=IQBURST*4;
 	iqdmasync iqtest(SetFrequency,SampleRate,14,FifoSize,MODE_IQ);
 	iqtest.SetPLLMasterLoop(3,4,0);
-	iqtest.print_clock_tree();
+	//iqtest.print_clock_tree();
 	//iqtest.SetPLLMasterLoop(5,6,0);
 	
 	std::complex<float> CIQBuffer[IQBURST];	
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
 						{
 							if(i%Decimation==0)
 							{		
-								CIQBuffer[CplxSampleNumber++]=std::complex<float>(IQBuffer[i*2]*10/32768.0,IQBuffer[i*2+1]*10/32768.0); 
+								CIQBuffer[CplxSampleNumber++]=std::complex<float>(IQBuffer[i*2]/32768.0,IQBuffer[i*2+1]/32768.0); 
 							}
 						}
 					}
