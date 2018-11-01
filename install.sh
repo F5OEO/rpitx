@@ -1,5 +1,5 @@
-
 echo Install rpitx - some package need internet connexion -
+
 sudo apt-get update
 sudo apt-get install -y libsndfile1-dev git
 sudo apt-get install -y imagemagick libfftw3-dev
@@ -17,4 +17,18 @@ cd ../../
 make 
 sudo make install
 cd ..
-echo Installation done
+
+
+read -p "In order to run properly, rpitx need to modify /boot/config.txt. Are you sure (y/n) " CONT
+
+if [ "$CONT" = "y" ]; then
+  echo "Set GPU to 250Mhz in order to be stable"
+   LINE='gpu_freq=250'
+   FILE='/boot/config.txt' 
+   grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
+   echo "Installation completed !"
+else
+  echo "Warning : Rpitx should be instable and stop from transmitting !";
+fi
+
+
