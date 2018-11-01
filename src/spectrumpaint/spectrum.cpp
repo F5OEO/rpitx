@@ -34,22 +34,27 @@ void ProcessPicture(float Excursion)
 	std::complex<float> sample[320];
 	int Row;
 				
-	
-	while(EndOfPicture==0)
+	//while(1)
 	{
-		NbRead=read(FilePicture,Line,320);
-		if(NbRead!=320) EndOfPicture=1;
-	
-							
-		for(Row=0;Row<320;Row++)
-		{ 
-			sample[Row]=std::complex<float>((Row/320.0-0.5)*Excursion,(Line[Row])/4);
-			
+		while(EndOfPicture==0)
+		{
+			NbRead=read(FilePicture,Line,320);
+			if(NbRead!=320) EndOfPicture=1;
+		
+								
+			for(Row=0;Row<320;Row++)
+			{ 
+				sample[Row]=std::complex<float>((Row/320.0-0.5)*Excursion,(Line[Row])/64);
+				//sample[Row]=std::complex<float>((Row/320.0-0.5)*Excursion,(Row/320.0)*8);
+				//fprintf(stderr,"%f ",sample[Row].imag());
+				
+			}
+			//fprintf(stderr,"\n");
+			fmmod->SetIQSamples(sample,320,1);
 			
 		}
-		fmmod->SetIQSamples(sample,320,1);
 		
-	}
+	}	
 }
 
 
