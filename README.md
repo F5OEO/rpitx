@@ -1,3 +1,18 @@
+![bpf](https://github.com/F5OEO/rpitx/blob/v2beta/doc/bpf-warning.png)
+
+# A major update is able to come : Version 2.
+
+**You are welcome to test. Hope it should be easier to use**
+
+**https://github.com/F5OEO/rpitx/tree/v2beta**
+
+
+
+
+
+# Following : the OLD version...it's up to you !!
+
+
 **rpitx** is a radio transmitter for Raspberry Pi (B, B+, PI2, PI3B,PI3B+,PIZero,PiZerow) that transmits RF directly to GPIO. It can handle frequencies from 5 KHz up to 1500 MHz.
 
 Before you transmit, know your laws. **rpitx** has not been tested for compliance with regulations governing transmission of radio signals. You are responsible for using your **rpitx** legally.
