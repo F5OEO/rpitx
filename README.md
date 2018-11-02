@@ -55,7 +55,11 @@ A carrier which move around 434MHZ.
 
 ### Spectrum ###
 ![Spectrum](/doc/spectrumrpitx.png)
-A picture is displayed on the waterfall on your SDR. Note that you should make some tweaks in order to obtain contrast and correct size depending on your reception and SDR software you use. 
+A picture is displayed on the waterfall on your SDR. Note that you should make some tweaks in order to obtain contrast and correct size depending on your reception and SDR software you use.
+
+### RfMyFace ###
+![Rfmyface](/doc/rfmyface.png)
+Spectrum painting of your face using the raspicam for fun !
 
 ### FM with RDS ###
 ![FMRDS](/doc/fmrds.png)
@@ -69,9 +73,6 @@ This is the classical Hamradio analog voice modulation. Use your SDR in USB mode
 ![SSTV](/doc/sstvrpitx.JPG)
 This is a picture transmission mode using audio modulation (USB mode). You need an extra software to decode and display it (qsstv,msstv...). This demo uses the Martin1 mode of sstv.
 
-### Opera (Beacon) ###
-![opera](/doc/operarpitx.JPG)
-This a beacon mode which sound like Morse. You need opera in mode 0.5 to decode.
 
 ### Pocsag (pager mode) ###
 ![pocsag](/doc/pocsagrpitx.JPG)
@@ -80,6 +81,10 @@ This is a mode used by pagers. You need an extra software to decode. Set your SD
 ### Freedv (digital voice) ###
 ![freedv](/doc/freedvrpitx.JPG)
 This is state of the art opensource digital modulation. You need Freedv for demodulation.
+
+### Opera (Beacon) ###
+![opera](/doc/operarpitx.JPG)
+This a beacon mode which sound like Morse. You need opera in mode 0.5 to decode.
 
 ## To continue
 **rpitx** is a generic RF transmitter. There is a lot of modulation to do with it and also documentation to make all that easy to contribute. This will be the next step ! Feel free to inspect scripts, change parameters (frequencies, audio input, pictures...). 
