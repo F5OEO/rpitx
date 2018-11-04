@@ -54,6 +54,8 @@ To launch it, go to rpitx folder and launch easytest.sh :
 cd rpitx
 ./easytest.sh
 ```
+Choose your choice with arrows and enter to start it.**Don't forget, some test are made in loop, you have to press CTRL^C to exit and back to menu.**
+
 Easy way to monitor what you are doing is by using a SDR software and a SDR receiver like a rtl-sdr one and set the frequency to 434MHZ.
 
 ### Carrier ### 
