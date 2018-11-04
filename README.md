@@ -32,6 +32,17 @@ sudo reboot
 # Hardware
 ![bpf](/doc/bpf-warning.png)
 
+| Raspberry Model      | Status  |
+| ---------------------|:-------:|
+| Pizero|OK|
+| PizeroW|OK|
+| PiA+|OK|
+| PiB|Partial|
+| PiB+|OK|
+| P2B|OK|
+| Pi3B|OK|
+| Pi3B+|OK|
+
 Plug a wire on GPIO 4, means Pin 7 of the GPIO header ([header P1](http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29)). This acts as the antenna. The optimal length of the wire depends the frequency you want to transmit on, but it works with a few centimeters for local testing.
 
 # How to use it
