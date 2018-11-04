@@ -1,5 +1,5 @@
 
-echo Install rpitx - some package need internet connexion -
+echo Install rpitx - some package need internet connection -
 sudo apt-get update
 sudo apt-get install -y libsndfile1-dev
 sudo apt-get install -y imagemagick
