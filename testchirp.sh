@@ -1,2 +1,2 @@
-sudo ./pichirp 433.8e6 400000 10
+sudo ./pichirp 433.95e6 100000 5
 
