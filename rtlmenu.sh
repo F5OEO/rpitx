@@ -27,13 +27,14 @@ do_freq_setup
 	"0 Record" "Record spectrum on $INPUT_RTLSDR" \
 	"1 Play" "Replay spectrum" \
 	"2 Transponder" "Transmit $INPUT_RTLSDR to 434MHZ" \
-	
- 	3>&2 2>&1 1>&3)
+	"3 Set frequency" "Modify frequency (actual $INPUT_RTLSDR Mhz)" \
+	3>&2 2>&1 1>&3)
 
         case "$menuchoice" in
-		0\ *) rtl_sdr -s 250000 -g "$INPUT_GAIN" -f "$INPUT_RTLSDR"M record.iq   ;;
-	    1\ *) sudo ./sendiq -s 250000 -f "$INPUT_RTLSDR"e6 -t u8 -i record.iq ;;
-		2\ *) source $"$PWD/transponder.sh" $INPUT_RTLSDR $INPUT_GAIN >/dev/null 2>/dev/null;;
+		0\ *) rtl_sdr -s 250000 -g "$INPUT_GAIN" -f "$INPUT_RTLSDR"M record.iq >/dev/null 2>/dev/null  ;;
+	    1\ *) sudo ./sendiq -s 250000 -f "$INPUT_RTLSDR"e6 -t u8 -i record.iq >/dev/null 2>/dev/null ;;
+		2\ *) source $"$PWD/transponder.sh" $INPUT_RTLSDR $INPUT_GAIN >/dev/null 2>/dev/null ;;
+		3\ *) do_freq_setup ;;
 		   *)	 status=1;;
         esac
        
