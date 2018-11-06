@@ -99,7 +99,30 @@ This is state of the art opensource digital modulation. You need Freedv for demo
 ![opera](/doc/operarpitx.JPG)
 This a beacon mode which sound like Morse. You need opera in mode 0.5 to decode.
 
-## To continue
+## Rpitx and low cost RTL-SDR dongle ##
+![rtlmenu](/doc/rlsdrmenu.png)
+
+**rtlmenu** allows to use rtl-sdr receiver dongle and **rpitx** together. This combine receiver and transmission for experimenting. 
+To launch it, go to rpitx folder and launch rtlmenu.sh :
+```sh
+./rtlmenu.sh
+```
+You have first to set receiver frequency and gain of rtl-sdr. Warning about gain, you should ensure that you have enough gain to receive the signal but not to strong which could saturate it and will not be usefull by **rpitx**.
+
+Choose your choice with arrows and enter to start it.**Don't forget, some test are made in loop, you have to press CTRL^C to exit and back to menu.**
+
+
+### Record and play ###
+![replay](/doc/replay.png)
+
+A typical application, is to replay a signal. Picture above shows a replay of a signal from a RF remote switch.
+So first, record few seconds of signal, CTRL^C for stop recording. Then replay it with play.
+
+### Transponder ###
+![fmtransponder](/doc/fmtransponder.png)
+We can also live transmitting a received band frequency. Here the input frequency is a FM broadcast station which is retransmit on 434MHZ.
+
+# To continue
 **rpitx** is a generic RF transmitter. There is a lot of modulation to do with it and also documentation to make all that easy to contribute. This will be the next step ! Feel free to inspect scripts, change parameters (frequencies, audio input, pictures...). 
 
 # Credits
