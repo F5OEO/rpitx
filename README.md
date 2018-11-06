@@ -20,7 +20,6 @@ You can now clone the repository. A script (install.sh) is there for easy instal
 ```sh
 git clone https://github.com/F5OEO/rpitx
 cd rpitx
-git checkout v2beta
 ./install.sh
 ```
 Make a reboot in order to use **rpitx** in a stable state.
