@@ -122,6 +122,10 @@ So first, record few seconds of signal, CTRL^C for stop recording. Then replay i
 ![fmtransponder](/doc/fmtransponder.png)
 We can also live transmitting a received band frequency. Here the input frequency is a FM broadcast station which is retransmit on 434MHZ.
 
+### Relay with transmodulation ###
+We assume that input frequency is tuned on FM station. It is demodulated and modulate to SSB on 434MHZ. SSB is not HiFi, so prefere to choose a talk radio, music sounds like bit weird !
+
+
 # To continue
 **rpitx** is a generic RF transmitter. There is a lot of modulation to do with it and also documentation to make all that easy to contribute. This will be the next step ! Feel free to inspect scripts, change parameters (frequencies, audio input, pictures...). 
 
