@@ -1,3 +1,3 @@
-./piam sampleaudio.wav am.rfa
-sudo ./rpitx -m RFA -i am.rfa -f 433900 -l
-
+#TODO using the AM mode from librpitx
+echo Need to implement
+(while true; do cat sampleaudio.wav; done) | csdr convert_i16_f | csdr gain_ff 4.0 | csdr dsb_fc | sudo ./rpitx -i - -m IQFLOAT -f 434000 -s 48000
