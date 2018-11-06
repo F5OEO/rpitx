@@ -4,7 +4,7 @@ sudo apt-get update
 sudo apt-get install -y libsndfile1-dev git
 sudo apt-get install -y imagemagick libfftw3-dev
 #For rtl-sdr use
-sudo apt-get install -y rtl-sdr
+sudo apt-get install -y rtl-sdr buffer
 # We use CSDR as a dsp for analogs modes thanks to HA7ILM
 git clone https://github.com/simonyiszk/csdr
 cd csdr
