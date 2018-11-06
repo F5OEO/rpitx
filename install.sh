@@ -20,7 +20,7 @@ make
 sudo make install
 cd ..
 
-
+echo "\n\n"
 read -p "In order to run properly, rpitx need to modify /boot/config.txt. Are you sure (y/n) " CONT
 
 if [ "$CONT" = "y" ]; then
