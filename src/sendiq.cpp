@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 				{
 					static short IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(short),IQBURST*2,iqfile);
-					if(nbread==0) continue;
+					//if(nbread==0) continue;
 					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
 				{
 					static unsigned char IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(unsigned char),IQBURST*2,iqfile);
-					if(nbread==0) continue;
+					
 					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
 				{
 					static float IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(float),IQBURST*2,iqfile);
-					if(nbread==0) continue;
+					//if(nbread==0) continue;
 					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
 				{
 					static double IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(double),IQBURST*2,iqfile);
-					if(nbread==0) continue;
+					//if(nbread==0) continue;
 					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
