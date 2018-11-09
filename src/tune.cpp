@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 		clk->SetFrequency(000);
 		clk->enableclk(4);
 		//clk->enableclk(6);//CLK2 : experimental
-		clk->enableclk(20);//CLK1 duplicate on GPIO20 for more power ?
+		//clk->enableclk(20);//CLK1 duplicate on GPIO20 for more power ?
 		if(!NotKill)
 		{
 			while(running)
