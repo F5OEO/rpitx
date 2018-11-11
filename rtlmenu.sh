@@ -6,7 +6,7 @@ INPUT_GAIN=0
 do_freq_setup()
 {
 
-FREQ=$(whiptail --inputbox "Choose input Frequency (in MHZ) Default is 100MHZ" 8 78 $INPUT_RTLSDR --title "RTL-SDR Receive Frequency" 3>&1 1>&2 2>&3)
+FREQ=$(whiptail --inputbox "Choose input Frequency (in MHZ) Default is 434MHZ" 8 78 $INPUT_RTLSDR --title "RTL-SDR Receive Frequency" 3>&1 1>&2 2>&3)
 if [ $? -eq 0 ]; then
     INPUT_RTLSDR=$FREQ
 fi
