@@ -1,7 +1,8 @@
 #COMMAND A BANDPATH FILTER FROM SV1AFN 
 
 #GPIO Declaration
-if [  -f /sys/class/gpio/gpio26 ]; then
+if [ ! -f /sys/class/gpio/gpio26 ]; then
+echo "Create GPIOs"
 
 echo GPIO declaration
 echo 26 > /sys/class/gpio/export 
