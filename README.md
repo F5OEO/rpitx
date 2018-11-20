@@ -4,6 +4,8 @@
 
 Rpitx is a software made for educational on RF system. It has not been tested for compliance with regulations governing transmission of radio signals. You are responsible for using your Raspberry Pi legally.
 
+A forum is available : https://groups.io/g/rpitx
+
 _Created by Evariste Courjaud F5OEO. See Licence for using it.
 
 # Installation
