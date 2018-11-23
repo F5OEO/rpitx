@@ -8,30 +8,30 @@ CC= gcc
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 
-../pissb: ssbgen/test_ssb.c ssbgen/ssb_gen.c ssbgen/liquid_ssb.c
+../pissb: ssbgen/test_ssb.c ssbgen/ssb_gen.c ssbgen/liquid_ssb.c librpitx/src/librpitx.a
 		$(CC) $(CFLAGS_Pissb) -o ../pissb ssbgen/liquid_ssb.c $(LDFLAGS_Pissb) 
 
-../pisstv : sstv/pisstv.cpp 
+../pisstv : sstv/pisstv.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../pisstv sstv/pisstv.cpp  $(LDFLAGS) 
 
 
-../piopera : opera/opera.cpp 
+../piopera : opera/opera.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../piopera opera/opera.cpp  $(LDFLAGS)
 
 
-../pifsq : fsq/pifsq.cpp 
+../pifsq : fsq/pifsq.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../pifsq fsq/pifsq.cpp  $(LDFLAGS) 
 
-../pichirp : chirp/chirp.cpp 
+../pichirp : chirp/chirp.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../pichirp chirp/chirp.cpp  $(LDFLAGS) 
 
 ../sendiq : sendiq.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../sendiq sendiq.cpp  $(LDFLAGS) 
 
-../tune : tune.cpp 
+../tune : tune.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../tune tune.cpp  $(LDFLAGS) 
 
-../freedv : freedv/freedv.cpp 
+../freedv : freedv/freedv.cpp librpitx/src/librpitx.a
 	$(CCP) $(CFLAGS) -o ../freedv freedv/freedv.cpp  $(LDFLAGS) 	
 
 ../dvbrf : dvb/dvbrf.cpp dvb/dvbsenco8.s dvb/fec100.c dvb/dvbs2arm_1v30.s librpitx/src/librpitx.a
@@ -60,7 +60,7 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 	$(CCP) $(CFLAGS) -Wno-write-strings -o ../rpitx rpitxv1/rpitx.cpp $(LDFLAGS) 	
 
 
-CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
+CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable 
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
 ../pifm : ../fm/pifm.c 
 	$(CC) $(CFLAGS_Pifm) -o ../pifm ../fm/pifm.c  $(LDFLAGS_Pifm) 
