@@ -1,9 +1,46 @@
 #!/bin/bash
 status="0"
+OUTPUT_FREQ=434.0
+LAST_ITEM="0 Tune"
+do_freq_setup()
+{
+
+FREQ=$(whiptail --inputbox "Choose output Frequency (in MHZ) Default is 434MHZ" 8 78 $OUTPUT_FREQ --title "Rpitx transmit Frequency" 3>&1 1>&2 2>&3)
+if [ $? -eq 0 ]; then
+    OUTPUT_FREQ=$FREQ
+fi
+
+}
+
+do_stop_transmit()
+{
+	sudo killall tune 2>/dev/null
+	sudo killall pichirp 2>/dev/null
+	sudo killall spectrumpaint 2>/dev/null
+	sudo killall pifmrds 2>/dev/null
+	sudo killall sendiq 2>/dev/null
+	sudo killall pocsag 2>/dev/null
+	sudo killall piopera 2>/dev/null	
+	sudo killall rpitx 2>/dev/null
+	sudo killall freedv 2>/dev/null
+	sudo killall pisstv 2>/dev/null	
+}
+
+do_status()
+{
+	 LAST_ITEM="$menuchoice"
+	whiptail --title "Transmit ""$LAST_ITEM"" on ""$OUTPUT_FREQ""MHZ" --msgbox "Transmitting" 8 78
+	do_stop_transmit
+}
+
+
+do_freq_setup
+
  while [ "$status" -eq 0 ] 
     do
 
- menuchoice=$(whiptail --title "Rpitx on 434Mhz" --menu "Choose your test, ctrl^c to end a test" 20 82 12 \
+ menuchoice=$(whiptail --default-item "$LAST_ITEM" --title "Rpitx on ""$OUTPUT_FREQ""MHZ" --menu "Choose your test" 20 82 12 \
+ 	"F Set frequency" "Modify frequency (actual $INPUT_RTLSDR Mhz)" \
 	"0 Tune" "Carrier" \
     "1 Chirp" "Moving carrier" \
 	"2 Spectrum" "Spectrum painting" \
@@ -17,21 +54,36 @@ status="0"
 	"10 Pocsag" "Pager message" \
     "11 Opera" "Like morse but need Opera decoder" \
  	3>&2 2>&1 1>&3)
-
+		
         case "$menuchoice" in
-	    0\ *) "./testvfo.sh" >/dev/null 2>/dev/null   ;;
-        1\ *) "./testchirp.sh" >/dev/null 2>/dev/null   ;;
-	    2\ *) "./testspectrum.sh" >/dev/null 2>/dev/null ;;
-		3\ *) "./snap2spectrum.sh" >/dev/null 2>/dev/null ;;
-   	    4\ *) "./testfmrds.sh" >/dev/null 2>/dev/null ;;
-		5\ *) "./testnfm.sh" >/dev/null 2>/dev/null ;;   
-	    6\ *) "./testssb.sh" >/dev/null 2>/dev/null ;;
-		7\ *) "./testam.sh" >/dev/null 2>/dev/null ;;
-		8\ *) "./testfreedv.sh" >/dev/null 2>/dev/null ;;
-	    9\ *) "./testsstv.sh" >/dev/null 2>/dev/null ;;
-	    10\ *) "./testpocsag.sh" >/dev/null 2>/dev/null ;;
-		11\ *) "./testopera.sh" >/dev/null 2>/dev/null ;;
-        *)	 status=1;;
+		F\ *) do_freq_setup ;;
+	    0\ *) "./testvfo.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null & 
+		do_status;;
+        1\ *) "./testchirp.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+		do_status;;
+	    2\ *) "./testspectrum.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+		do_status;;
+		3\ *) "./snap2spectrum.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+		do_status;;
+   	    4\ *) "./testfmrds.sh" "$OUTPUT_FREQ" >/dev/null 2>/dev/null &
+		   do_status;;
+		5\ *) "./testnfm.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &   
+		do_status;;
+	    6\ *) "./testssb.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+		do_status;;
+		7\ *) "./testam.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &
+		do_status;;
+		8\ *) "./testfreedv.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+		do_status;;
+	    9\ *) "./testsstv.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
+		do_status;;
+	    10\ *) "./testpocsag.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
+		do_status;;
+		11\ *) "./testopera.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
+		do_status;;
+        *)	 status=1
+		whiptail --title "Bye bye" --msgbox "Thx for using rpitx" 8 78
+		;;
         esac
        
     done

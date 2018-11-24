@@ -1,2 +1,2 @@
-sudo ./freedv src/freedv/VCO800XA.rf 434e6 400
+sudo ./freedv src/freedv/VCO800XA.rf $1 400
 

@@ -1,1 +1,1 @@
-sudo ./pifmrds -freq 434 -audio src/pifmrds/stereo_44100.wav 
+sudo ./pifmrds -freq $1 -audio src/pifmrds/stereo_44100.wav 

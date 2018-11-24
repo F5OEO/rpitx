@@ -1,1 +1,1 @@
-sudo tune -f 434.0e6
+sudo tune -f $1

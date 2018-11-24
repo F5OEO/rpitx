@@ -1,1 +1,1 @@
-sudo ./pifsq "Test" 434e6
+sudo ./pifsq "Test" $1
