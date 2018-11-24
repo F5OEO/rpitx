@@ -68,4 +68,4 @@ do_freq_setup
         esac
         
     done
-exit
+
