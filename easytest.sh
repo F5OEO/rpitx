@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 status="0"
 OUTPUT_FREQ=434.0
 LAST_ITEM="0 Tune"
@@ -54,37 +54,43 @@ do_freq_setup
 	"10 Pocsag" "Pager message" \
     "11 Opera" "Like morse but need Opera decoder" \
  	3>&2 2>&1 1>&3)
-		
-        case "$menuchoice" in
-		F\ *) do_freq_setup ;;
-	    0\ *) "./testvfo.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null & 
-		do_status;;
-        1\ *) "./testchirp.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
-		do_status;;
-	    2\ *) "./testspectrum.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
-		do_status;;
-		3\ *) "./snap2spectrum.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
-		do_status;;
-   	    4\ *) "./testfmrds.sh" "$OUTPUT_FREQ" >/dev/null 2>/dev/null &
-		   do_status;;
-		5\ *) "./testnfm.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &   
-		do_status;;
-	    6\ *) "./testssb.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
-		do_status;;
-		7\ *) "./testam.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &
-		do_status;;
-		8\ *) "./testfreedv.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
-		do_status;;
-	    9\ *) "./testsstv.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
-		do_status;;
-	    10\ *) "./testpocsag.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
-		do_status;;
-		11\ *) "./testopera.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
-		do_status;;
-        *)	 status=1
-		whiptail --title "Bye bye" --msgbox "Thx for using rpitx" 8 78
-		;;
-        esac
-       
+		RET=$?
+		if [ $RET -eq 1 ]; then
+    		exit 0
+		elif [ $RET -eq 0 ]; then	
+			case "$menuchoice" in
+			F\ *) do_freq_setup ;;
+			0\ *) "./testvfo.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null & 
+			do_status;;
+			1\ *) "./testchirp.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+			do_status;;
+			2\ *) "./testspectrum.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+			do_status;;
+			3\ *) "./snap2spectrum.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+			do_status;;
+			4\ *) "./testfmrds.sh" "$OUTPUT_FREQ" >/dev/null 2>/dev/null &
+			do_status;;
+			5\ *) "./testnfm.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &   
+			do_status;;
+			6\ *) "./testssb.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+			do_status;;
+			7\ *) "./testam.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &
+			do_status;;
+			8\ *) "./testfreedv.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
+			do_status;;
+			9\ *) "./testsstv.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
+			do_status;;
+			10\ *) "./testpocsag.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
+			do_status;;
+			11\ *) "./testopera.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
+			do_status;;
+			*)	 status=1
+			whiptail --title "Bye bye" --msgbox "Thx for using rpitx" 8 78
+			;;
+			esac
+		else
+			exit 1
+		fi	
     done
+	exit 0
 
