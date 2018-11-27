@@ -40,7 +40,7 @@ do_freq_setup
     do
 
  menuchoice=$(whiptail --default-item "$LAST_ITEM" --title "Rpitx on ""$OUTPUT_FREQ""MHZ" --menu "Range frequency : 50Khz-1Ghz. Choose your test" 20 82 12 \
- 	"F Set frequency" "Modify frequency (actual $INPUT_RTLSDR Mhz)" \
+ 	"F Set frequency" "Modify frequency (actual $OUTPUT_FREQ Mhz)" \
 	"0 Tune" "Carrier" \
     "1 Chirp" "Moving carrier" \
 	"2 Spectrum" "Spectrum painting" \
