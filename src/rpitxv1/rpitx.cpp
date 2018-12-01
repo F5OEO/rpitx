@@ -25,6 +25,7 @@
 #include <stdarg.h>     /* va_list, va_start, va_arg, va_end */
 #include <cstring>
 #include <signal.h>
+#include <stdlib.h>
 
 
 #define PROGRAM_VERSION "2.0"
