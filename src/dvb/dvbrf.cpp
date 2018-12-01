@@ -3,6 +3,7 @@
 #include "stdio.h"
 #include <cstring>
 #include <signal.h>
+#include <stdlib.h>
 
 // DVBS ENCODER
 extern "C" 
