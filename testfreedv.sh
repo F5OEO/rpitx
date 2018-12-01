@@ -1,2 +1,3 @@
-sudo ./freedv src/freedv/VCO800XA.rf $1 400
+#!/bin/sh
 
+sudo ./freedv src/freedv/VCO800XA.rf "$1" 400

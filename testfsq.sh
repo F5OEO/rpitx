@@ -1,1 +1,3 @@
-sudo ./pifsq "Test" $1
+#!/bin/sh
+
+sudo ./pifsq "Test" "$1"
