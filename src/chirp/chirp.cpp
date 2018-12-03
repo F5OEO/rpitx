@@ -4,6 +4,7 @@
 #include "stdio.h"
 #include <cstring>
 #include <signal.h>
+#include <stdlib.h>
 
 bool running=true;
 
