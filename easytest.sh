@@ -1,12 +1,12 @@
 #!/bin/sh
+
 status="0"
 OUTPUT_FREQ=434.0
 LAST_ITEM="0 Tune"
 do_freq_setup()
 {
 
-FREQ=$(whiptail --inputbox "Choose output Frequency (in MHZ) Default is 434MHZ" 8 78 $OUTPUT_FREQ --title "Rpitx transmit Frequency" 3>&1 1>&2 2>&3)
-if [ $? -eq 0 ]; then
+if FREQ=$(whiptail --inputbox "Choose output Frequency (in MHZ) Default is 434MHZ" 8 78 $OUTPUT_FREQ --title "Rpitx transmit Frequency" 3>&1 1>&2 2>&3); then
     OUTPUT_FREQ=$FREQ
 fi
 
@@ -20,10 +20,10 @@ do_stop_transmit()
 	sudo killall pifmrds 2>/dev/null
 	sudo killall sendiq 2>/dev/null
 	sudo killall pocsag 2>/dev/null
-	sudo killall piopera 2>/dev/null	
+	sudo killall piopera 2>/dev/null
 	sudo killall rpitx 2>/dev/null
 	sudo killall freedv 2>/dev/null
-	sudo killall pisstv 2>/dev/null	
+	sudo killall pisstv 2>/dev/null
 }
 
 do_status()
@@ -36,7 +36,7 @@ do_status()
 
 do_freq_setup
 
- while [ "$status" -eq 0 ] 
+ while [ "$status" -eq 0 ]
     do
 
  menuchoice=$(whiptail --default-item "$LAST_ITEM" --title "Rpitx on ""$OUTPUT_FREQ""MHZ" --menu "Range frequency : 50Khz-1Ghz. Choose your test" 20 82 12 \
@@ -57,10 +57,10 @@ do_freq_setup
 		RET=$?
 		if [ $RET -eq 1 ]; then
     		exit 0
-		elif [ $RET -eq 0 ]; then	
+		elif [ $RET -eq 0 ]; then
 			case "$menuchoice" in
 			F\ *) do_freq_setup ;;
-			0\ *) "./testvfo.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null & 
+			0\ *) "./testvfo.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
 			do_status;;
 			1\ *) "./testchirp.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
 			do_status;;
@@ -70,7 +70,7 @@ do_freq_setup
 			do_status;;
 			4\ *) "./testfmrds.sh" "$OUTPUT_FREQ" >/dev/null 2>/dev/null &
 			do_status;;
-			5\ *) "./testnfm.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &   
+			5\ *) "./testnfm.sh" "$OUTPUT_FREQ""e3" >/dev/null 2>/dev/null &
 			do_status;;
 			6\ *) "./testssb.sh" "$OUTPUT_FREQ""e6" >/dev/null 2>/dev/null &
 			do_status;;
@@ -90,7 +90,7 @@ do_freq_setup
 			esac
 		else
 			exit 1
-		fi	
+		fi
     done
 	exit 0
 
