@@ -6,7 +6,7 @@ LAST_ITEM="0 Tune"
 do_freq_setup()
 {
 
-if FREQ=$(whiptail --inputbox "Choose output Frequency (in MHZ) Default is 434MHZ" 8 78 $OUTPUT_FREQ --title "Rpitx transmit Frequency" 3>&1 1>&2 2>&3); then
+if FREQ=$(whiptail --inputbox "Choose output Frequency (in MHz) Default is 434 MHz" 8 78 $OUTPUT_FREQ --title "Rpitx transmit Frequency" 3>&1 1>&2 2>&3); then
     OUTPUT_FREQ=$FREQ
 fi
 
@@ -29,7 +29,7 @@ do_stop_transmit()
 do_status()
 {
 	 LAST_ITEM="$menuchoice"
-	whiptail --title "Transmit ""$LAST_ITEM"" on ""$OUTPUT_FREQ""MHZ" --msgbox "Transmitting" 8 78
+	whiptail --title "Transmit ""$LAST_ITEM"" on ""$OUTPUT_FREQ"" MHz" --msgbox "Transmitting" 8 78
 	do_stop_transmit
 }
 
@@ -39,8 +39,8 @@ do_freq_setup
  while [ "$status" -eq 0 ]
     do
 
- menuchoice=$(whiptail --default-item "$LAST_ITEM" --title "Rpitx on ""$OUTPUT_FREQ""MHZ" --menu "Range frequency : 50Khz-1Ghz. Choose your test" 20 82 12 \
- 	"F Set frequency" "Modify frequency (actual $OUTPUT_FREQ Mhz)" \
+ menuchoice=$(whiptail --default-item "$LAST_ITEM" --title "Rpitx on ""$OUTPUT_FREQ"" MHz" --menu "Range frequency : 50kHz-1GHz. Choose your test" 20 82 12 \
+ 	"F Set frequency" "Modify frequency (actual $OUTPUT_FREQ MHz)" \
 	"0 Tune" "Carrier" \
     "1 Chirp" "Moving carrier" \
 	"2 Spectrum" "Spectrum painting" \
@@ -50,7 +50,7 @@ do_freq_setup
 	"6 SSB" "Upper Side Bande modulation" \
 	"7 AM" "Amplitude Modulation (Poor quality)" \
 	"8 FreeDV" "Digital voice mode 800XA" \
-	"9 SSTV" "Patern picture" \
+	"9 SSTV" "Pattern picture" \
 	"10 Pocsag" "Pager message" \
     "11 Opera" "Like morse but need Opera decoder" \
  	3>&2 2>&1 1>&3)
