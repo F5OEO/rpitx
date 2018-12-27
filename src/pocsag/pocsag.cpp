@@ -241,7 +241,7 @@ int addressOffset(int address) {
  * (*message) is a null terminated C string.
  * (*out) is the destination to which the transmission will be written.
  */
-void encodeTransmission(int address, char* message, uint32_t* out) {
+void encodeTransmission(int address, int fb, char* message, uint32_t* out) {
 
     
     //Encode preamble
@@ -266,10 +266,10 @@ void encodeTransmission(int address, char* message, uint32_t* out) {
     }
 
     //Write address word.
-    //The last two bits of word's data contain the message type
+    //The last two bits of word's data contain the message type (function bits)
     //The 3 least significant bits are dropped, as those are encoded by the
     //word's location.
-    *out = encodeCodeword( ((address >> 3) << 2) | FLAG_TEXT_DATA);
+    *out = encodeCodeword( ((address >> 3) << 2) | fb);
     out++;
 
     //Encode the message itself
@@ -325,29 +325,32 @@ size_t textMessageLength(int address, int numChars) {
     return numWords;
 }
 
-void SendFsk(uint64_t Freq,uint32_t *Message,int Size)
+void SendFsk(uint64_t Freq,bool Inverted,int SR,bool debug,uint32_t *Message,int Size)
 {
 	
-	//int SR=40625;
-	int SR=1200;
 	float Deviation=4500;
 	int FiFoSize=12000;
-    fprintf(stderr,"Fifo Size =%d, Size = %d",FiFoSize,Size);
+        if(debug) fprintf(stderr,"Fifo Size = %d, Size = %d, Baud rate = %d\n",FiFoSize,Size,SR);
 	fskburst fsktest(Freq,SR,Deviation,14,FiFoSize);
 	unsigned char *TabSymbol=(unsigned char *)malloc(Size*32);
 	int Sym=0;
 	
-	
-		for(int i=0;i<Size;i++)
+	for(int i=0;i<Size;i++)
         {
+            if(!Inverted) Message[i] = ~Message[i];
             for(int j=31;j>=0;j--)
             {
                 TabSymbol[Sym]=(Message[i]>>j)&0x1;
-                //fprintf(stderr,"%x ",TabSymbol[Sym]);
+                if(debug)
+                {
+                  fprintf(stderr,"%x",TabSymbol[Sym]);
+                  if (j==16) fprintf(stderr," ");
+                }
                 Sym++;
             }
+            if(debug) fprintf(stderr,"\n");
         }
-        //fprintf(stderr,"Symbols=%d\n",Sym);
+        if(debug) fprintf(stderr,"Symbols=%d\n",Sym);
 		fsktest.SetSymbols(TabSymbol,Sym);
 		sleep(1);
 		/*for(i=0;i<FiFoSize;i++)
@@ -367,8 +370,12 @@ void print_usage(void)
 
 fprintf(stderr,\
 "\npocsag -%s\n\
-Usage:\npocsag  [-f Frequency] \n\
+Usage:\npocsag  [-f Frequency] [-i] [-r Rate]\n\
 -f float      central frequency Hz(50 kHz to 1500 MHz),\n\
+-r int        baud rate (512, 1200 or 2400. Default 1200 bps),\n\
+-b int        function bits (0-3. Default 3),\n\
+-i            invert the modulation polarity,\n\
+-d            debug,\n\
 -?            help (this help).\n\
 \n",\
 PROGRAM_VERSION);
@@ -384,9 +391,13 @@ int main(int argc, char* argv[]) {
     int a;
     int anyargs = 1;
     uint64_t SetFrequency=439875000L;
+    int SetRate = 1200;
+    int SetFunctionBits = 3;
+    bool SetInverted = false;
+    bool debug = false;
     while(1)
 	{
-		a = getopt(argc, argv, "f:");
+		a = getopt(argc, argv, "b:df:ir:");
 	
 		if(a == -1) 
 		{
@@ -398,8 +409,42 @@ int main(int argc, char* argv[]) {
 		switch(a)
 		{
 		
+		case 'd': // Debug
+			debug = true;
+			break;
+				
 		case 'f': // Frequency
 			SetFrequency = atof(optarg);
+			break;
+				
+		case 'b': // Function bits
+                        SetFunctionBits = -1;
+                        sscanf(optarg, "%d", &SetFunctionBits);
+                        if(SetFunctionBits<0 || SetFunctionBits>3)
+                        {
+                            fprintf(stderr,"Invalid function bits!");
+			    print_usage();
+			    exit(1);
+                        }
+			break;
+
+		case 'r': // Baud rate
+			SetRate = atoi(optarg);
+                        switch(SetRate)
+                        {
+                          case 512:
+                          case 1200:
+                          case 2400:
+                            break;
+                          default:
+                            fprintf(stderr,"Invalid baud rate!");
+			    print_usage();
+			    exit(1);
+                        }
+			break;
+				
+		case 'i': // Invert the modulation polarity
+			SetInverted = true;
 			break;
 				
 		default:
@@ -410,6 +455,7 @@ int main(int argc, char* argv[]) {
 	}/* end while getopt() */
 
     char line[65536];
+    char *endptr;
     srand(time(NULL));
     for (;;) {
 
@@ -430,17 +476,42 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        int address = (int) strtol(line, NULL, 10);
+        int address = (int) strtol(line, &endptr, 10);
         char* message = line + colonIndex + 1;
+
+        // If address is followed by a letter, this set the function bits
+        switch(*endptr)
+        {
+          case 'a':
+          case 'A':
+            SetFunctionBits = 0;
+            break;
+
+          case 'b':
+          case 'B':
+            SetFunctionBits = 1;
+            break;
+
+          case 'c':
+          case 'C':
+            SetFunctionBits = 2;
+            break;
+
+          case 'd':
+          case 'D':
+            SetFunctionBits = 3;
+            break;
+
+        }
 
         size_t messageLength = textMessageLength(address, strlen(message));
 
         uint32_t* transmission =
             (uint32_t*) malloc(sizeof(uint32_t) * messageLength+2);
 
-        encodeTransmission(address, message, transmission);
+        encodeTransmission(address, SetFunctionBits, message, transmission);
         
-        SendFsk(SetFrequency,transmission,messageLength);
+        SendFsk(SetFrequency,SetInverted,SetRate,debug,transmission,messageLength);
 
        
         //Generate rand amount of silence. Silence is a sample with
