@@ -233,7 +233,7 @@ uint32_t encodeASCII(uint32_t initial_offset, char* str, uint32_t* out) {
  * words will be filled with the idle value.
  */
 int addressOffset(int address) {
-    return (address & 0x3) * FRAME_SIZE;
+    return (address & 0x7) * FRAME_SIZE;
 }
 
 /**
