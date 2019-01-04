@@ -1,4 +1,4 @@
-![rpitx banner](/doc/Galois-pastemps.jpg)
+![rpitx banner](/doc/rpitxlogo.png)
 # About rpitx
 **rpitx** is a general radio frequency transmitter for Raspberry Pi which doesn't require any other hardware unless filter to avoid intererence. It can handle frequencies from 5 KHz up to 1500 MHz.
 
