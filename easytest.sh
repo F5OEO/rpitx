@@ -24,6 +24,24 @@ do_stop_transmit()
 	sudo killall rpitx 2>/dev/null
 	sudo killall freedv 2>/dev/null
 	sudo killall pisstv 2>/dev/null
+	sudo killall csdr 2>/dev/null
+
+	case "$menuchoice" in
+			
+			0\ *) sudo killall testvfo.sh >/dev/null 2>/dev/null ;;
+			1\ *) sudo killall testvfo.sh >/dev/null 2>/dev/null ;;
+			2\ *) sudo killall testspectrum.sh >/dev/null 2>/dev/null ;; 
+			3\ *) sudo killall snap2spectrum.sh >/dev/null 2>/dev/null ;;
+			4\ *) sudo killall  testfmrds.sh >/dev/null 2>/dev/null ;;
+			5\ *) sudo killall testnfm.sh >/dev/null 2>/dev/null ;;
+			6\ *) sudo killall testssb.sh >/dev/null 2>/dev/null ;;
+			7\ *) sudo killall testam.sh >/dev/null 2>/dev/null ;;
+			8\ *) sudo killall testfreedv.sh >/dev/null 2>/dev/null ;;
+			9\ *) sudo killall testsstv.sh >/dev/null 2>/dev/null ;;
+			10\ *) sudo killall testpocsag.sh >/dev/null 2>/dev/null ;;
+			11\ *) sudo killall testopera.sh >/dev/null 2>/dev/null ;;
+			
+	esac		
 }
 
 do_status()
