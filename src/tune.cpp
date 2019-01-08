@@ -18,6 +18,7 @@ fprintf(stderr,\
 Usage:\ntune  [-f Frequency] [-h] \n\
 -f float      frequency carrier Hz(50 kHz to 1500 MHz),\n\
 -e exit immediately without killing the carrier,\n\
+-p set clock ppm instead of ntp adjust\n\
 -h            help (this help).\n\
 \n",\
 PROGRAM_VERSION);
@@ -37,11 +38,12 @@ int main(int argc, char* argv[])
 	int a;
 	int anyargs = 0;
 	float SetFrequency=434e6;
-	
+	dbg_setlevel(1);
 	bool NotKill=false;
+	float ppm=1000.0;
 	while(1)
 	{
-		a = getopt(argc, argv, "f:eh");
+		a = getopt(argc, argv, "f:ehp:");
 	
 		if(a == -1) 
 		{
@@ -55,9 +57,12 @@ int main(int argc, char* argv[])
 		case 'f': // Frequency
 			SetFrequency = atof(optarg);
 			break;
-		case 'e': // SampleRate (Only needeed in IQ mode)
+		case 'e': //End immediately
 			NotKill=true;
 			break;
+		case 'p': //ppm
+			ppm=atof(optarg);
+			break;	
 		case 'h': // help
 			print_usage();
 			exit(1);
@@ -100,9 +105,12 @@ int main(int argc, char* argv[])
 		pad.setlevel(7);
 		clkgpio *clk=new clkgpio;
 		clk->SetAdvancedPllMode(true);
+		if(ppm!=1000)	//ppm is set else use ntp
+			clk->Setppm(ppm);
 		clk->SetCenterFrequency(SetFrequency,10);
 		clk->SetFrequency(000);
 		clk->enableclk(4);
+		
 		//clk->enableclk(6);//CLK2 : experimental
 		//clk->enableclk(20);//CLK1 duplicate on GPIO20 for more power ?
 		if(!NotKill)
