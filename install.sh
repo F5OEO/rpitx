@@ -19,6 +19,11 @@ git clone https://github.com/F5OEO/librpitx
 cd librpitx/src || exit
 make
 cd ../../ || exit
+
+cd pift8
+git clone https://github.com/kgoba/ft8_lib
+cd ../
+
 make
 sudo make install
 cd .. || exit
