@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS = -std=c++11 -Wall -g -O2 -Wno-unused-variable
@@ -56,6 +56,12 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 
 ../rpitx: rpitxv1/rpitx.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -Wno-write-strings -o ../rpitx rpitxv1/rpitx.cpp $(LDFLAGS)
+
+../corel8: corel8/corel8.cpp corel8/costas8.h librpitx/src/librpitx.a
+	$(CCP) $(CXXFLAGS) -Wno-write-strings -o ../corel8 corel8/corel8.cpp $(LDFLAGS)
+
+../pift8 : pift8/pift8.cpp pift8/ft8_lib/ft8/constants.cpp pift8/ft8_lib/ft8/text.cpp pift8/ft8_lib/ft8/pack.cpp pift8/ft8_lib/ft8/encode.cpp librpitx/src/librpitx.a
+	$(CCP) $(CXXFLAGS) -Wno-write-strings -o ../pift8 pift8/pift8.cpp pift8/ft8_lib/ft8/constants.cpp pift8/ft8_lib/ft8/text.cpp pift8/ft8_lib/ft8/pack.cpp pift8/ft8_lib/ft8/encode.cpp  $(LDFLAGS)
 
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile
