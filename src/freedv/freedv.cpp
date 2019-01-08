@@ -21,13 +21,13 @@ bool running=true;
 
 ngfmdmasync *fmmod;
 static double GlobalTuningFrequency=00000.0;
-int FifoSize=10000; //10ms
+int FifoSize=100; //10ms
 
 void playtone(float Frequency)
 {
-		float VCOFreq[100];
-		for(int i=0;i<100;i++) VCOFreq[i]=Frequency;
-		fmmod->SetFrequencySamples(VCOFreq,100);
+		float VCOFreq[10];
+		for(int i=0;i<10;i++) VCOFreq[i]=Frequency;
+		fmmod->SetFrequencySamples(VCOFreq,10);
 		
 }
 
@@ -71,10 +71,10 @@ int main(int argc, char **argv)
         sigaction(i, &sa, NULL);
     }
 
-	fmmod=new ngfmdmasync(frequency,100*SampleRate,14,FifoSize); //400 bits*100 for 800XA	
+	fmmod=new ngfmdmasync(frequency,/*100**/SampleRate*10,14,FifoSize); //400 bits*100 for 800XA	
 	padgpio pad;
 	pad.setlevel(7);// Set max power
-	fmmod->enableclk(20);//CLK1 duplicate on GPIO20 for more power ?
+	
 	
 	short VCOFreq;
 	while(running)
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 			ByteRead=1;	
 		}*/	
 	}
-	fmmod->disableclk(20);
+	
 	printf("End of Tx\n");
     close(FileVCO);
 	delete fmmod;
