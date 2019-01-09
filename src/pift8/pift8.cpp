@@ -19,10 +19,12 @@ bool running=true;
 void usage() {
     fprintf(stderr,\
 "\npift8 -%s\n\
-Usage:\npift8  [-m Message][-f Frequency][-p ppm] [-h] \n\
+Usage:\npift8  [-m Message][-f Frequency][-p ppm][-o offset][-s slot][-r] [-h] \n\
 -m message to transmit (13 caracters)\n\
 -f float      frequency carrier Hz(50 kHz to 1500 MHz),\n\
 -p set clock ppm instead of ntp adjust\n\
+-o set frequency offset(0-2500Hz) default:1240\n\
+-s set time slot to transmit 0 or 1 (2 is always)\n\
 -r repeat (every 15s)\n\
 -h            help (this help).\n\
 Example : sudo pift8 -m \"CQ CA0ALL JN06\" -f 14.074e6\n\
@@ -40,14 +42,14 @@ terminate(int num)
 }
 
 void wait_every(
-  int seconds
+  int seconds, int slot
 ) {
   time_t t;
   struct tm* ptm;
   for(;running;){
     time(&t);
     ptm = gmtime(&t);
-    if( (ptm->tm_sec % seconds)==0 ) break;
+    if( ((ptm->tm_sec) % seconds)==slot ) break;
     usleep(1000);
   }
   usleep(800000); // wait another second
@@ -61,13 +63,14 @@ int main(int argc, char **argv) {
 
     float frequency=14.07e6;
     float ppm=1000;
-    const char *message;
+    const char *message="CQ";
     bool repeat=false;
-    
+    int slot=0;
+    float offset=1240;
 
     while(1)
 	{
-		a = getopt(argc, argv, "m:f:p:hr");
+		a = getopt(argc, argv, "m:f:p:hro:s:");
 	
 		if(a == -1) 
 		{
@@ -95,9 +98,16 @@ int main(int argc, char **argv) {
 			usage();
 			exit(1);
 			break;
-        case 'r': // help
+        case 'r': // repeat
 			repeat=true;
 			break;
+        case 's': // time slot
+			slot=atoi(optarg);
+            fprintf(stderr,"slot=%d\n",slot);
+			break;
+        case 'o': // frequency offset
+			offset=atof(optarg);
+			break;    
 		case -1:
         	break;
 		case '?':
@@ -161,7 +171,7 @@ int main(int argc, char **argv) {
     float Deviation=6.25;
     dbg_setlevel(1);
 
-    fskburst fsk(frequency, 6.25*Upsample, Deviation, 14, FifoSize);
+    fskburst fsk(frequency+offset, 6.25*Upsample, Deviation, 14, FifoSize);
     if(ppm!=1000)
     {	//ppm is set else use ntp
 			fsk.Setppm(ppm);
@@ -179,16 +189,20 @@ int main(int argc, char **argv) {
 	    //fprintf(stderr,"Freq %f\n",Symbols[i]);
     }
     fprintf(stderr,"Wait 1st Tx\n");
-    wait_every(15);
+    wait_every(30,slot*15);
     do
     {
-        
-        
         if(!running) exit(0);
         fprintf(stderr,"Tx!\n");
         fsk.SetSymbols(Symbols, (ft8::NN)*Upsample);
         fsk.stop();
-        fprintf(stderr,"Wait 30s\n");
-        wait_every(30);
+        if(repeat)
+        {
+            fprintf(stderr,"Wait 30s\n");
+            if(slot<2)
+             wait_every(30,slot*15);
+            else
+              wait_every(15,slot*15);
+        }    
     }  while(repeat&&running);  
 }
