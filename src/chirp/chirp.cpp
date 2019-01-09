@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
         sigaction(i, &sa, NULL);
     }
 	
-	int SR=100000;
+	int SR=200000;
 	 
 	int FifoSize=4096;
 	ngfmdmasync ngfmtest(Frequency,SR,14,FifoSize);
@@ -91,14 +91,14 @@ int main(int argc, char* argv[])
 			for(int j=0;j<Available;j++)
 			{
 				
-				ngfmtest.SetFrequencySample(Index+j,StepWithSR*count);
+				ngfmtest.SetFrequencySample(Index+j,Bandwidth*0.5*sin(2*3.1415*(float)count/(float)NbStepWithSR));
 				count++;
 				if(count>NbStepWithSR) count=0;
 			
 			}
 			
 		}
-		fprintf(stderr,"Freq=%f\n",Frequency+StepWithSR*count);
+		fprintf(stderr,"Freq=%f\n",Bandwidth*0.5*sin(2*3.1415*(float)count/(float)NbStepWithSR));
 		
 	}
 	fprintf(stderr,"End\n");
