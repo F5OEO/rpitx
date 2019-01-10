@@ -91,11 +91,11 @@ int main(int argc, char **argv)
     
     int NbSymbol=5;
     
-    int SR = 4*100;
+    int SR = 4;
 	float Deviation = 4;
     int Upsample=100;
-	int FifoSize = 8*(20+1)*Upsample; //8 symbols * 20 caracters max, 1 Symbol SYNC
-	fsk=new fskburst(frequency, SR, Deviation, 14, FifoSize);
+	int FifoSize = 8*(20+1); //8 symbols * 20 caracters max, 1 Symbol SYNC
+	fsk=new fskburst(frequency, SR, Deviation, 14, FifoSize,Upsample,0.4);
 
 	unsigned char TabSymbol[FifoSize];
     NbSymbol=strlen(Message);
@@ -108,14 +108,14 @@ int main(int argc, char **argv)
         if(!running) break;
         fprintf(stderr,"Begin Tx\n");
         unsigned char *TabChar=TabSymbol;        
-        Encode(1,TabChar,Upsample);
-        TabChar+=8*Upsample;    
+        Encode(1,TabChar,1);
+        TabChar+=8;    
         for(int symbol=0;(symbol<NbSymbol)&&running;symbol++)
         {
-            Encode(Message[symbol],TabChar,Upsample);
-            TabChar+=8*Upsample;
+            Encode(Message[symbol],TabChar,1);
+            TabChar+=8;
         }
-        fsk->SetSymbols(TabSymbol, (NbSymbol+1)*8*Upsample);
+        fsk->SetSymbols(TabSymbol, (NbSymbol+1)*8);
        fsk->stop();
     }    
 	delete fsk;
