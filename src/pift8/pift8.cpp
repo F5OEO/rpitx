@@ -52,7 +52,7 @@ void wait_every(
     if( ((ptm->tm_sec) % seconds)==slot ) break;
     usleep(1000);
   }
-  usleep(800000); // wait another second
+  //usleep(400000); // wait another second
 }
 
 int main(int argc, char **argv) {
@@ -67,10 +67,10 @@ int main(int argc, char **argv) {
     bool repeat=false;
     int slot=0;
     float offset=1240;
-
+    float RampRatio=0;
     while(1)
 	{
-		a = getopt(argc, argv, "m:f:p:hro:s:");
+		a = getopt(argc, argv, "m:f:p:hro:s:e:");
 	
 		if(a == -1) 
 		{
@@ -107,7 +107,10 @@ int main(int argc, char **argv) {
 			break;
         case 'o': // frequency offset
 			offset=atof(optarg);
-			break;    
+			break;
+        case 'e': // Ramp Ratio (0..1)
+			RampRatio=atof(optarg);
+			break;            
 		case -1:
         	break;
 		case '?':
@@ -167,11 +170,11 @@ int main(int argc, char **argv) {
 
     
     int Upsample=100;
-    int FifoSize=ft8::NN*Upsample;
+    int FifoSize=ft8::NN;
     float Deviation=6.25;
     dbg_setlevel(1);
 
-    fskburst fsk(frequency+offset, 6.25*Upsample, Deviation, 14, FifoSize);
+    fskburst fsk(frequency+offset, 6.25, Deviation, 14, FifoSize,Upsample,RampRatio);
     if(ppm!=1000)
     {	//ppm is set else use ntp
 			fsk.Setppm(ppm);
@@ -181,28 +184,35 @@ int main(int argc, char **argv) {
 	//pad.setlevel(7);// Set max power
 
 	unsigned char Symbols[FifoSize];
+    
     for(size_t i=0;(i<ft8::NN)&&running;i++)
     {
-		for(int j=0;j<Upsample;j++) Symbols[Upsample*i+j]=tones[i];
-
+		//for(int j=0;j<Upsample;j++)
+             Symbols[i]=tones[i];
+        
+           
 		
 	    //fprintf(stderr,"Freq %f\n",Symbols[i]);
     }
-    fprintf(stderr,"Wait 1st Tx\n");
-    wait_every(30,slot*15);
+    fprintf(stderr,"Wait next slot\n");
+    if(slot<2)
+        wait_every(30,slot*15);
+    else
+        wait_every(15,0);
     do
     {
         if(!running) exit(0);
         fprintf(stderr,"Tx!\n");
-        fsk.SetSymbols(Symbols, (ft8::NN)*Upsample);
+        fsk.SetSymbols(Symbols, (ft8::NN));
         fsk.stop();
+        fprintf(stderr,"End of Tx\n");
         if(repeat)
         {
-            fprintf(stderr,"Wait 30s\n");
+            fprintf(stderr,"Wait next slot\n");
             if(slot<2)
              wait_every(30,slot*15);
             else
-              wait_every(15,slot*15);
+              wait_every(15,0);
         }    
     }  while(repeat&&running);  
 }
