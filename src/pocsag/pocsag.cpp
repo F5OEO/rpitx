@@ -331,7 +331,8 @@ void SendFsk(uint64_t Freq,bool Inverted,int SR,bool debug,uint32_t *Message,int
 	float Deviation=4500;
 	int FiFoSize=12000;
         if(debug) fprintf(stderr,"Fifo Size = %d, Size = %d, Baud rate = %d\n",FiFoSize,Size,SR);
-	fskburst fsktest(Freq,SR,Deviation,14,FiFoSize);
+	fskburst fsktest(Freq-Deviation,SR,Deviation*2,14,FiFoSize,1,0.0);
+    
 	unsigned char *TabSymbol=(unsigned char *)malloc(Size*32);
 	int Sym=0;
 	
@@ -352,7 +353,7 @@ void SendFsk(uint64_t Freq,bool Inverted,int SR,bool debug,uint32_t *Message,int
         }
         if(debug) fprintf(stderr,"Symbols=%d\n",Sym);
 		fsktest.SetSymbols(TabSymbol,Sym);
-		sleep(1);
+		
 		/*for(i=0;i<FiFoSize;i++)
 		{
 			TabSymbol[i]=1;
@@ -453,7 +454,7 @@ int main(int argc, char* argv[]) {
 			break;
 		}/* end switch a */
 	}/* end while getopt() */
-
+    dbg_setlevel(1);
     char line[65536];
     char *endptr;
     srand(time(NULL));
@@ -512,7 +513,7 @@ int main(int argc, char* argv[]) {
         encodeTransmission(address, SetFunctionBits, message, transmission);
         
         SendFsk(SetFrequency,SetInverted,SetRate,debug,transmission,messageLength);
-
+        sleep(1);
        
         //Generate rand amount of silence. Silence is a sample with
         //a value of 0.
