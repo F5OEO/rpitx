@@ -22,8 +22,9 @@ SOFTWARE.
 
 Fork and modification for rpitx (c)(F5OEO 2018)
 
-*/
+** 11.09.2019 : Added Numeric Pager support by cuddlycheetah (github.com/cuddlycheetah)
 
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -33,7 +34,7 @@ Fork and modification for rpitx (c)(F5OEO 2018)
 #include <unistd.h>
 #include "../librpitx/src/librpitx.h"
 
-#define PROGRAM_VERSION "0.1"
+#define PROGRAM_VERSION "0.2"
 //Check out main() at the bottom of the file
 //You can modify MIN_DELAY and MAX_DELAY to fit your needs.
 
@@ -83,6 +84,9 @@ Fork and modification for rpitx (c)(F5OEO 2018)
 
 //As mentioned above, characters are 7 bit ASCII encoded
 #define TEXT_BITS_PER_CHAR 7
+
+#define NUMERIC_BITS_PER_WORD 20
+#define NUMERIC_BITS_PER_DIGIT 4
 
 //Length of CRC codes in bits
 #define CRC_BITS 10
@@ -225,6 +229,107 @@ uint32_t encodeASCII(uint32_t initial_offset, char* str, uint32_t* out) {
     return numWordsWritten;
 }
 
+// Char Translationtable
+char* mirrorTab = new char[10]{ 0x00, 0x08, 0x04, 0x0c, 0x02, 0x0a, 0x06, 0x0e, 0x01, 0x09 };
+char encodeDigit(char ch) {    
+    if (ch >= '0' && ch <= '9')
+        return mirrorTab[ch - '0'];
+
+    switch (ch) {
+        case ' ':
+            return 0x03;
+
+        case 'u':
+        case 'U':
+            return 0x0d;
+
+        case '-':
+        case '_':
+            return 0x0b;
+
+        case '(':
+        case '[':
+            return 0x0f;
+
+        case ')':
+        case ']':
+            return 0x07;
+    }
+
+    return 0x05;
+}
+
+uint32_t encodeNumeric(uint32_t initial_offset, char* str, uint32_t* out) {
+    //Number of words written to *out
+    uint32_t numWordsWritten = 0;
+
+    //Data for the current word we're writing
+    uint32_t currentWord = 0;
+
+    //Nnumber of bits we've written so far to the current word
+    uint32_t currentNumBits = 0;
+
+    //Position of current word in the current batch
+    uint32_t wordPosition = initial_offset;
+
+    while (*str != 0) {
+        unsigned char c = *str;
+        str++;
+        //Encode the digit bits backwards
+        for (int i = 0; i < NUMERIC_BITS_PER_DIGIT; i++) {
+            currentWord <<= 1;
+            char digit = encodeDigit(c);
+            digit = ((digit & 1) <<3) |
+                ((digit & 2) <<1) | 
+                ((digit & 4) >>1) | 
+                ((digit & 8)>>3);
+
+            currentWord |= (digit >> i) & 1;
+            currentNumBits++;
+            if (currentNumBits == NUMERIC_BITS_PER_WORD) {
+                //Add the MESSAGE flag to our current word and encode it.
+                *out = encodeCodeword(currentWord | FLAG_MESSAGE);
+                out++;
+                currentWord = 0;
+                currentNumBits = 0;
+                numWordsWritten++;
+
+                wordPosition++;
+                if (wordPosition == BATCH_SIZE) {
+                    //We've filled a full batch, time to insert a SYNC word
+                    //and start a new one.
+                    *out = SYNC;
+                    out++;
+                    numWordsWritten++;
+                    wordPosition = 0;
+                }
+            }
+        }
+    }
+
+    //Write remainder of message
+    if (currentNumBits > 0) {
+        //Pad out the word to 20 bits with zeroes
+        currentWord <<= 20 - currentNumBits;
+        *out = encodeCodeword(currentWord | FLAG_MESSAGE);
+        out++;
+        numWordsWritten++;
+
+        wordPosition++;
+        if (wordPosition == BATCH_SIZE) {
+            //We've filled a full batch, time to insert a SYNC word
+            //and start a new one.
+            *out = SYNC;
+            out++;
+            numWordsWritten++;
+            wordPosition = 0;
+        }
+    }
+
+    return numWordsWritten;
+}
+
+
 /**
  * An address of 21 bits, but only 18 of those bits are encoded in the address
  * word itself. The remaining 3 bits are derived from which frame in the batch
@@ -241,6 +346,7 @@ int addressOffset(int address) {
  * (*message) is a null terminated C string.
  * (*out) is the destination to which the transmission will be written.
  */
+bool numeric = false;
 void encodeTransmission(int address, int fb, char* message, uint32_t* out) {
 
     
@@ -273,8 +379,12 @@ void encodeTransmission(int address, int fb, char* message, uint32_t* out) {
     out++;
 
     //Encode the message itself
-    out += encodeASCII(addressOffset(address) + 1, message, out);
-
+    if (numeric == true) {
+        out += encodeNumeric(addressOffset(address) + 1, message, out);
+    } else {
+        out += encodeASCII(addressOffset(address) + 1, message, out);
+    }
+    
 
     //Finally, write an IDLE word indicating the end of the message
     *out = IDLE;
@@ -306,6 +416,41 @@ size_t textMessageLength(int address, int numChars) {
     //numChars * 7 bits per character / 20 bits per word, rounding up
     numWords += (numChars * TEXT_BITS_PER_CHAR + (TEXT_BITS_PER_WORD - 1))
                     / TEXT_BITS_PER_WORD;
+
+    //Idle word representing end of message
+    numWords++;
+
+    //Pad out last batch with idles
+    numWords += BATCH_SIZE - (numWords % BATCH_SIZE);
+
+    //Batches consist of 16 words each and are preceded by a sync word.
+    //So we add one word for every 16 message words
+    numWords += numWords / BATCH_SIZE;
+
+    //Preamble of 576 alternating 1,0,1,0 bits before the message
+    //Even though this comes first, we add it to the length last so it
+    //doesn't affect the other word-based calculations
+    numWords += PREAMBLE_LENGTH / 32;
+
+    return numWords;
+}
+
+/**
+ * Calculates the length in words of a numeric POCSAG message, given the address
+ * and the number of characters to be transmitted.
+ */
+size_t numericMessageLength(int address, int numChars) {
+    size_t numWords = 0;
+
+    //Padding before address word.
+    numWords += addressOffset(address);
+
+    //Address word itself
+    numWords++;
+
+    //numChars * 7 bits per character / 20 bits per word, rounding up
+    numWords += (numChars * NUMERIC_BITS_PER_DIGIT + (NUMERIC_BITS_PER_WORD - 1))
+                    / NUMERIC_BITS_PER_WORD;
 
     //Idle word representing end of message
     numWords++;
@@ -375,6 +520,7 @@ Usage:\npocsag  [-f Frequency] [-i] [-r Rate]\n\
 -f float      central frequency Hz(50 kHz to 1500 MHz),\n\
 -r int        baud rate (512, 1200 or 2400. Default 1200 bps),\n\
 -b int        function bits (0-3. Default 3),\n\
+-n            use numeric messages,\n\
 -i            invert the modulation polarity,\n\
 -d            debug,\n\
 -?            help (this help).\n\
@@ -391,14 +537,14 @@ int main(int argc, char* argv[]) {
     //from 1-10 seconds in length, to act as a simulated "delay".
     int a;
     int anyargs = 1;
-    uint64_t SetFrequency=439875000L;
+    uint64_t SetFrequency=466230000L;
     int SetRate = 1200;
     int SetFunctionBits = 3;
     bool SetInverted = false;
     bool debug = false;
     while(1)
 	{
-		a = getopt(argc, argv, "b:df:ir:");
+		a = getopt(argc, argv, "b:dnf:ir:");
 	
 		if(a == -1) 
 		{
@@ -409,7 +555,10 @@ int main(int argc, char* argv[]) {
 
 		switch(a)
 		{
-		
+		case 'n': // Numeric messages
+            numeric = true;
+            break;
+
 		case 'd': // Debug
 			debug = true;
 			break;
@@ -505,7 +654,9 @@ int main(int argc, char* argv[]) {
 
         }
 
-        size_t messageLength = textMessageLength(address, strlen(message));
+        size_t messageLength = numeric
+            ? numericMessageLength(address, strlen(message))
+            : textMessageLength(address, strlen(message));
 
         uint32_t* transmission =
             (uint32_t*) malloc(sizeof(uint32_t) * messageLength+2);
