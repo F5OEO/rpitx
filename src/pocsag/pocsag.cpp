@@ -687,15 +687,15 @@ int main(int argc, char *argv[]) {
                                        : textMessageLength(x, address, strlen(message));
 
             uint32_t *transmission =
-                (uint32_t *)malloc(sizeof(uint32_t) * messageLength + 2);
+                (uint32_t *)malloc(sizeof(uint32_t) * messageLength + 0);
 
             encodeTransmission(x, address, SetFunctionBits, message, transmission);
 
-            completeLength += messageLength + 2;
+            completeLength += messageLength + 0;
             completeTransmission = (uint32_t *)realloc(completeTransmission, sizeof(uint32_t) * completeLength);
-            for (size_t byteI = 0; byteI < messageLength + 2; byteI++)
+            for (size_t byteI = 0; byteI < messageLength + 0; byteI++)
             {
-                completeTransmission[(completeLength - (messageLength + 2)) + byteI] = transmission[byteI];
+                completeTransmission[(completeLength - (messageLength + 0)) + byteI] = transmission[byteI];
             }
         }
     }
