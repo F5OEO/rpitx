@@ -638,6 +638,7 @@ int main(int argc, char *argv[]) {
     char *endptr;
     srand(time(NULL));
 
+    int msgIndex = 0;
     size_t completeLength = 0;
     uint32_t *completeTransmission =
         (uint32_t *)malloc(sizeof(uint32_t) * 0);
@@ -680,22 +681,24 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-        for (int x = 0; x < REPEAT_COUNT; x++)
-        {
+        for (int x = 0; x < REPEAT_COUNT; x++) {
             size_t messageLength = numeric
-                                       ? numericMessageLength(x, address, strlen(message))
-                                       : textMessageLength(x, address, strlen(message));
+                                       ? numericMessageLength(msgIndex, address, strlen(message))
+                                       : textMessageLength(msgIndex, address, strlen(message));
 
             uint32_t *transmission =
                 (uint32_t *)malloc(sizeof(uint32_t) * messageLength);
 
-            encodeTransmission(x, address, SetFunctionBits, message, transmission);
+            encodeTransmission(msgIndex, address, SetFunctionBits, message, transmission);
+            size_t beforeLength = completeLength + 0;
+            fprintf(stderr, "DEBUG DATA = I=%d   P=%p T=%d L=%d\n", msgIndex, completeTransmission, completeLength, messageLength);
             completeLength += messageLength;
             completeTransmission = (uint32_t *)realloc(completeTransmission, sizeof(uint32_t) * completeLength);
-            for (size_t byteI = 0; byteI < messageLength; byteI++)
-            {
-                completeTransmission[(completeLength - (messageLength)) + byteI] = transmission[byteI];
+            for (size_t byteI = 0; byteI < messageLength; byteI++) {
+                completeTransmission[beforeLength + byteI] = transmission[byteI];
             }
+            // free(transmission);
+            msgIndex++;
         }
     }
     SendFsk(SetFrequency, SetInverted, SetRate, debug, completeTransmission, completeLength);
