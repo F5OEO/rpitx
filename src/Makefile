@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8
+all: ../pisstv ../piopera ../pifsq ../pichirp ../morse ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS = -std=c++11 -Wall -g -O2 -Wno-unused-variable
@@ -23,6 +23,9 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 
 ../pichirp : chirp/chirp.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../pichirp chirp/chirp.cpp  $(LDFLAGS)
+
+../morse : morse/morse.cpp librpitx/src/librpitx.a
+	$(CCP) $(CXXFLAGS) -o ../morse morse/morse.cpp  $(LDFLAGS)
 
 ../sendiq : sendiq.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../sendiq sendiq.cpp  $(LDFLAGS)
