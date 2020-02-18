@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8
+all: ../pisstv ../foxhunt ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS = -std=c++11 -Wall -g -O2 -Wno-unused-variable
@@ -14,6 +14,9 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid
 
 ../pisstv : sstv/pisstv.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../pisstv sstv/pisstv.cpp  $(LDFLAGS)
+	
+../foxhunt : foxhunt/foxhunt.cpp librpitx/src/librpitx.a
+	$(CCP) $(CXXFLAGS) -o ../foxhunt foxhunt/foxhunt.cpp  $(LDFLAGS)
 
 ../piopera : opera/opera.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../piopera opera/opera.cpp  $(LDFLAGS)
@@ -78,10 +81,11 @@ LDFLAGS_Pidcf77	= librpitx/src/librpitx.a -lm -lrt -lpthread
 ../pidcf77 : ../dcf77/pidcf77.c
 	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS_Piam)
 clean:
-	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds ../rpitx
+	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../foxhunt ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds ../rpitx
 
 install: all
 	install -m 0755 ../pisstv /usr/bin
+	install -m 0755 ../foxhunt /usr/bin
 	install -m 0755 ../piopera /usr/bin
 	install -m 0755 ../pifsq /usr/bin
 	install -m 0755 ../pichirp /usr/bin
