@@ -4,15 +4,28 @@
 #include <cstring>
 #include <signal.h>
 #include <stdlib.h>
+#include <sys/shm.h>		//Used for shared memory
+//----- SHARED MEMORY STRUCTURE -----
+struct shared_memory_struct {
+        bool  updated;
+        int   command;
+        float data;
+	char  common_data[1024];
+};
 
-bool running=true;
+bool  running=true;
+bool  fdds=false;            //operate as a DDS
+float drivedds=1.0;          //drive level
 
-#define PROGRAM_VERSION "0.1"
+#define PROGRAM_VERSION "0.2"
 
-void SimpleTestFileIQ(uint64_t Freq)
-{
-	
-}
+// *----- Shared memory Variables
+
+      void    *pshared = (void *)0;	      //pointer to IPC structure
+      struct shared_memory_struct *sharedmem; //Actual shared memory area
+      int    sharedmem_id;                    //token is an unique ID for shared memory
+      int    sharedmem_token=0;               //key ID, =0 means no shared memory
+// *----- End of shared memory  definitions
 
 void print_usage(void)
 {
@@ -23,6 +36,9 @@ Usage:\nsendiq [-i File Input][-s Samplerate][-l] [-f Frequency] [-h Harmonic nu
 -i            path to File Input \n\
 -s            SampleRate 10000-250000 \n\
 -f float      central frequency Hz(50 kHz to 1500 MHz),\n\
+-m int        shared memory token,\n\
+-d            dds mode,\n\
+-p            power level (0.00 to 7.00),\n\
 -l            loop mode for file input\n\
 -h            Use harmonic number n\n\
 -t            IQ type (i16 default) {i16,u8,float,double}\n\
@@ -36,7 +52,7 @@ static void
 terminate(int num)
 {
     running=false;
-	fprintf(stderr,"Caught signal - Terminating %x\n",num);
+    fprintf(stderr,"Caught signal - Terminating %x\n",num);
    
 }
 
@@ -54,9 +70,10 @@ int main(int argc, char* argv[])
 	enum {typeiq_i16,typeiq_u8,typeiq_float,typeiq_double};
 	int InputType=typeiq_i16;
 	int Decimation=1;
+     
 	while(1)
 	{
-		a = getopt(argc, argv, "i:f:s:h:lt:");
+		a = getopt(argc, argv, "i:f:s:m:p:h:ldt:");
 	
 		if(a == -1) 
 		{
@@ -70,14 +87,24 @@ int main(int argc, char* argv[])
 		case 'i': // File name
 			FileName = optarg;
 			break;
+		case 'd': // dds mode
+			fdds=true;
+			break;
+		case 'p': // driver level (power)
+			drivedds=atof(optarg);
+			if (drivedds<0.0) {drivedds=0.0;}
+			if (drivedds>7.0) {drivedds=7.0;}
+			break;
 		case 'f': // Frequency
 			SetFrequency = atof(optarg);
+			break;
+                case 'm': // Shared memory token
+                        sharedmem_token = atoi(optarg);
 			break;
 		case 's': // SampleRate (Only needeed in IQ mode)
 			SampleRate = atoi(optarg);
 			if(SampleRate>MAX_SAMPLERATE) 
 			{
-				
 				for(int i=2;i<12;i++) //Max 10 times samplerate
 				{
 					if(SampleRate/i<MAX_SAMPLERATE) 
@@ -85,18 +112,18 @@ int main(int argc, char* argv[])
 						SampleRate=SampleRate/i;
 						Decimation=i;
 						break;
-					}	
+					}
 				}
 				if(Decimation==1)
-				{	
+				{
 					 fprintf(stderr,"SampleRate too high : >%d sample/s",10*MAX_SAMPLERATE);
 					 exit(1);
-				}	 
+				} 
 				else
-				{	
+				{
 					fprintf(stderr,"Warning samplerate too high, decimation by %d will be performed",Decimation);	 
-				}		
-			};	
+				}
+			};
 			break;
 		case 'h': // help
 			Harmonic=atoi(optarg);
@@ -154,14 +181,43 @@ int main(int argc, char* argv[])
 	}
 
 	#define IQBURST 4000
-	
 	int SR=48000;
 	int FifoSize=IQBURST*4;
 	iqdmasync iqtest(SetFrequency,SampleRate,14,FifoSize,MODE_IQ);
 	iqtest.SetPLLMasterLoop(3,4,0);
+
+        if (fdds==true) {           //if instructed to operate as DDS start with carrier, otherwise I/Q mode it is
+           iqtest.ModeIQ=MODE_FREQ_A;
+        }
+
 	//iqtest.print_clock_tree();
 	//iqtest.SetPLLMasterLoop(5,6,0);
-	
+//=========================================================================================================
+// *------ Shared memory definitions if enabled
+//=========================================================================================================
+   if (sharedmem_token != 0) {
+       sharedmem_id = shmget((key_t)sharedmem_token, sizeof(struct shared_memory_struct), 0666 | IPC_CREAT);		//<<<<< SET THE SHARED MEMORY KEY    (Shared memory key , Size in bytes, Permission flags)
+       if (sharedmem_id == -1) {
+           printf("Shared memory shmget() failed\n");
+           exit(8);
+       }
+
+// *----- Make the shared memory accessible to the program
+       pshared = shmat(sharedmem_id, (void *)0, 0);
+       if (pshared == (void *)-1) 	{
+          printf("Shared memory shmat() failed\n");
+          exit(16);
+       }
+
+// *----- Assign the shared_memory segment
+       sharedmem = (struct shared_memory_struct *)pshared;
+
+       sharedmem->updated=false;
+       sharedmem->command=0x00;
+       sharedmem->data=0;
+   }
+//=========================================================================================================
+
 	std::complex<float> CIQBuffer[IQBURST];	
 	while(running)
 	{
@@ -173,7 +229,6 @@ int main(int argc, char* argv[])
 				{
 					static short IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(short),IQBURST*2,iqfile);
-					//if(nbread==0) continue;
 					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
@@ -209,7 +264,6 @@ int main(int argc, char* argv[])
 								CIQBuffer[CplxSampleNumber++]=std::complex<float>((IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
 										
 							}		 
-							//printf("%f %f\n",(IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
 						}
 					}
 					else 
@@ -226,17 +280,47 @@ int main(int argc, char* argv[])
 				{
 					static float IQBuffer[IQBURST*2];
 					int nbread=fread(IQBuffer,sizeof(float),IQBURST*2,iqfile);
-					//if(nbread==0) continue;
 					if(nbread>0)
 					{
 						for(int i=0;i<nbread/2;i++)
 						{
+
+// *-----------------------------------------------------[Patch to introduce IPC handling]-------------------------------------------------------
+// * this modification operates only when using the float stream for a  minimum intervention into the original sendiq
+// * for consistency and transparence it should be propagated to all pipe modes eventually
+// *---------------------------------------------------------------------------------------------------------------------------------------------
+           						if (sharedmem_token != 0) {
+							   if (sharedmem->updated==true) {
+							      if (sharedmem->command == 1111) {
+								  iqtest.ModeIQ=MODE_IQ;
+ 							      }
+							      if (sharedmem->command == 2222) {
+							  	  iqtest.ModeIQ=MODE_FREQ_A;
+							      }
+
+							      if (sharedmem->command == 3333) {
+								  drivedds=sharedmem->data;
+							      }
+							      if (sharedmem->command == 4444) {
+								  SetFrequency=sharedmem->data;
+					                          iqtest.clkgpio::disableclk(4);
+					                          iqtest.clkgpio::SetAdvancedPllMode(true);
+					                          iqtest.clkgpio::SetCenterFrequency(SetFrequency,SampleRate);
+					                          iqtest.clkgpio::SetFrequency(0);
+					                          iqtest.clkgpio::enableclk(4);
+							      }
+							      sharedmem->updated=false;
+    							   }
+                                                        }
+							if (iqtest.ModeIQ==MODE_FREQ_A) {  //if into Frequency-Amplitude mode then only drive a constant carrier
+                             				    IQBuffer[i*2]=10.0;            //should be 10 Hz 
+                                                            IQBuffer[i*2+1]=drivedds;      //at the defined drive level
+                          				}
+// *---------------------------------------------------------------------------------------------------------------------------------------------
 							if(i%Decimation==0)
-							{	
+							{
 								CIQBuffer[CplxSampleNumber++]=std::complex<float>(IQBuffer[i*2],IQBuffer[i*2+1]);
-										
-							}		 
-							//printf("%f %f\n",(IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
+							}
 						}
 					}
 					else 
@@ -263,7 +347,6 @@ int main(int argc, char* argv[])
 								CIQBuffer[CplxSampleNumber++]=std::complex<float>(IQBuffer[i*2],IQBuffer[i*2+1]);
 										
 							}		 
-							//printf("%f %f\n",(IQBuffer[i*2]-127.5)/128.0,(IQBuffer[i*2+1]-127.5)/128.0);
 						}
 					}
 					else 
@@ -281,7 +364,19 @@ int main(int argc, char* argv[])
 		iqtest.SetIQSamples(CIQBuffer,CplxSampleNumber,Harmonic);
 	}
 
+
 	iqtest.stop();
-	
+
+// *--- Detach and delete shared memory
+        if (sharedmem_token != 0) {
+           if (shmdt(pshared) == -1) {
+               printf("shmdt failed\n");
+           } else {
+             if (shmctl(sharedmem_id, IPC_RMID, 0) == -1) {
+        	 printf("shmctl(IPC_RMID) failed\n");
+             }
+           }
+        }
+// *--- end of shared memory detach 
 }	
 
