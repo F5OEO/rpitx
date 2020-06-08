@@ -5,7 +5,38 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/shm.h>		//Used for shared memory
-//----- SHARED MEMORY STRUCTURE -----
+// =============================================================================================
+// ----- SHARED MEMORY STRUCTURE -----
+// All commands sent by a partner program towards sendiq
+// Operation tips
+//      1-Partner program creates a shared memory block with a given arbitrary token id
+//        (any integer non-zero integer number).
+//      2-sendiq is started with the -m {token} argument, without it no shared memory commands
+//        are honored.
+//      3-Partner program willing to alter the operation of sendiq place the
+//        appropriate commnand plus optional associated data and/or common_data
+//        if needed (see table below).
+//      4-Partner program set updated=true.
+//      5-sendiq checks periodically for condition updated==true.
+//      6-if detected updated==true at step -5- the command is evaluated and executed.
+//      7-sendiq set updated=false.
+//      8-Partner program must refrain to send any command while the condition updated==true is on
+//
+//      Table
+//      ---------------------------------------------------------------------------
+//      Command       Meaning                  data                    common_data
+//       1111         Switch to I/Q mode       N/A                     N/A
+//       2222         Switch to Freq & A mode  N/A                     N/A
+//       3333         Set drive level          Drive level {0..7}      N/A
+//       4444         Change Frequency         Frequency in Hz         N/A
+//      ---------------------------------------------------------------------------
+//
+// Note: with current level if shared memory is enabled the data incoming thru standar input
+// or file is expected to be in float format. Other data formats aren't supported together with
+// commands, for them sendiq will work but no commands will be honored.
+//
+// *--- Memory structure
+
 struct shared_memory_struct {
         bool  updated;
         int   command;
@@ -15,7 +46,7 @@ struct shared_memory_struct {
 
 bool  running=true;
 bool  fdds=false;            //operate as a DDS
-float drivedds=1.0;          //drive level
+float drivedds=0.1;          //drive level
 
 #define PROGRAM_VERSION "0.2"
 
@@ -70,7 +101,7 @@ int main(int argc, char* argv[])
 	enum {typeiq_i16,typeiq_u8,typeiq_float,typeiq_double};
 	int InputType=typeiq_i16;
 	int Decimation=1;
-     
+        
 	while(1)
 	{
 		a = getopt(argc, argv, "i:f:s:m:p:h:ldt:");
@@ -100,6 +131,7 @@ int main(int argc, char* argv[])
 			break;
                 case 'm': // Shared memory token
                         sharedmem_token = atoi(optarg);
+     	                InputType=typeiq_float;      //if using shared memory force float pipe
 			break;
 		case 's': // SampleRate (Only needeed in IQ mode)
 			SampleRate = atoi(optarg);
@@ -293,16 +325,20 @@ int main(int argc, char* argv[])
 							   if (sharedmem->updated==true) {
 							      if (sharedmem->command == 1111) {
 								  iqtest.ModeIQ=MODE_IQ;
+								  printf("MODE_IQ selected\n");
  							      }
 							      if (sharedmem->command == 2222) {
 							  	  iqtest.ModeIQ=MODE_FREQ_A;
+						                  printf("MODE_FREQ_A selected\n");
 							      }
 
 							      if (sharedmem->command == 3333) {
 								  drivedds=sharedmem->data;
+								  printf("Drive level set (%f)\n",drivedds);
 							      }
 							      if (sharedmem->command == 4444) {
 								  SetFrequency=sharedmem->data;
+								  printf("Frequency set %f\n",SetFrequency);
 					                          iqtest.clkgpio::disableclk(4);
 					                          iqtest.clkgpio::SetAdvancedPllMode(true);
 					                          iqtest.clkgpio::SetCenterFrequency(SetFrequency,SampleRate);
