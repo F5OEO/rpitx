@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS = -std=c++11 -Wall -g -O2 -Wno-unused-variable
@@ -63,6 +63,9 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid -L
 ../pift8 : pift8/pift8.cpp pift8/ft8_lib/ft8/constants.cpp pift8/ft8_lib/ft8/text.cpp pift8/ft8_lib/ft8/pack.cpp pift8/ft8_lib/ft8/encode.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -Wno-write-strings -o ../pift8 pift8/pift8.cpp pift8/ft8_lib/ft8/constants.cpp pift8/ft8_lib/ft8/text.cpp pift8/ft8_lib/ft8/pack.cpp pift8/ft8_lib/ft8/encode.cpp  $(LDFLAGS)
 
+../sendook: ook/sendook.cpp librpitx/src/librpitx.a
+	$(CCP) $(CXXFLAGS) -Wno-write-strings -o ../sendook ook/sendook.cpp $(LDFLAGS)
+
 CFLAGS_Pifm	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pifm	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -L/opt/vc/lib -lbcm_host
 ../pifm : ../fm/pifm.c
@@ -78,7 +81,7 @@ LDFLAGS_Pidcf77	= librpitx/src/librpitx.a -lm -lrt -lpthread -L/opt/vc/lib -lbcm
 ../pidcf77 : ../dcf77/pidcf77.c
 	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS_Piam)
 clean:
-	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds ../rpitx
+	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds ../rpitx ../sendook
 
 install: all
 	install -m 0755 ../pisstv /usr/bin
@@ -91,3 +94,4 @@ install: all
 	install -m 0755 ../dvbrf /usr/bin
 	install -m 0755 ../rpitx /usr/bin
 	install -m 0755 ../pift8 /usr/bin
+	install -m 0755 ../sendook /usr/bin
