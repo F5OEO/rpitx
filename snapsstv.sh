@@ -1,6 +1,8 @@
+#!/bin/sh
+
 raspistill -w 320 -h 256 -o picture.jpg -t 1
 convert -depth 8 picture.jpg picture.rgb
 
-sudo ./pisstv picture.rgb picture.ft
-sudo ./rpitx -m RF -i picture.ft -f 50105
+sudo ./pisstv picture.rgb "$1"
+
 

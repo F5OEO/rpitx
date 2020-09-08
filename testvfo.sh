@@ -1,1 +1,3 @@
-sudo ./rpitx -m VFO -f 433900
+#!/bin/sh
+
+sudo tune -f "$1"
