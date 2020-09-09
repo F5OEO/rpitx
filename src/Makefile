@@ -14,6 +14,9 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid -L
 
 ../pisstv : sstv/pisstv.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../pisstv sstv/pisstv.cpp  $(LDFLAGS)
+	
+../foxhunt : foxhunt/foxhunt.cpp librpitx/src/librpitx.a
+	$(CCP) $(CXXFLAGS) -o ../foxhunt foxhunt/foxhunt.cpp  $(LDFLAGS)
 
 ../piopera : opera/opera.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../piopera opera/opera.cpp  $(LDFLAGS)
@@ -85,6 +88,7 @@ clean:
 
 install: all
 	install -m 0755 ../pisstv /usr/bin
+	install -m 0755 ../foxhunt /usr/bin
 	install -m 0755 ../piopera /usr/bin
 	install -m 0755 ../pifsq /usr/bin
 	install -m 0755 ../pichirp /usr/bin
