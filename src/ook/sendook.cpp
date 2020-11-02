@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include "../librpitx/src/librpitx.h"
-#include "../librpitx/src/optparse.h"
+#include "optparse.h"
 #include <unistd.h>
 #include "stdio.h"
 #include <cstring>
