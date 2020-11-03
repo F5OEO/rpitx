@@ -40,8 +40,8 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid -L
 	$(CCP) $(CXXFLAGS) -o ../freedv freedv/freedv.cpp  $(LDFLAGS)
 
 ../dvbrf : dvb/dvbrf.cpp dvb/dvbsenco8.s dvb/fec100.c dvb/dvbs2arm_1v30.s librpitx/src/librpitx.a
-	$(CC) $(CFLAGS) -S -c -o dvb/dvbsenco8.o dvb/dvbsenco8.s
-	$(CC) $(CFLAGS) -S -c -o dvb/dvbs2arm_1v30.o dvb/dvbs2arm_1v30.s
+	$(CC) $(CFLAGS) -c -o dvb/dvbsenco8.o dvb/dvbsenco8.s
+	$(CC) $(CFLAGS) -c -o dvb/dvbs2arm_1v30.o dvb/dvbs2arm_1v30.s
 	$(CC) $(CFLAGS) -c -o dvb/fec100.o dvb/fec100.c
 	$(CCP) $(CXXFLAGS) -o ../dvbrf dvb/dvbrf.cpp dvb/dvbsenco8.o dvb/fec100.o dvb/dvbs2arm_1v30.o $(LDFLAGS)
 
@@ -98,7 +98,6 @@ install: all
 	install -m 0755 ../sendiq /usr/bin
 	install -m 0755 ../tune /usr/bin
 	install -m 0755 ../freedv /usr/bin
-	install -m 0755 ../dvbrf /usr/bin
 	install -m 0755 ../rpitx /usr/bin
 	install -m 0755 ../pift8 /usr/bin
 	install -m 0755 ../sendook /usr/bin
