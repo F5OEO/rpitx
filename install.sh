@@ -37,6 +37,9 @@ if [ "$CONT" = "y" ]; then
    LINE='gpu_freq=250'
    FILE='/boot/config.txt'
    grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
+   #PI4
+   LINE='force_turbo=1'
+   grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
    echo "Installation completed !"
 else
   echo "Warning : Rpitx should be instable and stop from transmitting !";
