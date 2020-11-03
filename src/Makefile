@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../dvbrf ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS = -std=c++11 -Wall -g -O2 -Wno-unused-variable
@@ -40,8 +40,8 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid -L
 	$(CCP) $(CXXFLAGS) -o ../freedv freedv/freedv.cpp  $(LDFLAGS)
 
 ../dvbrf : dvb/dvbrf.cpp dvb/dvbsenco8.s dvb/fec100.c dvb/dvbs2arm_1v30.s librpitx/src/librpitx.a
-	$(CC) $(CFLAGS) -c -o dvb/dvbsenco8.o dvb/dvbsenco8.s
-	$(CC) $(CFLAGS) -c -o dvb/dvbs2arm_1v30.o dvb/dvbs2arm_1v30.s
+	$(CC) $(CFLAGS) -S -c -o dvb/dvbsenco8.o dvb/dvbsenco8.s
+	$(CC) $(CFLAGS) -S -c -o dvb/dvbs2arm_1v30.o dvb/dvbs2arm_1v30.s
 	$(CC) $(CFLAGS) -c -o dvb/fec100.o dvb/fec100.c
 	$(CCP) $(CXXFLAGS) -o ../dvbrf dvb/dvbrf.cpp dvb/dvbsenco8.o dvb/fec100.o dvb/dvbs2arm_1v30.o $(LDFLAGS)
 
