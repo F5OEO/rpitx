@@ -1,6 +1,6 @@
 ![rpitx banner](/doc/rpitxlogo.png)
 # About rpitx
-**rpitx** is a general radio frequency transmitter for Raspberry Pi which doesn't require any other hardware unless filter to avoid intererence. It can handle frequencies from 5 KHz up to 1500 MHz.
+**rpitx** is a general radio frequency transmitter for Raspberry Pi which doesn't require any other hardware unless filter to avoid interference. It can handle frequencies from 5 KHz up to 1500 MHz.
 
 Rpitx is a software made for educational on RF system. It has not been tested for compliance with regulations governing transmission of radio signals. You are responsible for using your Raspberry Pi legally.
 
@@ -17,7 +17,7 @@ Be sure to have git package installed :
 sudo apt-get update
 sudo apt-get install git
 ```
-You can now clone the repository. A script (install.sh) is there for easy installation. You could inspect it and make steps manualy in case of any doubt. You can note that /boot/config.txt should be prompt to be modified during the installation. If it is not accepted, **rpitx** will be unstable.  
+You can now clone the repository. A script (install.sh) is there for easy installation. You could inspect it and make steps manually in case of any doubt. You can note that /boot/config.txt should be prompt to be modified during the installation. If it is not accepted, **rpitx** will be unstable.  
 
 ```sh
 git clone https://github.com/F5OEO/rpitx
@@ -109,7 +109,7 @@ To launch it, go to rpitx folder and launch rtlmenu.sh :
 ```sh
 ./rtlmenu.sh
 ```
-You have first to set receiver frequency and gain of rtl-sdr. Warning about gain, you should ensure that you have enough gain to receive the signal but not to strong which could saturate it and will not be usefull by **rpitx**.
+You have first to set receiver frequency and gain of rtl-sdr. Warning about gain, you should ensure that you have enough gain to receive the signal but not to strong which could saturate it and will not be useful by **rpitx**.
 
 Choose your choice with arrows and enter to start it.**Don't forget, some test are made in loop, you have to press CTRL^C to exit and back to menu.**
 
