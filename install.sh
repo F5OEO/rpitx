@@ -8,8 +8,7 @@ sudo apt-get install -y imagemagick libfftw3-dev
 #For rtl-sdr use
 sudo apt-get install -y rtl-sdr buffer
 # We use CSDR as a dsp for analogs modes thanks to HA7ILM
-git clone https://github.com/simonyiszk/csdr
-patch -i csdrpizero.diff csdr/Makefile
+git clone https://github.com/F5OEO/csdr
 cd csdr || exit
 make && sudo make install
 cd ../ || exit
@@ -36,6 +35,9 @@ if [ "$CONT" = "y" ]; then
   echo "Set GPU to 250Mhz in order to be stable"
    LINE='gpu_freq=250'
    FILE='/boot/config.txt'
+   grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
+   #PI4
+   LINE='force_turbo=1'
    grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
    echo "Installation completed !"
 else
