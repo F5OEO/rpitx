@@ -25,6 +25,7 @@ do_stop_transmit()
 	sudo killall freedv 2>/dev/null
 	sudo killall pisstv 2>/dev/null
 	sudo killall csdr 2>/dev/null
+	sudo killall pirtty 2>/dev/null
 
 	case "$menuchoice" in
 			
@@ -40,6 +41,7 @@ do_stop_transmit()
 			9\ *) sudo killall testsstv.sh >/dev/null 2>/dev/null ;;
 			10\ *) sudo killall testpocsag.sh >/dev/null 2>/dev/null ;;
 			11\ *) sudo killall testopera.sh >/dev/null 2>/dev/null ;;
+			12\ *) sudo killall testrtty.sh >/dev/null 2>/dev/null ;;
 			
 	esac		
 }
@@ -71,6 +73,7 @@ do_freq_setup
 	"9 SSTV" "Pattern picture" \
 	"10 Pocsag" "Pager message" \
     "11 Opera" "Like morse but need Opera decoder" \
+    "12 RTTY" "Radioteletype" \
  	3>&2 2>&1 1>&3)
 		RET=$?
 		if [ $RET -eq 1 ]; then
@@ -101,6 +104,8 @@ do_freq_setup
 			10\ *) "./testpocsag.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
 			do_status;;
 			11\ *) "./testopera.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
+			do_status;;
+			12\ *) "./testrtty.sh" "$OUTPUT_FREQ""e6">/dev/null 2>/dev/null &
 			do_status;;
 			*)	 status=1
 			whiptail --title "Bye bye" --msgbox "Thx for using rpitx" 8 78
