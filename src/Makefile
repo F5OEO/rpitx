@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt ../pirtty
 
 CFLAGS	= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS = -std=c++11 -Wall -g -O2 -Wno-unused-variable
@@ -17,6 +17,10 @@ LDFLAGS_Pissb	= librpitx/src/librpitx.a -lm -lrt -lpthread -lsndfile -lliquid -L
 	
 ../foxhunt : foxhunt/foxhunt.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../foxhunt foxhunt/foxhunt.cpp  $(LDFLAGS)
+	
+	
+../pirtty : pirtty/pirtty.cpp librpitx/src/librpitx.a
+	$(CCP) $(CXXFLAGS) -o ../pirtty pirtty/pirtty.cpp  $(LDFLAGS)
 
 ../piopera : opera/opera.cpp librpitx/src/librpitx.a
 	$(CCP) $(CXXFLAGS) -o ../piopera opera/opera.cpp  $(LDFLAGS)
@@ -92,6 +96,7 @@ clean:
 install: all
 	install -m 0755 ../pisstv /usr/bin
 	install -m 0755 ../foxhunt /usr/bin
+	install -m 0755 ../pirtty /usr/bin
 	install -m 0755 ../piopera /usr/bin
 	install -m 0755 ../pifsq /usr/bin
 	install -m 0755 ../pichirp /usr/bin
