@@ -15,7 +15,7 @@
 #include <sys/mman.h>
 
 
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 
 int FilePicture;
 int FileFreqTiming;

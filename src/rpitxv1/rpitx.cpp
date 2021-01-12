@@ -20,8 +20,8 @@
    Helped by a code fragment by PE1NNZ (http://pe1nnz.nl.eu.org/2013/05/direct-ssb-generation-on-pll.html)
  */
 #include <unistd.h>
-#include "../librpitx/src/librpitx.h"
-#include "stdio.h"
+#include <librpitx/librpitx.h>
+#include <stdio.h>
 #include <stdarg.h>     /* va_list, va_start, va_arg, va_end */
 #include <cstring>
 #include <signal.h>

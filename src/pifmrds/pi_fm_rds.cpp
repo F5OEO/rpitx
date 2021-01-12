@@ -112,7 +112,7 @@ extern "C"
 #include "control_pipe.h"
 }
 
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 
 ngfmdmasync *fmmod;
 // The deviation specifies how wide the signal is. 

@@ -14,7 +14,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 #include "costas8.h"
 
 float frequency=14.07e6;

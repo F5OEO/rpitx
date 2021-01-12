@@ -5,12 +5,12 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "ft8_lib/common/wave.h"
-#include "ft8_lib/ft8/pack.h"
-#include "ft8_lib/ft8/encode.h"
-#include "ft8_lib/ft8/constants.h"
+#include "ft8/wave.h"
+#include "ft8/pack.h"
+#include "ft8/encode.h"
+#include "ft8/constants.h"
 
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 
 bool running=true;
 
