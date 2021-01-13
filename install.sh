@@ -16,11 +16,15 @@ cd ../ || exit
 cd src || exit
 git clone https://github.com/F5OEO/librpitx
 cd librpitx/src || exit
-make
+make && sudo make install
 cd ../../ || exit
 
 cd pift8
-git clone https://github.com/kgoba/ft8_lib
+git clone https://github.com/F5OEO/ft8_lib
+cd ft8_lib
+make && sudo make install
+cd ../
+make
 cd ../
 
 make
