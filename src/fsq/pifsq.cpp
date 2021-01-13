@@ -40,7 +40,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 
 #define TONE_SPACING            8789           // ~8.7890625 Hz
 #define BAUD_2                  7812          // CTC value for 2 baud

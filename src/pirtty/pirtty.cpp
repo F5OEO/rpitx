@@ -12,19 +12,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-
-
-
-
-#include "../librpitx/src/librpitx.h"
-
-
-
-
-
+#include <librpitx/librpitx.h>
 
 #define byte uint8_t
-
 
 int MARK = 2125;
 int SPACE = 1955;

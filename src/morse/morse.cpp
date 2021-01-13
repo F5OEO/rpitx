@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <ctype.h>
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 
 #define MORSECODES 37
 

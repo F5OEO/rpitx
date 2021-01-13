@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include "librpitx/src/librpitx.h"
+#include "librpitx.h"
 #include "stdio.h"
 #include <cstring>
 #include <signal.h>

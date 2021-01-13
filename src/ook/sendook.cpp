@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 #include "optparse.h"
 #include <unistd.h>
 #include "stdio.h"
