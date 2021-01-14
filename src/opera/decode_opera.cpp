@@ -126,7 +126,7 @@ char packed_target[29] ="0000011011000110111100001111"; //0x0606F0F
 
 char call_target[7] = "AA1AA ";
 
-// **** Grobal variables ****
+// **** Global variables ****
 short int symbol[239];           // to be decode
 short int interleaved[119];
 short int before_interleave[119];
@@ -458,7 +458,7 @@ void generate_crc(char * datas, char * crc, int length)
 {   // 32 + 16(length) = 48 or 48 + 3(length) = 51
 	// CRC16-IBM : Polynominal = X16+X15+X2+1 = 1000 0000 0000 0101
 	// This function is a copy of JUMA TX136/500 control program 
-	// whitch was written by F4GCB (Patrick). Thanks Patrick.
+	// which was written by F4GCB (Patrick). Thanks Patrick.
 
 	int i, j, k, len;
 	char buffer[52];

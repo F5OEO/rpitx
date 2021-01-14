@@ -176,7 +176,7 @@ uint32_t encodeASCII(uint32_t initial_offset, char *str, uint32_t *out)
     //Data for the current word we're writing
     uint32_t currentWord = 0;
 
-    //Nnumber of bits we've written so far to the current word
+    //Number of bits we've written so far to the current word
     uint32_t currentNumBits = 0;
 
     //Position of current word in the current batch
@@ -279,7 +279,7 @@ uint32_t encodeNumeric(uint32_t initial_offset, char *str, uint32_t *out)
     //Data for the current word we're writing
     uint32_t currentWord = 0;
 
-    //Nnumber of bits we've written so far to the current word
+    //Number of bits we've written so far to the current word
     uint32_t currentNumBits = 0;
 
     //Position of current word in the current batch

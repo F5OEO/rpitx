@@ -41,7 +41,7 @@
 bool running=true;
 //#define  __VCpp__  TRUE
 
-// Grobal Variables
+// Global Variables
 float Frequency=0;
 
 static const short int pseudo_sequence[51] = {

@@ -29,8 +29,8 @@ The program return 0 if message send.
 ### Known limitation
 
 - a gap or a pulse can not be shorter than 10us (options `-0` or `-1`).
-- the pulse is not really a pulse : it is not modulated (you cant have a pulse of 7Khz for ex.)
-- but the signal is not really a square signal too, because librpitx, for an unkown reason, modulate the generated signal globally :
+- the pulse is not really a pulse : it is not modulated (you can't have a pulse of 7Khz for ex.)
+- but the signal is not really a square signal too, because librpitx, for an unknown reason, modulate the generated signal globally :
 -- for example, the command `sendook -f 868.3M -0 500 -1 250 -r 3 101010` should generate :
 ```
 | ....    ....    ....

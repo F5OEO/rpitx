@@ -17,7 +17,7 @@ Be sure to have git package installed :
 sudo apt-get update
 sudo apt-get install git
 ```
-You can now clone the repository. A script (install.sh) is there for easy installation. You could inspect it and make steps manualy in case of any doubt. You can note that /boot/config.txt should be prompt to be modified during the installation. If it is not accepted, **rpitx** will be unstable.  
+You can now clone the repository. A script (install.sh) is there for easy installation. You could inspect it and make steps manually in case of any doubt. You can note that /boot/config.txt should be prompt to be modified during the installation. If it is not accepted, **rpitx** will be unstable.  
 
 ```sh
 git clone https://github.com/F5OEO/rpitx
@@ -109,7 +109,7 @@ To launch it, go to rpitx folder and launch rtlmenu.sh :
 ```sh
 ./rtlmenu.sh
 ```
-You have first to set receiver frequency and gain of rtl-sdr. Warning about gain, you should ensure that you have enough gain to receive the signal but not to strong which could saturate it and will not be usefull by **rpitx**.
+You have first to set receiver frequency and gain of rtl-sdr. Warning about gain, you should ensure that you have enough gain to receive the signal but not to strong which could saturate it and will not be useful by **rpitx**.
 
 Choose your choice with arrows and enter to start it.**Don't forget, some test are made in loop, you have to press CTRL^C to exit and back to menu.**
 
@@ -125,7 +125,7 @@ So first, record few seconds of signal, CTRL^C for stop recording. Then replay i
 We can also live transmitting a received band frequency. Here the input frequency is a FM broadcast station which is retransmit on 434MHZ.
 
 ### Relay with transmodulation ###
-We assume that input frequency is tuned on FM station. It is demodulated and modulate to SSB on 434MHZ. SSB is not HiFi, so prefere to choose a talk radio, music sounds like bit weird !
+We assume that input frequency is tuned on FM station. It is demodulated and modulate to SSB on 434MHZ. SSB is not HiFi, so prefer to choose a talk radio, music sounds like bit weird !
 
 
 # To continue

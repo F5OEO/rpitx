@@ -14,7 +14,7 @@
 //      2-sendiq is started with the -m {token} argument, without it no shared memory commands
 //        are honored.
 //      3-Partner program willing to alter the operation of sendiq place the
-//        appropriate commnand plus optional associated data and/or common_data
+//        appropriate command plus optional associated data and/or common_data
 //        if needed (see table below).
 //      4-Partner program set updated=true.
 //      5-sendiq checks periodically for condition updated==true.
@@ -31,7 +31,7 @@
 //       4444         Change Frequency         Frequency in Hz         N/A
 //      ---------------------------------------------------------------------------
 //
-// Note: with current level if shared memory is enabled the data incoming thru standar input
+// Note: with current level if shared memory is enabled the data incoming thru standard input
 // or file is expected to be in float format. Other data formats aren't supported together with
 // commands, for them sendiq will work but no commands will be honored.
 //
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
                         sharedmem_token = atoi(optarg);
      	                InputType=typeiq_float;      //if using shared memory force float pipe
 			break;
-		case 's': // SampleRate (Only needeed in IQ mode)
+		case 's': // SampleRate (Only needed in IQ mode)
 			SampleRate = atoi(optarg);
 			if(SampleRate>MAX_SAMPLERATE) 
 			{
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 		case 'l': // loop mode
 			loop_mode_flag = true;
 			break;
-		case 't': // inout type
+		case 't': // input type
 			if(strcmp(optarg,"i16")==0) InputType=typeiq_i16;
 			if(strcmp(optarg,"u8")==0) InputType=typeiq_u8;
 			if(strcmp(optarg,"float")==0) InputType=typeiq_float;

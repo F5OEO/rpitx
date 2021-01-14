@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 			nbbits ++;
 			computed_duration += bit1duration;
 		}
-		// any other char is ignored (it allows to speparate nibble with a space for example)
+		// any other char is ignored (it allows to separate nibble with a space for example)
 		// improvement : allow "." and "-" or "i" and "a" to create a MORSE sender
 	}
 	dbg_printf(1, "Send %d bits, with a total duration of %d us.\n", nbbits, computed_duration);
@@ -198,6 +198,6 @@ int main(int argc, char *argv[])
 		if(!running)
 			break;
 	}
-	printf("Message successfuly transmitted\n");
+	printf("Message successfully transmitted\n");
 	return 0;
 }

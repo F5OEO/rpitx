@@ -149,7 +149,7 @@ if __name__ == "__main__":
         datetime.timedelta(minutes=1)  # start of next minute
 
     if now.second >= 58:
-        # not enougth time, add one more minute
+        # not enough time, add one more minute
         start = start + datetime.timedelta(minutes=1)
 
     filename = None
@@ -169,7 +169,7 @@ if __name__ == "__main__":
                 f.write(sample)
                 logger.debug("%s, %s", amplitude, timing)
 
-    print "waiting %s for syncronization..." % start
+    print "waiting %s for synchronization..." % start
     while True:
         # whaiting for start of minute
         if datetime.datetime.now() >= start:

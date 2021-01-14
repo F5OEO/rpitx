@@ -162,7 +162,7 @@ ldpc_inter_array: .space 40 * 64 @: intermediate output array when applying the 
 @:
 @: Version 12.34 would be returned as 0x00001234
 @:
-@: The effiency value is used to determine the required bit rate of the 188 byte TS
+@: The efficiency value is used to determine the required bit rate of the 188 byte TS
 @: Bit rate = symbol_rate * efficiency / 1,000,000
 @:
 @: Typical usage:
@@ -428,7 +428,7 @@ setup_s34:
 @: 0 = more packets are required to fill the frame
 @: !0 = pointer to a 546 word IQ buffer containing a short frame
 @:
-@: 4 outbuffers are used in sequence so that it is not neccessary to move the
+@: 4 outbuffers are used in sequence so that it is not necessary to move the
 @: data to prevent it being overwritten by the next frame
 @:
 @: All registers except r0 are restored to their original values
@@ -2336,7 +2336,7 @@ bch_s168_table:
 @: entry 1: offset to the group of 360 bits (45 bytes) in the BCH frame array
 @: entry 2: offset of the row number in the intermediate LDPC array
 @: entry 3: left shift value for first register
-@: entry 4: adddress of the setup routine for the particlular first register
+@: entry 4: address of the setup routine for the particlular first register
 
 
 @: LDPC parameters - short frame, FEC 1/4, 5 words per entry

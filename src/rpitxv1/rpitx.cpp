@@ -2,7 +2,7 @@
     This version is to allow back compatibility with rpitx v1
     Copyright (C) 2015-2018  Evariste COURJAUD F5OEO (evaristec@gmail.com)
     Transmitting on HF band is surely not permitted without license (Hamradio for example).
-    Usage of this software is not the responsability of the author.
+    Usage of this software is not the responsibility of the author.
 	
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 			if(strcmp("IQFLOAT",optarg)==0) Mode=MODE_RPITX_IQ_FLOAT;
 			if(strcmp("VFO",optarg)==0) Mode=MODE_RPITX_VFO;
 			break;
-		case 's': // SampleRate (Only needeed in IQ mode)
+		case 's': // SampleRate (Only needed in IQ mode)
 			SampleRate = atoi(optarg);
 			break;
 		case 'p':  //	ppmcorrection

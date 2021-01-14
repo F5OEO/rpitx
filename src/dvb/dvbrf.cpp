@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 		case 'f': // Frequency
 			SetFrequency = atof(optarg);
 			break;
-		case 's': // SampleRate (Only needeed in IQ mode)
+		case 's': // SampleRate (Only needed in IQ mode)
 			SampleRate = atoi(optarg);
 			if(SampleRate>MAX_SAMPLERATE) 
 			{
