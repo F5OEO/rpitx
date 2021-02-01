@@ -1,5 +1,5 @@
 #!/bin/sh
 
-sudo ./piopera F5OEO 0.5 "$1"
+sudo ./piopera "$2" 0.5 "$1"
 
 
