@@ -32,7 +32,7 @@ sudo make install
 cd .. || exit
 
 printf "\n\n"
-printf "In order to run properly, rpitx need to modify /boot/config.txt. Are you sure (y/n) "
+printf "In order to run properly, rpitx needs to modify /boot/config.txt. Are you sure (y/n) "
 read -r CONT
 
 if [ "$CONT" = "y" ]; then
