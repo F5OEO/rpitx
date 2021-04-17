@@ -45,7 +45,7 @@ if [ "$CONT" = "y" ]; then
    grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
    echo "Installation completed !"
 else
-  echo "Warning : Rpitx should be instable and stop from transmitting !";
+  echo "Warning : Rpitx will be unstable and won't be transmitting!";
 fi
 
 
