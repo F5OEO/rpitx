@@ -37,7 +37,7 @@
 #include "math.h"
 #include <signal.h>
  #include <unistd.h>
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 bool running=true;
 //#define  __VCpp__  TRUE
 

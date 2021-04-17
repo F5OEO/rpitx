@@ -14,7 +14,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 
 int FileVCO;
 bool running=true;

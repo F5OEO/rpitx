@@ -33,7 +33,7 @@ Fork and modification for rpitx (c)(F5OEO 2018)
 #include <strings.h>
 #include <time.h>
 #include <unistd.h>
-#include "../librpitx/src/librpitx.h"
+#include <librpitx/librpitx.h>
 
 #define PROGRAM_VERSION "0.3"
 //Check out main() at the bottom of the file

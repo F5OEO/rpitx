@@ -1,6 +1,6 @@
 #include <unistd.h>
-#include "../librpitx/src/librpitx.h"
-#include "stdio.h"
+#include <librpitx/librpitx.h>
+#include <stdio.h>
 #include <cstring>
 #include <signal.h>
 #include <stdlib.h>
