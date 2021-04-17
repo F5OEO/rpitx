@@ -35,15 +35,15 @@ sudo reboot
 
 | Raspberry Model      | Status  |
 | ---------------------|:-------:|
-| Pizero|OK|
-| PizeroW|OK|
-| PiA+|OK|
-| PiB|Partial|
-| PiB+|OK|
-| P2B|OK|
-| Pi3B|OK|
-| Pi3B+|OK|
-| Pi4|In beta mode|
+| Pi Zero|OK|
+| Pi ZeroW|OK|
+| Pi A+|OK|
+| Pi B|Partial|
+| Pi B+|OK|
+| P2 B|OK|
+| Pi 3 B|OK|
+| Pi 3 B+|OK|
+| Pi 4|In beta mode|
 
 Plug a wire on GPIO 4, which is Pin 7 of the GPIO header ([header P1](http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29)). This acts as the antenna. The optimal length of the wire depends on the frequency you want to transmit on, but it works with a few centimeters for local testing.
 
