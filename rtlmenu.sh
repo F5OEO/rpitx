@@ -9,15 +9,15 @@ LAST_ITEM="0 Record"
 do_freq_setup()
 {
 
-if FREQ=$(whiptail --inputbox "Choose input Frequency (in MHZ) Default is 434MHZ" 8 78 $INPUT_RTLSDR --title "RTL-SDR Receive Frequency" 3>&1 1>&2 2>&3); then
+if FREQ=$(whiptail --inputbox "Choose input Frequency (in MHz) Default is 434 MHz" 8 78 $INPUT_RTLSDR --title "RTL-SDR Receiving Frequency" 3>&1 1>&2 2>&3); then
     INPUT_RTLSDR=$FREQ
 fi
 
-if GAIN=$(whiptail --inputbox "Choose input Gain (0(AGC) or 1-45)" 8 78 $INPUT_GAIN --title "RTL-SDR Receive Frequency" 3>&1 1>&2 2>&3); then
+if GAIN=$(whiptail --inputbox "Choose input Gain (0(AGC) or 1-45)" 8 78 $INPUT_GAIN --title "RTL-SDR Receiving Frequency" 3>&1 1>&2 2>&3); then
     INPUT_GAIN=$GAIN
 fi
 
-if FREQ=$(whiptail --inputbox "Choose output Frequency (in MHZ) Default is 434MHZ" 8 78 $OUTPUT_FREQ --title "Transmit Frequency" 3>&1 1>&2 2>&3); then
+if FREQ=$(whiptail --inputbox "Choose output Frequency (in MHz) Default is 434 MHz" 8 78 $OUTPUT_FREQ --title "Transmitting Frequency" 3>&1 1>&2 2>&3); then
     OUTPUT_FREQ=$FREQ
 fi
 
