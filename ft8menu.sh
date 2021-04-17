@@ -15,7 +15,7 @@ TIMESLOT="1"
 
 do_offset_frequency()
 {
-    if OFFSET=$(whiptail --inputbox "Choose FT8 offset (10-2600Hz) Default is 1240Hz" 8 78 $OUTPUT_OFFSET --title "Offset Frequency" 3>&1 1>&2 2>&3); then
+    if OFFSET=$(whiptail --inputbox "Choose FT8 offset (10-2600 Hz) Default is 1240 Hz" 8 78 $OUTPUT_OFFSET --title "Offset Frequency" 3>&1 1>&2 2>&3); then
         OUTPUT_OFFSET=$OFFSET
     fi
 }
@@ -32,7 +32,7 @@ do_slot_choice()
 do_freq_setup()
 {
 
-    if FREQ=$(whiptail --inputbox "Choose FT8 output Frequency (in MHZ) Default is 14.074MHZ" 8 78 $OUTPUT_FREQ --title "Transmit Frequency" 3>&1 1>&2 2>&3); then
+    if FREQ=$(whiptail --inputbox "Choose FT8 output Frequency (in MHz) Default is 14.074 MHz" 8 78 $OUTPUT_FREQ --title "Transmit Frequency" 3>&1 1>&2 2>&3); then
         OUTPUT_FREQ=$FREQ
     fi
 
@@ -50,7 +50,7 @@ do_freq_setup()
 do_status()
 {
 	LAST_ITEM="$menuchoice"
-	whiptail --title "Processing ""$LAST_ITEM"" on ""$OUTPUT_FREQ""MHZ" --msgbox "Running" 8 78
+	whiptail --title "Processing ""$LAST_ITEM"" on ""$OUTPUT_FREQ""MHz" --msgbox "Running" 8 78
 	
 }
 
