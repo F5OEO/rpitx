@@ -33,7 +33,7 @@ sudo reboot
 # Hardware
 ![bpf](/doc/bpf-warning.png)
 
-| Raspberry Model      | Status  |
+| Raspberry Pi Model   | Status  |
 | ---------------------|:-------:|
 | Pi Zero|OK|
 | Pi ZeroW|OK|
