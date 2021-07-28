@@ -128,16 +128,16 @@ int fm_mpx_open(char *filename, size_t len) {
 
         // IIR pre-emphasis filter
         // Reference material:    http://jontio.zapto.org/hda1/preempiir.pdf
-        double tau=75e-6;
-        double delta=1.96e-6;
+        double tau=50e-6; // 50us default pre-emphasis, TODO: make it adjustable for the US to 75us
+        double delta=1/(2*PI*20000); // 20KHz frequency max for the emphasis function
         double taup, deltap, bp, ap, a0, a1, b1;
         taup=1.0/(2.0*(in_samplerate*FIR_PHASES))/tan(  1.0/(2*tau*(in_samplerate*FIR_PHASES) ));
         deltap=1.0/(2.0*(in_samplerate*FIR_PHASES))/tan(  1.0/(2*delta*(in_samplerate*FIR_PHASES) ));
         bp=sqrt( -taup*taup + sqrt(taup*taup*taup*taup + 8.0*taup*taup*deltap*deltap) ) / 2.0 ;
         ap=sqrt( 2*bp*bp + taup*taup );
-        a0=( 2.0*ap + 1/(in_samplerate*FIR_PHASES) )/(2.0*bp + 1/(in_samplerate*FIR_PHASES) );
-        a1=(-2.0*ap + 1/(in_samplerate*FIR_PHASES) )/(2.0*bp + 1/(in_samplerate*FIR_PHASES) );
-        b1=( 2.0*bp + 1/(in_samplerate*FIR_PHASES) )/(2.0*bp + 1/(in_samplerate*FIR_PHASES) );
+        a0=( 2.0*ap + 1.0/(in_samplerate*FIR_PHASES) )/(2.0*bp + 1.0/(in_samplerate*FIR_PHASES) );
+        a1=(-2.0*ap + 1.0/(in_samplerate*FIR_PHASES) )/(2.0*bp + 1.0/(in_samplerate*FIR_PHASES) );
+        b1=( 2.0*bp - 1.0/(in_samplerate*FIR_PHASES) )/(2.0*bp + 1.0/(in_samplerate*FIR_PHASES) );
         double x=0,y=0;
  
         for(int i=0; i<FIR_TAPS; i++) { 
