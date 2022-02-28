@@ -37,10 +37,12 @@ int main(int argc, char* argv[])
 {
 	int a;
 	int anyargs = 0;
-	float SetFrequency=434e6;
+	float SetFrequency = 434e6;
 	dbg_setlevel(1);
 	bool NotKill=false;
-	float ppm=1000.0;
+  bool ppmSet = false;
+	float ppm = 0.0f;
+  char * endptr = NULL;
 	while(1)
 	{
 		a = getopt(argc, argv, "f:ehp:");
@@ -55,13 +57,22 @@ int main(int argc, char* argv[])
 		switch(a)
 		{
 		case 'f': // Frequency
-			SetFrequency = atof(optarg);
+      SetFrequency = strtof(optarg, &endptr);
+      if (endptr == optarg || SetFrequency <= 0.0f || SetFrequency == HUGE_VALF) {
+        fprintf(stderr, "tune: not a valid frequency - '%s'", optarg)
+        exit(1);
+      }
 			break;
 		case 'e': //End immediately
 			NotKill=true;
 			break;
 		case 'p': //ppm
-			ppm=atof(optarg);
+      ppm = strtof(optarg, &endptr);
+      if (endptr == optarg || ppm <= 0.0f || ppm == HUGE_VALF) {
+        fprintf(stderr, "tune: not a valid ppm - '%s'", optarg)
+        exit(1);
+      }
+      ppmSet = true;
 			break;	
 		case 'h': // help
 			print_usage();
@@ -105,7 +116,7 @@ int main(int argc, char* argv[])
 		pad.setlevel(7);
 		clkgpio *clk=new clkgpio;
 		clk->SetAdvancedPllMode(true);
-		if(ppm!=1000)	//ppm is set else use ntp
+		if(ppmSet)	//ppm is set else use ntp
 			clk->Setppm(ppm);
 		clk->SetCenterFrequency(SetFrequency,10);
 		clk->SetFrequency(000);

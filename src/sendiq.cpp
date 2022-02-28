@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 	enum {typeiq_i16,typeiq_u8,typeiq_float,typeiq_double};
 	int InputType=typeiq_i16;
 	int Decimation=1;
-        
+  char * endptr = NULL;
 	while(1)
 	{
 		a = getopt(argc, argv, "i:f:s:m:p:h:ldt:");
@@ -127,11 +127,15 @@ int main(int argc, char* argv[])
 			if (drivedds>7.0) {drivedds=7.0;}
 			break;
 		case 'f': // Frequency
-			SetFrequency = atof(optarg);
-			break;
-                case 'm': // Shared memory token
-                        sharedmem_token = atoi(optarg);
-     	                InputType=typeiq_float;      //if using shared memory force float pipe
+      SetFrequency = strtof(optarg, &endptr);
+      if (endptr == optarg || SetFrequency <= 0.0f || SetFrequency == HUGE_VALF) {
+        fprintf(stderr, "tune: not a valid frequency - '%s'", optarg)
+        exit(1);
+      }
+			break;			
+    case 'm': // Shared memory token
+      sharedmem_token = atoi(optarg);
+     	InputType=typeiq_float;      //if using shared memory force float pipe
 			break;
 		case 's': // SampleRate (Only needeed in IQ mode)
 			SampleRate = atoi(optarg);
@@ -157,7 +161,7 @@ int main(int argc, char* argv[])
 				}
 			};
 			break;
-		case 'h': // help
+		case 'h': // Harmonic numebr
 			Harmonic=atoi(optarg);
 			break;
 		case 'l': // loop mode

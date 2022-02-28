@@ -48,7 +48,9 @@ Usage:\nrpitx [-i File Input][-m ModeInput] [-f frequency output] [-s Samplerate
 -f float      frequency to output on GPIO_4 pin 7 in khz : (130 kHz to 750 MHz),\n\
 -l            loop mode for file input\n\
 -p float      frequency correction in parts per million (ppm), positive or negative, for calibration, default 0.\n\
+-q            Use harmonic number n\n\
 -h            help (this help).\n\
+-s            SampleRate input file sample rate (only in IEQ mode) \n\
 \n",\
 PROGRAM_VERSION);
 
@@ -87,6 +89,7 @@ int main(int argc, char* argv[])
     bool loop_mode_flag=false;
     bool useStdin;
     int Harmonic=1;
+  char * endptr;
 	while(1)
 	{
 		a = getopt(argc, argv, "i:f:m:s:p:hld:w:c:ra:");
@@ -104,7 +107,11 @@ int main(int argc, char* argv[])
 			FileName = optarg;
 			break;
 		case 'f': // Frequency
-			SetFrequency = atof(optarg)*1e3;
+      SetFrequency = strtof(optarg, &endptr);
+      if (endptr == optarg || SetFrequency <= 0.0f || SetFrequency == HUGE_VALF) {
+        fprintf(stderr, "tune: not a valid frequency - '%s'", optarg)
+        exit(1);
+      }
 			break;
 		case 'm': // Mode (IQ,IQFLOAT,RF,RFA)
 			if(strcmp("IQ",optarg)==0) Mode=MODE_RPITX_IQ;
@@ -117,8 +124,11 @@ int main(int argc, char* argv[])
 			SampleRate = atoi(optarg);
 			break;
 		case 'p':  //	ppmcorrection
-			ppmpll = atof(optarg);
-			
+      ppmpll = strtof(optarg, &endptr);
+      if (endptr == optarg || ppmpll  <= 0.0f || ppmpll  == HUGE_VALF) {
+        fprintf(stderr, "tune: not a valid ppm - '%s'", optarg)
+        exit(1);
+      }		
 			break;
 		case 'h': // help
 			print_usage();
@@ -136,14 +146,18 @@ int main(int argc, char* argv[])
 				fprintf(stderr,"Warning : 'w' parameter not used in this version\n");
 			break;
 		case 'r': // Randomize PWM frequency 
-				fprintf(stderr,"Warning : 'r' parameter not used in this version\n");
-			
+				fprintf(stderr,"Warning : 'r' parameter not used in this version\n");			
 			break;
 		case 'a': // DMA Channel 1-14
 			 	fprintf(stderr,"Warning : 'a' parameter not used in this version\n");
+		case 'q': // Harmonic number
+			Harmonic=atoi(optarg);
+      break;
+
 			break;
         	case -1:
         	break;
+
 		case '?':
 			if (isprint(optopt) )
  			{
