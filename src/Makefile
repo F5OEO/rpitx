@@ -60,10 +60,10 @@ LDFLAGS_Pissb	= $(LDFLAGS) -lsndfile -lliquid
 	$(CC) $(CFLAGS) -c -o pifmrds/rds.o pifmrds/rds.c
 	$(CC) $(CFLAGS) -c -o pifmrds/control_pipe.o pifmrds/control_pipe.c
 	$(CC) $(CFLAGS) -c -o pifmrds/waveforms.o pifmrds/waveforms.c
-	$(CC) $(CFLAGS) -c -o pifmrds/rds_wav.o pifmrds/rds_wav.c
-	$(CC) $(CFLAGS) -c -o pifmrds/fm_mpx.o pifmrds/fm_mpx.c
-	$(CC) -o pifmrds/rds_wav pifmrds/rds_wav.o pifmrds/rds.o pifmrds/waveforms.o pifmrds/fm_mpx.o -lm -lsndfile
-	$(CXX) $(CXXFLAGS) -Wno-write-strings -o ../pifmrds pifmrds/rds.o pifmrds/waveforms.o pifmrds/pi_fm_rds.cpp pifmrds/fm_mpx.o pifmrds/control_pipe.o -lm -lsndfile -lrt -lpthread -L/opt/vc/lib -lrpitx
+	#$(CC) $(CFLAGS) -c -o pifmrds/rds_wav.o pifmrds/rds_wav.c
+	#$(CC) $(CFLAGS) -c -o pifmrds/fm_mpx.o pifmrds/fm_mpx.c
+	#$(CC) -o pifmrds/rds_wav pifmrds/rds_wav.o pifmrds/rds.o pifmrds/waveforms.o pifmrds/fm_mpx.o -lm -lsndfile
+	#$(CXX) $(CXXFLAGS) -Wno-write-strings -o ../pifmrds pifmrds/rds.o pifmrds/waveforms.o pifmrds/pi_fm_rds.cpp pifmrds/fm_mpx.o pifmrds/control_pipe.o -lm -lsndfile -lrt -lpthread -L/opt/vc/lib -lrpitx
 
 ../rpitx: rpitxv1/rpitx.cpp 
 	$(CXX) $(CXXFLAGS) -Wno-write-strings -o ../rpitx rpitxv1/rpitx.cpp $(LDFLAGS)
