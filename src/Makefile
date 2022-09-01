@@ -106,3 +106,4 @@ install: all
 	install -m 0755 ../rpitx /usr/bin
 	install -m 0755 ../pift8 /usr/bin
 	install -m 0755 ../sendook /usr/bin
+	install -m 0755 ../pifmrds /usr/bin
