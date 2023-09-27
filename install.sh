@@ -41,13 +41,13 @@ if [ "$CONT" = "y" ] || [ "$CONT" = "yes" ]; then
   echo "Setting GPU to 250MHz to ensure stability"
   
   # Add or update the gpu_freq line in /boot/config.txt
-  #LINE='gpu_freq=250'
-  #FILE='/boot/config.txt'
-  #grep -qF "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+  LINE='gpu_freq=250'
+  FILE='/boot/config.txt'
+  grep -qF "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
   
   # Add or update the force_turbo line in /boot/config.txt
-  #LINE='force_turbo=1'
-  #grep -qF "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+  LINE='force_turbo=1'
+  grep -qF "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
   
   echo "Installation completed!"
 else
