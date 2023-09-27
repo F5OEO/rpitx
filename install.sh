@@ -32,20 +32,26 @@ sudo make install
 cd .. || exit
 
 printf "\n\n"
-printf "In order to run properly, rpitx need to modify /boot/config.txt. Are you sure (y/n) "
+# Ask the user for confirmation
+printf "In order to run properly, rpitx needs to modify /boot/config.txt. Are you sure (y/yes/n)? "
 read -r CONT
 
-if [ "$CONT" = "y" ]; then
-  echo "Set GPU to 250Mhz in order to be stable"
-   LINE='gpu_freq=250'
-   FILE='/boot/config.txt'
-   grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
-   #PI4
-   LINE='force_turbo=1'
-   grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
-   echo "Installation completed !"
+# Validate user input
+if [ "$CONT" = "y" ] || [ "$CONT" = "yes" ]; then
+  echo "Setting GPU to 250MHz to ensure stability"
+  
+  # Add or update the gpu_freq line in /boot/config.txt
+  #LINE='gpu_freq=250'
+  #FILE='/boot/config.txt'
+  #grep -qF "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+  
+  # Add or update the force_turbo line in /boot/config.txt
+  #LINE='force_turbo=1'
+  #grep -qF "$LINE" "$FILE" || echo "$LINE" | sudo tee --append "$FILE"
+  
+  echo "Installation completed!"
 else
-  echo "Warning : Rpitx should be instable and stop from transmitting !";
+  echo "Warning: rpitx may be unstable and may stop transmitting!"
 fi
 
 
