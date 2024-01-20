@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt ../pirtty
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt ../pirtty ../dvbrf
 
 CFLAGS	?= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS ?= -std=c++11 -Wall -g -O2 -Wno-unused-variable

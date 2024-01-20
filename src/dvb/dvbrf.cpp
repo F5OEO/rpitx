@@ -40,6 +40,7 @@ Usage:\ndvbrf [-i File Input][-s Samplerate][-l] [-f Frequency] [-h Harmonic num
 -c            Fec : {1/2,3/4,5/6,7/8} \n\
 -f float      central frequency Hz(50 kHz to 1500 MHz),\n\
 -l            loop mode for file input\n\
+-m            dvbs or dvbs2\n\
 -n            Use harmonic number n\n\
 -?            help (this help).\n\
 \n",\
@@ -73,7 +74,7 @@ int main(int argc, char* argv[])
 	int Decimation=1;
 	int FEC=-1;
 	enum {DVBS,DVBS2};
-	int DVB_Mode=DVBS;//
+	int DVB_Mode=DVBS;
 	while(1)
 	{
 		a = getopt(argc, argv, "i:f:s:n:lt:c:m:");
@@ -113,7 +114,7 @@ int main(int argc, char* argv[])
 			if(strcmp("carrier",optarg)==0) {fprintf(stderr,"Carrier mode\n");FEC=0;}//CARRIER MODE
 			
 			break;
-		case 'm': // FEC
+		case 'm': // Mode
 			if(strcmp("dvbs",optarg)==0) DVB_Mode=DVBS;
 			if(strcmp("dvbs2",optarg)==0) DVB_Mode=DVBS2;
 		break;		
@@ -169,7 +170,7 @@ int main(int argc, char* argv[])
 	if(DVB_Mode==DVBS)
 	{
 		int FifoSize=204*100*4;
-		int NumberofPhase=4;
+		int NumberofPhase=8;
 		phasedmasync dvbsmodul(SetFrequency/Harmonic,SampleRate,NumberofPhase,14,FifoSize);
 		padgpio pad;
 		pad.setlevel(7);
@@ -233,7 +234,7 @@ int main(int argc, char* argv[])
 	else
 	{
 		int FifoSize=546*30*4;
-		int NumberofPhase=4;
+		int NumberofPhase=8;
 		phasedmasync dvbs2modul(SetFrequency/Harmonic,SampleRate,NumberofPhase,14,FifoSize);
 		padgpio pad;
 		pad.setlevel(7);
