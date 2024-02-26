@@ -10,6 +10,13 @@
 
 bool running = true;
 
+typedef struct
+{
+    double active;
+    uint32_t duration; //nano seconds
+    uint32_t padding;
+} Bitdata;
+
 void print_usage(void)
 {
 /** Future options :
@@ -26,8 +33,11 @@ Options:\n\
 -f freq : frequency in Hz (default : 433.92MHz)\n\
 -0 nb : duration in microsecond of 0 bit (by default : 500us). Use integer only.\n\
 -1 nb : duration in microsecond of 1 bit (by default : 250us)\n\
+-g nb : bit gap (by default : 500us)\n\
 -r nb : repeat nb times the message (default : 3)\n\
 -p nb : pause between each message (default : 1000us=1ms)\n\
+-m nb : modulation type 0=OOK, 1=OOK_PWM, 2=OOK_PPM (default : 0=OOK)\n\
+-i : filemode : read from file\n\
 \n\
 \"binary code\":\n\
   a serie of 0 or 1 char (space allowed and ignored)\n\
@@ -67,10 +77,16 @@ int main(int argc, char *argv[])
 	uint64_t Freq = 433920000;
 	uint64_t bit0duration = 500; // in microsecond
 	uint64_t bit1duration = 500;
+	uint64_t bitgap = 500;
 	int nbrepeat = 3;
 	int pause = 1000; // in us
 	int dryrun = 0; // if 1 : hte message is not really transmitted
+	int modulation = 0; // 0=OOK, 1=OOK_PWM, 2=OOK_PPM
 	char *bits = NULL;
+	int filemode = 0;
+	char *filename = NULL;
+	uint8_t *data = NULL;
+	int size;
 	
 	for (int i = 0; i < 64; i++)
 	{
@@ -81,7 +97,7 @@ int main(int argc, char *argv[])
 	}
 	while(1)
 	{
-		a = getopt(argc, argv, "f:0:1:r:p:hvd");
+		a = getopt(argc, argv, "f:0:1:g:r:p:m:hvdi");
 		if(a == -1)
 		{
 			if(anyargs) break;
@@ -99,11 +115,17 @@ int main(int argc, char *argv[])
 			case '1': // bit 0 duration
 				bit1duration = atouint32_metric(optarg, "Error with -1 : ");
 				break;
+			case 'g': // bit gap
+				bitgap = atouint32_metric(optarg, "Error with -g : ");
+				break;
 			case 'r':
 				nbrepeat = atoi(optarg);
 				break;
 			case 'p':
 				pause = atoi(optarg);
+				break;
+			case 'm':
+				modulation = atoi(optarg);
 				break;
 			case 'h' :
 				print_usage();
@@ -114,6 +136,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'd': // Dry run
 				dryrun = 1;
+				break;
+			case 'i': // filemode
+				filemode = 1;
 				break;
 			case -1:
 				break;
@@ -126,10 +151,26 @@ int main(int argc, char *argv[])
 	if (optind >= argc) {
 		FATAL_ERROR(-2, "Missing bit message.\n");
 	}
-	bits = argv[optind];
+	if (filemode)
+	{
+		filename = argv[optind];
+	}
+	else
+	{
+		bits = argv[optind];
+	}
 	printf("Frequency set to : %" PRIu64 "Hz \n", Freq);
-	printf("Bit duration 0 : %" PRIu64 "us ; 1 : %" PRIu64 "us\n",
-		bit0duration, bit1duration);
+	if(!filemode)
+	{
+		printf("Modulation: %d \n", modulation);
+		printf("Bit duration 0 : %" PRIu64 "us ; 1 : %" PRIu64 "us\n",
+			bit0duration, bit1duration);
+		printf("Bit gap = %" PRIu64 "us \n", bitgap);
+	}
+	else
+	{
+		printf("Reading data from file %s.\n", filename);
+	}
 	printf("Send message %d times with a pause of %dus\n", nbrepeat, pause);
 	if (dryrun) 
 		printf("Dry run mode enabled : no message will be sent\n");
@@ -137,21 +178,54 @@ int main(int argc, char *argv[])
 	// Simplify the message to send
 	int computed_duration = 0; // in us	
 	int nbbits = 0;
-	for(size_t i = 0; i < strlen(bits); i++)
+	if(!filemode)
 	{
-		char c = bits[i];
-		if (c == '0')
+		for(size_t i = 0; i < strlen(bits); i++)
 		{
-			nbbits ++;
-			computed_duration += bit0duration;
-		} else if (c == '1')
-		{
-			nbbits ++;
-			computed_duration += bit1duration;
+			char c = bits[i];
+			if (c == '0')
+			{
+				nbbits ++;
+				computed_duration += bit0duration;
+			} else if (c == '1')
+			{
+				nbbits ++;
+				computed_duration += bit1duration;
+			}
+
+			/* OOK_PWM and OOK_PPM requires extra bit */
+			if((modulation == 1) || (modulation == 2))
+			{
+				computed_duration += bitgap;
+				nbbits ++;
+			}
+			// any other char is ignored (it allows to speparate nibble with a space for example)
+			// improvement : allow "." and "-" or "i" and "a" to create a MORSE sender
 		}
-		// any other char is ignored (it allows to speparate nibble with a space for example)
-		// improvement : allow "." and "-" or "i" and "a" to create a MORSE sender
 	}
+	else
+	{
+		FILE *p_file = NULL;
+		p_file = fopen(filename,"rb");
+		if(p_file == NULL)
+		{
+			FATAL_ERROR(-2, "Can't open file %s.\n", filename);
+		}
+		fseek(p_file,0,SEEK_END);
+		size = ftell(p_file);
+		data = (uint8_t *)malloc(size);
+		rewind(p_file);	
+		fread(data,sizeof(uint8_t),size,p_file);
+		Bitdata *p_bitdata = (Bitdata *)data;
+
+		nbbits = size/sizeof(Bitdata);
+		for(int i = 0; i < nbbits; i++)
+		{
+			computed_duration += p_bitdata[i].duration/1000; //nano to us
+		}
+
+	}
+	
 	dbg_printf(1, "Send %d bits, with a total duration of %d us.\n", nbbits, computed_duration);
 	if (computed_duration == 0 || nbbits == 0)
 	{
@@ -165,17 +239,71 @@ int main(int argc, char *argv[])
 	// Prepare the message
 	ookbursttiming ooksender(Freq, computed_duration);
 	ookbursttiming::SampleOOKTiming Message[nbbits];
-	for(size_t i = 0; i < strlen(bits); i++)
+	if(!filemode)
 	{
-		char c = bits[i];
-		if (c == '0')
+		for(size_t i = 0; i < strlen(bits); i++)
 		{
-			Message[i].value = 0; 
-			Message[i].duration = bit0duration;
-		} else if (c == '1')
+			char c = bits[i];
+			switch (modulation)
+			{
+			case 0: // OOK:
+				if (c == '0')
+				{
+					Message[i].value = 0; 
+					Message[i].duration = bit0duration;
+					
+				} else if (c == '1')
+				{
+					Message[i].value = 1; 
+					Message[i].duration = bit1duration;
+				}
+				break;
+			
+			case 1: // OOK_PWM:		
+				if (c == '0')
+				{
+					Message[i*2].value = 1; 
+					Message[i*2].duration = bit0duration;
+					
+				} else if (c == '1')
+				{
+					Message[i*2].value = 1; 
+					Message[i*2].duration = bit1duration;
+				}
+				Message[(i*2)+1].value = 0; 
+				Message[(i*2)+1].duration = bitgap;
+				break;
+
+			case 2: // OOK_PPM:
+				Message[i*2].value = 1; 
+				Message[i*2].duration = bitgap;
+				if (c == '0')
+				{
+					Message[(i*2)+1].value = 0; 
+					Message[(i*2)+1].duration = bit0duration;
+					
+				} else if (c == '1')
+				{
+					Message[(i*2)+1].value = 0; 
+					Message[(i*2)+1].duration = bit1duration;
+				}
+				break;
+
+
+			
+			default:
+				break;
+			}
+			
+		}
+	}
+	else
+	{
+		Bitdata *p_bitdata = (Bitdata *)data;
+		for(int i = 0; i < nbbits; i++)
 		{
-			Message[i].value = 1; 
-			Message[i].duration = bit1duration;
+			Message[i].value = p_bitdata[i].active;
+			Message[i].duration = p_bitdata[i].duration/1000; //nano to us
 		}
 	}
 	
