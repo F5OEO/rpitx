@@ -6,6 +6,7 @@ LDFLAGS ?= -L/opt/vc/lib
 LDFLAGS += -lrpitx -lm -lrt -lpthread
 CXX ?= c++
 CC ?= cc
+INTSTALL_DIR ?= /usr/local/bin
 
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pissb	= $(LDFLAGS) -lsndfile -lliquid
@@ -94,15 +95,15 @@ clean:
 	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds ../rpitx ../sendook
 
 install: all
-	install -m 0755 ../pisstv /usr/bin
-	install -m 0755 ../foxhunt /usr/bin
-	install -m 0755 ../pirtty /usr/bin
-	install -m 0755 ../piopera /usr/bin
-	install -m 0755 ../pifsq /usr/bin
-	install -m 0755 ../pichirp /usr/bin
-	install -m 0755 ../sendiq /usr/bin
-	install -m 0755 ../tune /usr/bin
-	install -m 0755 ../freedv /usr/bin
-	install -m 0755 ../rpitx /usr/bin
-	install -m 0755 ../pift8 /usr/bin
-	install -m 0755 ../sendook /usr/bin
+	install -m 0755 ../pisstv $(INSTALL_DIR)
+	install -m 0755 ../foxhunt $(INSTALL_DIR)
+	install -m 0755 ../pirtty $(INSTALL_DIR)
+	install -m 0755 ../piopera $(INSTALL_DIR)
+	install -m 0755 ../pifsq $(INSTALL_DIR)
+	install -m 0755 ../pichirp $(INSTALL_DIR)
+	install -m 0755 ../sendiq $(INSTALL_DIR)
+	install -m 0755 ../tune $(INSTALL_DIR)
+	install -m 0755 ../freedv $(INSTALL_DIR)
+	install -m 0755 ../rpitx $(INSTALL_DIR)
+	install -m 0755 ../pift8 $(INSTALL_DIR)
+	install -m 0755 ../sendook $(INSTALL_DIR)
