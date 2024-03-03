@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
 		case 'f': // Frequency
       SetFrequency = strtof(optarg, &endptr);
       if (endptr == optarg || SetFrequency <= 0.0f || SetFrequency == HUGE_VALF) {
-        fprintf(stderr, "tune: not a valid frequency - '%s'", optarg)
+        fprintf(stderr, "tune: not a valid frequency - '%s'", optarg);
         exit(1);
       }
 			break;			
