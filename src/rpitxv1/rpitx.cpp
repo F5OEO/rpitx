@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
 		case 'f': // Frequency
       SetFrequency = strtof(optarg, &endptr);
       if (endptr == optarg || SetFrequency <= 0.0f || SetFrequency == HUGE_VALF) {
-        fprintf(stderr, "tune: not a valid frequency - '%s'", optarg)
+        fprintf(stderr, "tune: not a valid frequency - '%s'", optarg);
         exit(1);
       }
 			break;
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 		case 'p':  //	ppmcorrection
       ppmpll = strtof(optarg, &endptr);
       if (endptr == optarg || ppmpll  <= 0.0f || ppmpll  == HUGE_VALF) {
-        fprintf(stderr, "tune: not a valid ppm - '%s'", optarg)
+        fprintf(stderr, "tune: not a valid ppm - '%s'", optarg);
         exit(1);
       }		
 			break;
