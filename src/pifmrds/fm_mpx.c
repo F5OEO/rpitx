@@ -117,7 +117,7 @@ int fm_mpx_open(char *filename, size_t len) {
         }
     
         // Choose a cutoff frequency for the low-pass FIR filter
-        float cutoff_freq = 15700;
+        float cutoff_freq = 20000;
 		//float cutoff_freq = 3000; //For NBFM
         if(in_samplerate/2 < cutoff_freq) cutoff_freq = in_samplerate/2 * .8;
    

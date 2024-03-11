@@ -108,3 +108,4 @@ install: all
 	install -m 0755 ../pift8 $(INSTALL_DIR)
 	install -m 0755 ../sendook $(INSTALL_DIR)
 	install -m 0755 ../dvbrf $(INSTALL_DIR)
+	install -m 0755 ../pifmrds $(INSTALL_DIR)
