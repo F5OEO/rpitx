@@ -36,8 +36,9 @@ fprintf(stderr,\
 "\ndvbrf -%s\n\
 Usage:\ndvbrf [-i File Input][-s Samplerate][-l] [-f Frequency] [-h Harmonic number] \n\
 -i            path to Transport Stream File Input \n\
--s            SampleRate 10000-250000 \n\
+-s            SampleRate 10000-1000000 \n\
 -c            Fec : {1/2,3/4,5/6,7/8} \n\
+-c            Mode : {dvbs,dvbs2} \n\
 -f float      central frequency Hz(50 kHz to 1500 MHz),\n\
 -l            loop mode for file input\n\
 -n            Use harmonic number n\n\
@@ -57,7 +58,8 @@ terminate(int num)
    
 }
 
-#define MAX_SAMPLERATE 2000000
+#define MAX_SAMPLERATE 1000000
+#define MAX_FREQUENCY 1e9
 
 int main(int argc, char* argv[])
 {
@@ -74,6 +76,7 @@ int main(int argc, char* argv[])
 	int FEC=-1;
 	enum {DVBS,DVBS2};
 	int DVB_Mode=DVBS;//
+	int nbphase=4;
 	while(1)
 	{
 		a = getopt(argc, argv, "i:f:s:n:lt:c:m:");
@@ -113,7 +116,7 @@ int main(int argc, char* argv[])
 			if(strcmp("carrier",optarg)==0) {fprintf(stderr,"Carrier mode\n");FEC=0;}//CARRIER MODE
 			
 			break;
-		case 'm': // FEC
+		case 'm': // Mode
 			if(strcmp("dvbs",optarg)==0) DVB_Mode=DVBS;
 			if(strcmp("dvbs2",optarg)==0) DVB_Mode=DVBS2;
 		break;		
@@ -165,6 +168,13 @@ int main(int argc, char* argv[])
 		printf("input file issue\n");
 		exit(0);
 	}
+
+	while(SetFrequency*(float)(nbphase*2)/(float)Harmonic>1e9)
+	{
+		Harmonic+=2;
+	}
+	if(Harmonic>1)
+		fprintf(stderr,"Using harmonic %d : main frequency=%0.f\n",Harmonic,SetFrequency/(float)Harmonic);
 
 	if(DVB_Mode==DVBS)
 	{
