@@ -1,4 +1,4 @@
-all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt ../pirtty
+all: ../pisstv ../piopera ../pifsq ../pichirp ../sendiq ../tune ../freedv ../pocsag ../spectrumpaint ../pifmrds ../rpitx ../corel8 ../pift8 ../sendook ../morse ../foxhunt ../pirtty ../dvbrf
 
 CFLAGS	?= -Wall -g -O2 -Wno-unused-variable
 CXXFLAGS ?= -std=c++11 -Wall -g -O2 -Wno-unused-variable
@@ -6,7 +6,7 @@ LDFLAGS ?= -L/opt/vc/lib
 LDFLAGS += -lrpitx -lm -lrt -lpthread
 CXX ?= c++
 CC ?= cc
-INTSTALL_DIR ?= /usr/local/bin
+INSTALL_DIR ?= /usr/local/bin
 
 CFLAGS_Pissb	= -Wall -g -O2 -Wno-unused-variable
 LDFLAGS_Pissb	= $(LDFLAGS) -lsndfile -lliquid
@@ -107,3 +107,4 @@ install: all
 	install -m 0755 ../rpitx $(INSTALL_DIR)
 	install -m 0755 ../pift8 $(INSTALL_DIR)
 	install -m 0755 ../sendook $(INSTALL_DIR)
+	install -m 0755 ../dvbrf $(INSTALL_DIR)
