@@ -10,7 +10,7 @@ _Created by Evariste Courjaud F5OEO. See Licence for using it.
 
 # Installation
 
-Assuming a Raspbian Lite installation (stretch) : https://www.raspberrypi.org/downloads/raspbian/
+Assuming a Raspbian Lite installation (raspios-bookworm) : [https://www.raspberrypi.org/downloads/raspbian/](https://www.raspberrypi.com/software/operating-systems/#raspberry-pi-os-32-bit)
 
 Be sure to have git package installed :
 ```sh
