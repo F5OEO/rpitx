@@ -92,7 +92,7 @@ CFLAGS_Pidcf77	= -Wall -g -O2 -Wno-unused-variable
 ../pidcf77 : ../dcf77/pidcf77.c
 	$(CC) $(CFLAGS_Piam) -o ../pidcf77 ../dcf77/pidcf77.c  $(LDFLAGS)
 clean:
-	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds ../rpitx ../sendook
+	rm -f  ../dvbrf ../sendiq ../pissb ../pisstv ../pifsq ../pifm ../piam ../pidcf77 ../pichirp ../tune ../freedv ../piopera ../spectrumpaint ../pocsag ../pifmrds ../rpitx ../sendook ../foxhunt ../morse ../pift8
 
 install: all
 	install -m 0755 ../pisstv $(INSTALL_DIR)
@@ -109,3 +109,9 @@ install: all
 	install -m 0755 ../sendook $(INSTALL_DIR)
 	install -m 0755 ../dvbrf $(INSTALL_DIR)
 	install -m 0755 ../pifmrds $(INSTALL_DIR)
+	install -m 0755 ../pocsag $(INSTALL_DIR)
+	install -m 0755 ../pissb $(INSTALL_DIR)
+	install -m 0755 ../piam $(INSTALL_DIR)
+	install -m 0755 ../pidcf77 $(INSTALL_DIR)
+	install -m 0755 ../spectrumpaint $(INSTALL_DIR)
+	install -m 0755 ../morse $(INSTALL_DIR)

@@ -38,7 +38,13 @@ read -r CONT
 if [ "$CONT" = "y" ]; then
   echo "Set GPU to 250Mhz in order to be stable"
    LINE='gpu_freq=250'
+   if [ ! -f /boot/firmware/config.txt ]; then
+   echo "Raspbian 11 or below detected using /boot/config.txt"
    FILE='/boot/config.txt'
+   else
+   echo "Raspbian 12 detected using /boot/firmware/config.txt"
+   FILE='/boot/firmware/config.txt'
+   fi
    grep -qF "$LINE" "$FILE"  || echo "$LINE" | sudo tee --append "$FILE"
    #PI4
    LINE='force_turbo=1'
