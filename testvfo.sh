@@ -1,3 +1,3 @@
 #!/bin/sh
 
-sudo tune -f "$1"
+sudo ./tune -f "$1"
