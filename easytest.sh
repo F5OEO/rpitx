@@ -7,6 +7,7 @@ DEFAULT_WAV_FILE_MONO_LOC=src/resources/SAMPLE_MONO_AUDIO.wav
 DEFAULT_WAV_FILE_STEREO_LOC=src/resources/SAMPLE_STEREO_AUDIO.wav
 DEFAULT_RF_FREEDV_FILE_LOC=src/resources/SAMPLE_FREEDV.rf
 DEFAULT_POCSAG_MESSAGE="1:YOURCALL\n2: Hello world"
+DEFAULT_FLEX_MESSAGE="1234567:Hello World"
 DEFAULT_OPERA_CALLSIGN="F5OEO"
 DEFAULT_RTTY_MESSAGE="HELLO WORLD FROM RPITX"
 LAST_ITEM="0 Tune"
@@ -85,6 +86,7 @@ do_stop_transmit()
 	sudo killall pifmrds 2>/dev/null
 	sudo killall sendiq 2>/dev/null
 	sudo killall pocsag 2>/dev/null
+	sudo killall flex 2>/dev/null
 	sudo killall piopera 2>/dev/null
 	sudo killall rpitx 2>/dev/null
 	sudo killall freedv 2>/dev/null
@@ -107,6 +109,7 @@ do_stop_transmit()
 			10\ *) sudo killall testpocsag.sh >/dev/null 2>/dev/null ;;
 			11\ *) sudo killall testopera.sh >/dev/null 2>/dev/null ;;
 			12\ *) sudo killall testrtty.sh >/dev/null 2>/dev/null ;;
+			13\ *) sudo killall testflex.sh >/dev/null 2>/dev/null ;;
 			
 	esac		
 }
@@ -127,7 +130,7 @@ do_freq_setup
  while [ true ]
     do
 
-	menuchoice=$(whiptail --default-item "$LAST_ITEM" --title "Rpitx on ""$OUTPUT_FREQ"" MHz" --menu "Range frequency : 50kHz-1GHz. Choose your test:" 20 82 12 \
+	menuchoice=$(whiptail --default-item "$LAST_ITEM" --title "Rpitx on ""$OUTPUT_FREQ"" MHz" --menu "Range frequency : 50kHz-1GHz. Choose your test:" 20 82 13 \
  	"F Set frequency" "Modify frequency (actual $OUTPUT_FREQ MHz)" \
 	"0 Tune" "Carrier" \
     "1 Chirp" "Moving carrier" \
@@ -142,6 +145,7 @@ do_freq_setup
 	"10 Pocsag" "Pager message" \
     "11 Opera" "Like morse but need Opera decoder" \
     "12 RTTY" "Radioteletype" \
+    "13 FLEX" "FLEX pager protocol" \
  	3>&2 2>&1 1>&3)
 		RET=$?
 		if [ $RET -eq 1 ]; then
@@ -231,6 +235,13 @@ do_freq_setup
 			12\ *) do_enter_message "RTTY" "$DEFAULT_RTTY_MESSAGE"
 			if [ $abort_action -eq 0 ]; then
 				"./testrtty.sh" "$OUTPUT_FREQ""e6" "$MESSAGE" >/dev/null 2>/dev/null &
+				do_status
+			fi
+			;;
+
+			13\ *) do_enter_message "FLEX (CAPCODE:MESSAGE)" "$DEFAULT_FLEX_MESSAGE"
+			if [ $abort_action -eq 0 ]; then
+				"./testflex.sh" "$OUTPUT_FREQ""e6" "$MESSAGE" >/dev/null 2>/dev/null &
 				do_status
 			fi
 			;;

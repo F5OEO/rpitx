@@ -93,6 +93,10 @@ This is a picture transmission mode using audio modulation (USB mode). You need 
 ![pocsag](/doc/pocsagrpitx.JPG)
 This is a mode used by pagers. You need an extra software to decode. Set your SDR in NBFM mode.
 
+### FLEX ###
+![flex](/doc/flexrpitx.jpg)
+Also a mode commonly used on pagers. Can be decoded with multimon-ng.
+
 ### Freedv (digital voice) ###
 ![freedv](/doc/freedvrpitx.JPG)
 This is state of the art opensource digital modulation. You need Freedv for demodulation.
