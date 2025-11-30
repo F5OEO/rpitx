@@ -327,8 +327,14 @@ uint32_t encodeNumeric(uint32_t initial_offset, char *str, uint32_t *out)
     //Write remainder of message
     if (currentNumBits > 0)
     {
-        //Pad out the word to 20 bits with zeroes
-        currentWord <<= 20 - currentNumBits;
+        //Pad out the word to 20 bits with space characters (BCD 0xC)
+        //In the encoded form, each space digit is 0x3 (0011 binary)
+        uint32_t paddingBits = 20 - currentNumBits;
+        uint32_t paddingValue = 0;
+        for (uint32_t i = 0; i < paddingBits / 4; i++) {
+            paddingValue = (paddingValue << 4) | 0x3;
+        }
+        currentWord = (currentWord << paddingBits) | paddingValue;
         *out = encodeCodeword(currentWord | FLAG_MESSAGE);
         out++;
         numWordsWritten++;
